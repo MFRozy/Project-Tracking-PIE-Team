@@ -5,11 +5,17 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>PI Project Management</title>
 <style>
-:root{--bg:#f4f4f6;--card:#ffffff;--sidebar:#ffffff;--text:#0f172a;--muted:#64748b;--line:#e4e4e7;--pri:#ed1c24;--soft:#f8fafc;--ok:#10b981;--warn:#f59e0b;--bad:#ef4444;--r:12px}
-[data-theme=dark]{--bg:#09090b;--card:#121215;--sidebar:#0d0d10;--text:#f4f4f5;--muted:#a1a1aa;--line:#232329;--soft:#18181c;--pri:#ed1c24}
+:root{color-scheme:light;--bg:#f4f4f6;--card:#ffffff;--sidebar:#ffffff;--text:#0f172a;--fg:#0f172a;--muted:#64748b;--line:#e4e4e7;--pri:#ed1c24;--soft:#f8fafc;--ok:#10b981;--warn:#f59e0b;--bad:#ef4444;--r:12px}
+[data-theme=dark]{color-scheme:dark;--bg:#09090b;--card:#121215;--sidebar:#0d0d10;--text:#f4f4f5;--fg:#f4f4f5;--muted:#a1a1aa;--line:#27272e;--soft:#18181c;--pri:#ed1c24}
 *{box-sizing:border-box}
 body{margin:0;font:14px/1.45 -apple-system,"Segoe UI",Roboto,Inter,Arial,sans-serif;background-color:var(--bg);color:var(--text);min-height:100vh}
 button,input,select,textarea{font:inherit;color:inherit}
+input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=color]):not([type=file]),select,textarea{background-color:var(--card);color:var(--text);border:1px solid var(--line);border-radius:8px;padding:7px 10px}
+input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=color]):not([type=file]):focus,select:focus,textarea:focus{outline:none;border-color:var(--pri);box-shadow:0 0 0 2px rgba(237,28,36,.18)}
+input::placeholder,textarea::placeholder{color:var(--muted);opacity:.75}
+select option,select optgroup{background-color:var(--card);color:var(--text)}
+input:disabled,select:disabled,textarea:disabled{opacity:.65;cursor:not-allowed;background-color:var(--soft)!important;color:var(--muted)!important}
+input:-webkit-autofill,input:-webkit-autofill:hover,input:-webkit-autofill:focus,input:-webkit-autofill:active,textarea:-webkit-autofill,select:-webkit-autofill{-webkit-text-fill-color:var(--text)!important;-webkit-box-shadow:0 0 0 1000px var(--card) inset!important;box-shadow:0 0 0 1000px var(--card) inset!important;background-color:var(--card)!important;color:var(--text)!important;caret-color:var(--text)!important;transition:background-color 99999s ease-out 0s}
 
 /* Cosmax Enterprise App Shell */
 .app-shell{display:flex;min-height:100vh;width:100%}
@@ -208,10 +214,10 @@ label input[type=range]{padding:0;border:0}
 .qfoot{display:flex;gap:8px;align-items:center;margin-top:8px;flex-wrap:wrap;font-size:12px}.qfoot .sp{flex:1}
 .fchip{background:var(--card);border:1px solid var(--line);padding:3px 8px;border-radius:6px;max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .msrow{display:grid;grid-template-columns:24px 1fr 160px 70px;gap:8px;align-items:center;margin-bottom:8px}
-.msrow input[type=text],.msrow input[type=date]{padding:7px 9px;border:1px solid var(--line);border-radius:8px;background:var(--card);width:100%}
+.msrow input:not([type=checkbox]){padding:7px 9px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--text);width:100%}
 .logi{padding:8px 0;border-bottom:1px solid var(--line);font-size:13px}.logi small{color:var(--muted)}
 #toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#0f172a;color:#fff;padding:10px 16px;border-radius:8px;z-index:99;display:none;max-width:90vw;font-size:13px}
-.catrow{display:flex;gap:8px;align-items:center;margin-bottom:6px}.catrow input[type=text]{flex:1;padding:7px 9px;border:1px solid var(--line);border-radius:8px;background:var(--card)}.catrow input[type=color]{width:38px;height:32px;padding:0;border:1px solid var(--line);border-radius:6px;background:none}
+.catrow{display:flex;gap:8px;align-items:center;margin-bottom:6px}.catrow input:not([type=color]):not([type=checkbox]){flex:1;padding:7px 9px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--text)}.catrow input[type=color]{width:38px;height:32px;padding:0;border:1px solid var(--line);border-radius:6px;background:none}
 
 /* v3: stage, PO, template */
 .strip{display:flex;gap:2px;margin-top:6px}.strip i{flex:1;height:7px;border-radius:2px;background:var(--line);min-width:3px}
@@ -229,25 +235,26 @@ label input[type=range]{padding:0;border:0}
 .tplwrap{display:grid;grid-template-columns:230px 1fr;gap:14px}
 .tpll .btn{display:block;width:100%;text-align:left;margin-bottom:4px}.tpll .btn.on{border-color:var(--pri);color:var(--pri)}
 .strow{display:grid;grid-template-columns:26px 1fr 140px 70px 80px 120px;gap:6px;align-items:center;margin-bottom:6px}
-.strow input[type=text],.strow input[type=number]{padding:6px 8px;border:1px solid var(--line);border-radius:6px;background:var(--card);width:100%}
+.strow input:not([type=checkbox]){padding:6px 8px;border:1px solid var(--line);border-radius:6px;background:var(--card);color:var(--text);width:100%}
 .itrow{display:grid;grid-template-columns:1fr 60px 70px 130px 120px 36px;gap:6px;margin-bottom:6px}
 .sec{grid-column:1/-1;margin:8px 0 0;font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid var(--line);padding-bottom:4px}
 .sgrow{grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;padding:8px;border:1px solid var(--line);border-radius:8px}
-.dlg select{padding:7px 8px;border:1px solid var(--line);border-radius:6px;background:var(--card);color:var(--fg);width:100%}
-.itrow input{padding:6px 8px;border:1px solid var(--line);border-radius:6px;background:var(--card);width:100%}
+.dlg select{padding:7px 8px;border:1px solid var(--line);border-radius:6px;background:var(--card);color:var(--text);width:100%}
+.itrow input{padding:6px 8px;border:1px solid var(--line);border-radius:6px;background:var(--card);color:var(--text);width:100%}
 .deadline-reminders{margin-bottom:12px}.deadline-reminders .ai{align-items:center}.deadline-reminders.has-overdue{border-color:#fecaca}
-body.auth-mode{min-height:100vh;background:#fff}
+body.auth-mode{min-height:100vh;background:#fff;color:#202124;color-scheme:light}
 body.auth-mode>.app-shell,body.auth-mode>#modal2,body.auth-mode>#toast{display:none!important}
 body.auth-mode>#modal{min-height:100vh}
-.auth-page{min-height:100vh;display:grid;grid-template-columns:minmax(280px,1fr) minmax(360px,500px);background:#fff}
+.auth-page{min-height:100vh;display:grid;grid-template-columns:minmax(280px,1fr) minmax(360px,500px);background:#fff;color:#202124;color-scheme:light}
 .auth-visual{min-height:100vh;padding:clamp(28px,6vw,76px);display:flex;flex-direction:column;justify-content:space-between;background-color:#fbfbfb;background-image:linear-gradient(112deg,rgba(255,255,255,.99) 0%,rgba(255,255,255,.92) 48%,rgba(255,255,255,.52) 100%),url('public/cosmax-mark.svg');background-repeat:no-repeat;background-size:cover,min(52vw,640px) auto;background-position:center,right -80px bottom -130px;color:#202124;position:relative;overflow:hidden;border-right:1px solid #e5e7eb}
 .auth-visual-copy{max-width:620px;position:relative;z-index:1}.auth-visual-copy h1{font-size:clamp(34px,4vw,58px);line-height:1.04;margin:0 0 16px;letter-spacing:0;font-weight:700;color:#ed1c24}.auth-visual-copy p{font-size:16px;color:#62676b;margin:0;max-width:410px}
 .auth-visual-foot{position:relative;z-index:1;color:#73777a;font-size:12px}
-.auth-pane{display:flex;align-items:center;justify-content:center;padding:30px clamp(20px,5vw,64px);background:#fff}
-.auth-card{width:100%;max-width:400px}.auth-tools{display:flex;justify-content:flex-end;margin-bottom:40px}.auth-tools select{border:1px solid #d8dadd;border-radius:7px;background:#fff;padding:8px 10px;color:#292c2f}
-.auth-card h2{font-size:28px;line-height:1.15;margin:0 0 8px;letter-spacing:0}.auth-subtitle{margin:0 0 24px;color:#657781;font-size:14px}
+.auth-pane{display:flex;align-items:center;justify-content:center;padding:30px clamp(20px,5vw,64px);background:#fff;color:#202124}
+.auth-card{width:100%;max-width:400px;color:#202124}.auth-tools{display:flex;justify-content:flex-end;margin-bottom:40px}.auth-tools select,.auth-tools select option{border:1px solid #d8dadd;border-radius:7px;background:#fff!important;padding:8px 10px;color:#292c2f!important}
+.auth-card h2{font-size:28px;line-height:1.15;margin:0 0 8px;letter-spacing:0;color:#202124}.auth-subtitle{margin:0 0 24px;color:#657781;font-size:14px}
 .auth-access-options{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));padding:4px;background:#f2f2f2;border-radius:8px;margin-bottom:22px}.auth-access-options button{min-height:40px;border:0;background:transparent;border-radius:6px;color:#62676b;font-weight:600;cursor:pointer}.auth-access-options button.active{background:#fff;color:#d71920;box-shadow:0 1px 4px rgba(15,23,42,.12)}
-.auth-card label{margin-bottom:14px;color:#53575b}.auth-card label input,.auth-card label select{width:100%;min-height:44px;padding:10px 12px;margin-top:6px;border:1px solid #d8dadd;border-radius:7px;background:#fff;color:#202124}
+.auth-card label{margin-bottom:14px;color:#53575b}.auth-card label input,.auth-card label select,.auth-card label select option{width:100%;min-height:44px;padding:10px 12px;margin-top:6px;border:1px solid #d8dadd;border-radius:7px;background-color:#fff!important;color:#202124!important}
+.auth-card label input:-webkit-autofill,.auth-card label input:-webkit-autofill:hover,.auth-card label input:-webkit-autofill:focus{-webkit-text-fill-color:#202124!important;-webkit-box-shadow:0 0 0 1000px #fff inset!important;box-shadow:0 0 0 1000px #fff inset!important}
 .auth-card .auth-submit{width:100%;min-height:46px;margin-top:8px;background:#ed1c24;color:#fff;border:0;border-radius:7px;font-weight:700;cursor:pointer}.auth-card .auth-submit:hover{background:#ce171e}
 .auth-card .auth-error{min-height:20px;color:#b42318;font-size:13px;margin:6px 0 0}.auth-note{padding:10px 12px;background:#fff8e6;border:1px solid #f4d58d;border-radius:7px;color:#70541b;font-size:13px;margin-bottom:14px}
 .viewer-badge{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);border-radius:6px;padding:4px 8px;font-size:11px;font-weight:700;color:var(--muted)}
@@ -428,14 +435,27 @@ const LANG_TEXT={
   'Daftar Project':{en:'Project List',ko:'프로젝트 목록'},
   'Quotation & PO':{en:'Quotations & POs',ko:'견적 및 발주서'},
   'Pengaturan':{en:'Settings',ko:'설정'},
+  'Pengaturan Akun':{en:'Account Settings',ko:'계정 설정'},
   'Keluar':{en:'Log out',ko:'로그아웃'},
+  'Toggle Menu':{en:'Toggle Menu',ko:'메뉴 열기/닫기'},
+  'Ubah Tema Terang / Gelap':{en:'Toggle Light / Dark Theme',ko:'라이트 / 다크 테마 전환'},
+  'Bahasa aplikasi':{en:'Application language',ko:'애플리케이션 언어'},
   '+ Project':{en:'+ Project',ko:'+ 프로젝트'},
+  '+ Project Baru':{en:'+ New Project',ko:'+ 신규 프로젝트'},
   'Cari project, vendor, PIC, No. PO, stage...':{en:'Search projects, vendors, owners, PO numbers, stages...',ko:'프로젝트, 공급업체, 담당자, 발주 번호, 단계 검색...'},
   'Reset filter':{en:'Reset filters',ko:'필터 초기화'},
   'Semua kategori':{en:'All categories',ko:'모든 분류'},
+  'Semua klasifikasi':{en:'All categories',ko:'모든 분류'},
   'Semua status':{en:'All statuses',ko:'모든 상태'},
   'Semua PIC':{en:'All owners',ko:'모든 담당자'},
   'Total Project':{en:'Total Projects',ko:'전체 프로젝트'},
+  'Total Project Saya':{en:'My Total Projects',ko:'내 전체 프로젝트'},
+  'Sedang Berjalan':{en:'In Progress',ko:'진행 중'},
+  'Melewati jadwal target':{en:'Past target schedule',ko:'목표 일정 초과'},
+  'Selesai':{en:'Completed',ko:'완료'},
+  'Selesai:':{en:'End:',ko:'종료:'},
+  'Mulai:':{en:'Start:',ko:'시작:'},
+  'Completed 100%':{en:'Completed 100%',ko:'100% 완료'},
   'Rata-rata progres':{en:'Average progress',ko:'평균 진행률'},
   'Stage terlambat':{en:'Overdue stages',ko:'지연 단계'},
   'Stage selesai':{en:'Stages completed',ko:'완료 단계'},
@@ -457,24 +477,192 @@ const LANG_TEXT={
   'Prioritas Harian':{en:'Daily Priorities',ko:'오늘의 우선순위'},
   'Prioritas Mingguan':{en:'Weekly Priorities',ko:'이번 주 우선순위'},
   'Prioritas Bulanan':{en:'Monthly Priorities',ko:'이번 달 우선순위'},
+  'Tidak ada prioritas terjadwal pada periode ini.':{en:'No scheduled priorities for this period.',ko:'이 기간에 예정된 우선순위 항목이 없습니다.'},
   'Hari ini':{en:'Today',ko:'오늘'},
   'Minggu ini':{en:'This week',ko:'이번 주'},
   'Bulan ini':{en:'This month',ko:'이번 달'},
   'Sembunyikan daftar':{en:'Hide list',ko:'목록 숨기기'},
   'Tampilkan daftar':{en:'Show list',ko:'목록 표시'},
+  'Target project':{en:'Project target',ko:'프로젝트 목표일'},
+  'BERISIKO':{en:'AT RISK',ko:'위험'},
+  'EXPIRED':{en:'EXPIRED',ko:'만료됨'},
+  'GANDA':{en:'DUPLICATE',ko:'중복'},
+  'Aman':{en:'Within budget',ko:'예산 이내'},
+  'Over budget':{en:'Over budget',ko:'예산 초과'},
+  'Sisa budget':{en:'Remaining budget',ko:'잔여 예산'},
+  'Status budget':{en:'Budget status',ko:'예산 상태'},
+  'Belum ada biaya':{en:'No cost recorded',ko:'비용 미입력'},
+  'Ada biaya (tanpa budget)':{en:'Cost recorded (no budget)',ko:'비용 입력됨 (예산 미설정)'},
+  'Aktual/PO':{en:'Actual/PO',ko:'실적/PO'},
+  'Quotation terpilih':{en:'Selected quotation',ko:'선정된 견적'},
+  'Quotation terendah':{en:'Lowest quotation',ko:'최저가 견적'},
+  'Jumlah quotation':{en:'Total quotations',ko:'견적 수'},
+  'Budget (opsional)':{en:'Budget (optional)',ko:'예산 (선택 사항)'},
+  'Nilai Aktual / PO':{en:'Actual / PO Value',ko:'실적 / 발주 금액'},
+  'Vendor Utama':{en:'Primary Vendor',ko:'주 공급업체'},
+  'Vendor utama':{en:'Primary vendor',ko:'주 공급업체'},
+  'vendor belum dipilih':{en:'no vendor selected',ko:'공급업체 미선정'},
+  'Belum dipilih':{en:'Not selected yet',ko:'미선정'},
+  'Belum ada PO':{en:'No PO yet',ko:'발주서 없음'},
+  'Belum adaPO':{en:'No PO yet',ko:'발주서 없음'},
+  'Belum ada PO terbit.':{en:'No POs issued yet.',ko:'발행된 발주서가 없습니다.'},
+  'No. PO (isi manual bila PO dibuat di luar aplikasi)':{en:'PO No. (enter manually if created outside the app)',ko:'발주 번호 (외부 발행 시 직접 입력)'},
+  'Harga Quotation':{en:'Quotation Price',ko:'견적 금액'},
+  'Link (SharePoint / URL / path jaringan)':{en:'Link (SharePoint / URL / network path)',ko:'링크 (SharePoint / URL / 네트워크 경로)'},
+  'https://... atau \\\\server\\folder\\file.pdf':{en:'https://... or \\\\server\\folder\\file.pdf',ko:'https://... 또는 \\\\server\\folder\\file.pdf'},
+  'Tidak ada file':{en:'No file attached',ko:'파일 없음'},
+  'File:':{en:'File:',ko:'파일:'},
+  'Hapus quotation':{en:'Delete quotation',ko:'견적 삭제'},
+  '✓ Pilih Quotation':{en:'✓ Select Quotation',ko:'✓ 견적 선정'},
+  '↺ Batalkan Terpilih':{en:'↺ Unselect Quotation',ko:'↺ 선정 취소'},
+  '↺ Batalkan':{en:'↺ Revert',ko:'↺ 취소'},
+  'Kembalikan status quotation ke semula':{en:'Revert quotation status to previous state',ko:'견적 상태를 이전 상태로 되돌리기'},
+  'Review':{en:'In Review',ko:'검토 중'},
+  'Ditolak':{en:'Rejected',ko:'반려됨'},
+  'Lihat selengkapnya':{en:'Show more',ko:'더 보기'},
+  'Mata uang berbeda, harga tidak dibandingkan':{en:'Different currencies; prices not compared',ko:'통화가 달라 가격을 비교하지 않음'},
+  'Kelola Quotation & PO':{en:'Manage Quotations & POs',ko:'견적 및 발주 관리'},
+  '+ Kelola Quotation':{en:'+ Manage Quotations',ko:'+ 견적 관리'},
+  'Kelola PO':{en:'Manage POs',ko:'발주서 관리'},
+  'Ref. Quote':{en:'Quote Ref.',ko:'견적 참조'},
+  'No.':{en:'No.',ko:'번호'},
+  'Berlaku':{en:'Valid until',ko:'유효 기간'},
+  'Buka File':{en:'Open File',ko:'파일 열기'},
   'Improvement lintas departemen':{en:'Cross-department improvements',ko:'부서 간 개선 제안'},
+  'Usulan perbaikan lintas departemen, status tinjauan Tim PI, dan tindak lanjut project.':{en:'Cross-department improvement proposals, PI review status, and project follow-ups.',ko:'부서 간 개선 제안, PI팀 검토 현황 및 프로젝트 후속 조치.'},
   'Catat masalah, konteks, tujuan, lalu tindak lanjut dan feedback PI.':{en:'Record the issue, context, goals, and PI follow-up.',ko:'문제, 배경, 목표 및 PI 후속 조치를 기록합니다.'},
   '+ Catat issue':{en:'+ Submit issue',ko:'+ 이슈 등록'},
+  '+ Ajukan Improvement':{en:'+ Submit Improvement',ko:'+ 개선 과제 등록'},
   'Cari issue, departemen, pelapor...':{en:'Search issues, departments, submitters...',ko:'이슈, 부서, 제출자 검색...'},
+  'Cari judul, departemen, pelapor...':{en:'Search title, department, submitter...',ko:'제목, 부서, 제출자 검색...'},
   'Issue':{en:'Issue',ko:'이슈'},
   'Baru':{en:'New',ko:'신규'},
   'Review PI':{en:'PI Review',ko:'PI 검토'},
   'Menunggu Data':{en:'Waiting for Information',ko:'정보 대기'},
   'Disetujui':{en:'Approved',ko:'승인'},
   'Tidak Perlu Improvement':{en:'No Improvement Needed',ko:'개선 불필요'},
+  'Menunggu tinjauan':{en:'Awaiting review',ko:'검토 대기 중'},
+  'Sedang ditinjau':{en:'Under review',ko:'검토 진행 중'},
+  'Lanjut ke project':{en:'Proceed to project',ko:'프로젝트로 진행'},
+  'Saran Alternatif':{en:'Alternative Suggestion',ko:'대안 제시'},
+  'Saran Alternatif (Tanpa Project)':{en:'Alternative Suggestion (No Project)',ko:'대안 제시 (프로젝트 미생성)'},
+  'Solusi langsung':{en:'Direct solution',ko:'직접 해결'},
+  'Tinjau PI':{en:'PI Review',ko:'PI 검토'},
+  'Belum ada usulan improvement.':{en:'No improvement proposals yet.',ko:'등록된 개선 제안이 없습니다.'},
+  'Antrean Perlu Ditinjau (Tim PI)':{en:'PI Review Queue (PI Team)',ko:'PI팀 검토 대기열'},
+  'Daftar pengajuan improvement dari kontributor yang memerlukan analisa, keputusan, atau konversi ke Project oleh Tim PI.':{en:'Contributor improvement proposals awaiting analysis, decision, or project conversion by the PI Team.',ko:'PI팀의 분석, 결정 또는 프로젝트 전환이 필요한 기여자 개선 제안 목록입니다.'},
+  'Issue Baru':{en:'New Issues',ko:'신규 이슈'},
+  'Belum direview':{en:'Not reviewed yet',ko:'미검토'},
+  'Dalam Review PI':{en:'In PI Review',ko:'PI 검토 중'},
+  'Perlu kelengkapan kontributor':{en:'Needs contributor details',ko:'추가 정보 필요'},
+  'Telah Diputuskan':{en:'Decided',ko:'결정 완료'},
+  'Disetujui / Saran alternatif':{en:'Approved / Alternative suggestion',ko:'승인 / 대안 제시'},
+  'Lihat Detail':{en:'View Details',ko:'상세 보기'},
+  'Buka Detail':{en:'Open Details',ko:'상세 열기'},
+  'Tinjau & Putuskan':{en:'Review & Decide',ko:'검토 및 결정'},
+  'Semua pengajuan improvement sudah ditinjau!':{en:'All improvement proposals have been reviewed!',ko:'모든 개선 제안 검토가 완료되었습니다!'},
   'Saving MP':{en:'Manpower Savings',ko:'인력 절감'},
+  'Quality':{en:'Quality',ko:'품질 개선'},
   'Efisiensi proses':{en:'Process Efficiency',ko:'공정 효율화'},
   'Lainnya':{en:'Other',ko:'기타'},
+  'RINGKASAN & STATUS IMPROVEMENT':{en:'IMPROVEMENT SUMMARY & STATUS',ko:'개선 과제 요약 및 상태'},
+  'Departemen':{en:'Department',ko:'부서'},
+  'Pelapor':{en:'Submitter',ko:'제출자'},
+  'Jenis Improvement':{en:'Improvement Type',ko:'개선 유형'},
+  'Jenis':{en:'Type',ko:'유형'},
+  'PIC Review PI':{en:'PI Reviewer',ko:'PI 검토 담당자'},
+  'Belum ditentukan':{en:'Not assigned yet',ko:'미지정'},
+  'Target Saving Manpower':{en:'Target Manpower Savings',ko:'목표 인력 절감'},
+  'Metrik Kualitas':{en:'Quality Metric',ko:'품질 지표'},
+  'Edit Pengajuan':{en:'Edit Proposal',ko:'제안 수정'},
+  'Tinjau & Keputusan PI':{en:'PI Review & Decision',ko:'PI 검토 및 결정'},
+  'Konversi ke Project Baru':{en:'Convert to New Project',ko:'신규 프로젝트로 전환'},
+  'Simpan & Konversi ke Project Baru':{en:'Save & Convert to New Project',ko:'저장 및 신규 프로젝트로 전환'},
+  'Tahapan Proses Improvement':{en:'Improvement Process Stages',ko:'개선 프로세스 단계'},
+  'Diajukan Kontributor':{en:'Submitted by Contributor',ko:'기여자 제출 완료'},
+  'Tinjauan Tim PI':{en:'PI Team Review',ko:'PI팀 검토'},
+  'Analisa kelayakan':{en:'Feasibility analysis',ko:'타당성 분석'},
+  'Keputusan PI':{en:'PI Decision',ko:'PI 결정'},
+  'Disetujui ke Project':{en:'Approved for Project',ko:'프로젝트 전환 승인'},
+  'Menunggu keputusan':{en:'Awaiting decision',ko:'결정 대기 중'},
+  'Tindak Lanjut Project':{en:'Project Follow-up',ko:'프로젝트 후속 조치'},
+  'Belum dikonversi':{en:'Not converted yet',ko:'미전환'},
+  '1. Rincian Masalah & Tujuan':{en:'1. Issue Details & Objectives',ko:'1. 문제 상세 및 목표'},
+  'Kendala / Issue yang Terjadi':{en:'Issue / Problem Description',ko:'발생한 문제 / 이슈'},
+  'Kondisi Saat Ini (Background)':{en:'Current Condition (Background)',ko:'현재 상태 (배경)'},
+  'Alasan Perlu Ditangani (Purpose)':{en:'Reason for Action (Purpose)',ko:'추진 사유 (목적)'},
+  'Hasil yang Diharapkan (Goals)':{en:'Expected Outcome (Goals)',ko:'기대 효과 (목표)'},
+  '2. Hasil Tinjauan & Keputusan Tim PI':{en:'2. PI Team Review & Decision',ko:'2. PI팀 검토 결과 및 결정'},
+  'Status & Keputusan':{en:'Status & Decision',ko:'상태 및 결정'},
+  'Proses menjadi Project Improvement':{en:'Convert into Improvement Project',ko:'개선 프로젝트로 진행'},
+  'Belum Diputuskan':{en:'Undecided',ko:'미결정'},
+  'Feedback Tim PI':{en:'PI Team Feedback',ko:'PI팀 피드백'},
+  'Belum ada feedback dari Tim PI.':{en:'No feedback from the PI Team yet.',ko:'아직 PI팀 피드백이 없습니다.'},
+  'Action Plan yang Disarankan':{en:'Recommended Action Plan',ko:'권장 실행 계획'},
+  'Saran / Solusi Alternatif':{en:'Alternative Suggestion / Solution',ko:'대안 / 해결책'},
+  'Alasan Tidak Dilanjutkan ke Project':{en:'Reason Not Converted to Project',ko:'프로젝트 미전환 사유'},
+  'Lampiran & Referensi':{en:'Attachments & References',ko:'첨부 파일 및 참고 자료'},
+  'Riwayat Feedback & Audit Review':{en:'Feedback & Review History',ko:'피드백 및 검토 이력'},
+  'Belum ada riwayat keputusan PI.':{en:'No PI decision history yet.',ko:'PI 결정 이력이 없습니다.'},
+  'FORM PENGAJUAN IMPROVEMENT':{en:'IMPROVEMENT SUBMISSION FORM',ko:'개선 과제 제출 양식'},
+  'Ajukan Improvement Baru':{en:'Submit New Improvement',ko:'신규 개선 과제 제출'},
+  'Edit Usulan Improvement':{en:'Edit Improvement Proposal',ko:'개선 제안 수정'},
+  'Lengkapi 3 langkah singkat di bawah ini untuk mengirimkan usulan ke Tim PI.':{en:'Complete the 3 short steps below to submit your proposal to the PI Team.',ko:'아래 3단계를 작성하여 PI팀에 개선 제안을 제출하세요.'},
+  'Informasi Pelapor':{en:'Submitter Info',ko:'제출자 정보'},
+  'Analisa Masalah & Goals':{en:'Issue Analysis & Goals',ko:'문제 분석 및 목표'},
+  'Lampiran & Kirim':{en:'Attachments & Submit',ko:'첨부 및 제출'},
+  'Langkah 1 · Identitas Issue & Departemen Pelapor':{en:'Step 1 · Issue Identity & Submitting Department',ko:'1단계 · 이슈 정보 및 제출 부서'},
+  'Judul Issue Improvement *':{en:'Improvement Issue Title *',ko:'개선 이슈 제목 *'},
+  'Judul Issue':{en:'Issue Title',ko:'이슈 제목'},
+  'Departemen Pengaju *':{en:'Submitting Department *',ko:'제출 부서 *'},
+  'Nama Pelapor':{en:'Submitter Name',ko:'제출자 이름'},
+  'Estimasi Saving Manpower':{en:'Estimated Manpower Savings',ko:'예상 인력 절감'},
+  'Dampak / Metrik Kualitas':{en:'Quality Impact / Metric',ko:'품질 영향 / 지표'},
+  'Contoh: Otomasi penimbangan bahan kemas line 3':{en:'Example: Automated packaging weighing on Line 3',ko:'예: 3라인 포장재 자동 계량 시스템'},
+  'Contoh: Production / QAC / Filling':{en:'Example: Production / QAC / Filling',ko:'예: 생산 / QAC / 충진'},
+  'Contoh: 2 orang atau 45 menit/shift':{en:'Example: 2 operators or 45 mins/shift',ko:'예: 작업자 2명 또는 교대당 45분'},
+  'Contoh: Menurunkan defect rate dari 2% ke 0.3%':{en:'Example: Reduce defect rate from 2% to 0.3%',ko:'예: 불량률을 2%에서 0.3%로 감소'},
+  'Langkah 2 · Detail Masalah, Kondisi Saat Ini & Target':{en:'Step 2 · Issue Details, Current Condition & Target',ko:'2단계 · 문제 상세, 현재 상태 및 목표'},
+  'Issue yang Terjadi *':{en:'Issue Description *',ko:'발생한 문제 *'},
+  'Background / Kondisi Saat Ini *':{en:'Background / Current Condition *',ko:'배경 / 현재 상태 *'},
+  'Purpose / Alasan Perlu Ditangani *':{en:'Purpose / Reason for Action *',ko:'목적 / 추진 사유 *'},
+  'Goals / Hasil Akhir yang Diharapkan *':{en:'Goals / Expected Outcome *',ko:'목표 / 기대 결과 *'},
+  'Jelaskan kendala utama yang terjadi di lapangan...':{en:'Describe the main issue occurring in the field...',ko:'현장에서 발생하는 주요 문제를 설명하세요...'},
+  'Bagaimana proses berjalan saat ini dan seberapa sering masalah muncul?':{en:'How does the process currently work and how often does the issue occur?',ko:'현재 공정 상태와 문제 발생 빈도를 설명하세요.'},
+  'Mengapa masalah ini penting untuk segera diselesaikan?':{en:'Why is it important to resolve this issue promptly?',ko:'이 문제를 신속히 해결해야 하는 이유는 무엇입니까?'},
+  'Output terukur yang diharapkan setelah improvement selesai...':{en:'Measurable outcome expected after the improvement is completed...',ko:'개선 완료 후 기대되는 정량적 성과...'},
+  'Langkah 3 · Lampiran Bukti & Tinjau Pengajuan':{en:'Step 3 · Supporting Evidence & Review Submission',ko:'3단계 · 증빙 첨부 및 제출 내용 검토'},
+  'Unggah Foto / Dokumen Pendukung':{en:'Upload Supporting Photos / Documents',ko:'증빙 사진 / 문서 업로드'},
+  'Gambar, PDF, dokumen Office, CSV, atau TXT (Maks. 100 MB per file).':{en:'Images, PDF, Office documents, CSV, or TXT (Max. 100 MB per file).',ko:'이미지, PDF, Office 문서, CSV 또는 TXT (파일당 최대 100MB).'},
+  'Judul Link Referensi':{en:'Reference Link Title',ko:'참고 링크 제목'},
+  'URL Web / Path Jaringan':{en:'Web URL / Network Path',ko:'웹 URL / 네트워크 경로'},
+  '+ Tambah Link':{en:'+ Add Link',ko:'+ 링크 추가'},
+  'Ringkasan Pengajuan':{en:'Submission Summary',ko:'제출 요약'},
+  'Lampiran':{en:'Attachments',ko:'첨부 파일'},
+  'Kirim Usulan Improvement':{en:'Submit Improvement Proposal',ko:'개선 제안 제출'},
+  'TINJAUAN & KEPUTUSAN TIM PI':{en:'PI TEAM REVIEW & DECISION',ko:'PI팀 검토 및 결정'},
+  'Ringkasan Usulan Pelapor':{en:'Submitter Proposal Summary',ko:'제출자 제안 요약'},
+  'Tanggal Lapor':{en:'Submission Date',ko:'제출일'},
+  'Issue:':{en:'Issue:',ko:'이슈:'},
+  'Background:':{en:'Background:',ko:'배경:'},
+  'Purpose:':{en:'Purpose:',ko:'목적:'},
+  'Goals:':{en:'Goals:',ko:'목표:'},
+  'Form Keputusan & Feedback Tim PI':{en:'PI Team Decision & Feedback Form',ko:'PI팀 결정 및 피드백 양식'},
+  'Keputusan Tindak Lanjut':{en:'Follow-up Decision',ko:'후속 조치 결정'},
+  'Tidak diproses (Berikan Saran Alternatif)':{en:'Do Not Convert (Provide Alternative Suggestion)',ko:'프로젝트 미진행 (대안 제시)'},
+  'Status Review':{en:'Review Status',ko:'검토 상태'},
+  'PIC Review Tim PI':{en:'PI Team Reviewer',ko:'PI팀 검토 담당자'},
+  'Nama PIC PI yang meninjau':{en:'Name of reviewing PI PIC',ko:'검토 담당 PI 이름'},
+  'Feedback Analisa Tim PI *':{en:'PI Team Feasibility Feedback *',ko:'PI팀 타당성 분석 피드백 *'},
+  'Tuliskan hasil analisa kelayakan oleh Tim PI...':{en:'Write the feasibility analysis results from the PI Team...',ko:'PI팀의 타당성 분석 결과를 작성하세요...'},
+  'Suggestion / Alternatif Solusi *':{en:'Suggestion / Alternative Solution *',ko:'제안 / 대안 솔루션 *'},
+  'Saran tindakan tanpa perlu membuka project baru...':{en:'Suggested action without opening a new project...',ko:'신규 프로젝트 없이 해결할 수 있는 권장 조치...'},
+  'Alasan Tidak Dilanjutkan sebagai Project *':{en:'Reason Not Continued as Project *',ko:'프로젝트로 진행하지 않는 사유 *'},
+  'Alasan mengapa issue cukup diselesaikan dengan saran alternatif...':{en:'Reason why the issue can be resolved with an alternative suggestion...',ko:'대안 조치로 해결 가능한 사유를 입력하세요...'},
+  'Action Plan / Langkah Berikutnya':{en:'Action Plan / Next Steps',ko:'실행 계획 / 다음 단계'},
+  'Rencana tindak lanjut yang perlu dilakukan...':{en:'Follow-up action plan required...',ko:'필요한 후속 실행 계획...'},
+  'Kembali ke Detail Output':{en:'Back to Details',ko:'상세 화면으로 돌아가기'},
+  'Simpan Keputusan PI':{en:'Save PI Decision',ko:'PI 결정 저장'},
   'Laporan dari Kontributor':{en:'Contributor Submission',ko:'기여자 제출 내용'},
   'Judul issue':{en:'Issue Title',ko:'이슈 제목'},
   'Departemen / pelapor':{en:'Department / Submitter',ko:'부서 / 제출자'},
@@ -507,9 +695,12 @@ const LANG_TEXT={
   'Buka / salin':{en:'Open / copy',ko:'열기 / 복사'},
   'Tambah file':{en:'Add file',ko:'파일 추가'},
   'Gambar, PDF, dokumen Office, CSV, atau TXT. Maksimal 100 MB per file.':{en:'Images, PDF, Office documents, CSV, or TXT. Maximum 100 MB per file.',ko:'이미지, PDF, Office 문서, CSV 또는 TXT. 파일당 최대 100MB.'},
+  'Foto, video, dan dokumen · Maksimal 100 MB per file':{en:'Photos, videos, and documents · Max 100 MB per file',ko:'사진, 동영상 및 문서 · 파일당 최대 100MB'},
+  'Belum ada dokumentasi untuk stage ini.':{en:'No documentation for this stage yet.',ko:'이 단계에 등록된 문서가 없습니다.'},
+  'Simpan project terlebih dahulu sebelum mengunggah dokumentasi.':{en:'Save the project first before uploading documentation.',ko:'문서를 업로드하기 전에 프로젝트를 먼저 저장하세요.'},
+  'Contoh: Report FAT':{en:'Example: FAT Report',ko:'예: FAT 보고서'},
   'Judul link':{en:'Link title',ko:'링크 제목'},
   'Link web / path jaringan':{en:'Web link / network path',ko:'웹 링크 / 네트워크 경로'},
-  '+ Tambah link':{en:'+ Add link',ko:'+ 링크 추가'},
   'Contoh: Video kondisi line':{en:'Example: Line condition video',ko:'예: 라인 상태 동영상'},
   'https://... atau \\\\server\\folder':{en:'https://... or \\\\server\\folder',ko:'https://... 또는 \\\\server\\folder'},
   'Estimasi saving manpower (contoh: 2 orang atau 30 menit/hari)':{en:'Estimated manpower savings (e.g. 2 people or 30 minutes/day)',ko:'예상 인력 절감 (예: 2명 또는 하루 30분)'},
@@ -520,6 +711,7 @@ const LANG_TEXT={
   'Tidak ada tenggat dalam 7 hari ke depan.':{en:'No deadlines in the next 7 days.',ko:'앞으로 7일 내 마감이 없습니다.'},
   'Papan Progres':{en:'Progress Board',ko:'진행 현황판'},
   'kotak kecil = tahap project (abu belum mulai, biru berjalan, hijau selesai, merah terlambat, kuning tertahan)':{en:'small blocks show project stages (gray not started, blue in progress, green completed, red overdue, yellow on hold)',ko:'작은 블록은 프로젝트 단계를 표시합니다 (회색 시작 전, 파랑 진행 중, 초록 완료, 빨강 지연, 노랑 보류)'},
+  '· kotak kecil = tahap project (abu belum mulai, biru berjalan, hijau selesai, merah terlambat, kuning tertahan)':{en:'· small blocks show project stages (gray not started, blue in progress, green completed, red overdue, yellow on hold)',ko:'· 작은 블록은 프로젝트 단계를 표시합니다 (회색 시작 전, 파랑 진행 중, 초록 완료, 빨강 지연, 노랑 보류)'},
   'Tidak ada project.':{en:'No projects.',ko:'프로젝트가 없습니다.'},
   'Tidak ada yang perlu perhatian.':{en:'Nothing needs attention.',ko:'확인이 필요한 항목이 없습니다.'},
   'Tidak ada':{en:'None',ko:'없음'},
@@ -536,10 +728,136 @@ const LANG_TEXT={
   'Plan':{en:'Plan',ko:'계획'},
   'Actual':{en:'Actual',ko:'실적'},
   'Buka semua stage':{en:'Expand all stages',ko:'모든 단계 펼치기'},
+  'Buka / tutup stage':{en:'Expand / collapse stages',ko:'단계 펼치기 / 접기'},
+  'Lihat dokumentasi stage':{en:'View stage documentation',ko:'단계 문서 보기'},
   'Tutup semua':{en:'Collapse all',ko:'모두 접기'},
   'Ke hari ini':{en:'Go to today',ko:'오늘로 이동'},
   'Project / Stage':{en:'Project / Stage',ko:'프로젝트 / 단계'},
-  'Daftar Project':{en:'Project List',ko:'프로젝트 목록'},
+  'Project yang menjadi tanggung jawab Anda. Klik baris project untuk melihat detail atau langsung memperbarui progres task.':{en:'Projects assigned to you. Click any project row to view details or directly update task progress.',ko:'귀하가 담당하는 프로젝트입니다. 행을 클릭하여 상세 정보를 보거나 작업 진행률을 즉시 업데이트하세요.'},
+  'Klik baris project untuk membuka ringkasan & progres task, atau klik "Edit" untuk mengubah pengaturan project.':{en:'Click any project row to open the summary & task progress, or click "Edit" to modify project settings.',ko:'프로젝트 행을 클릭하여 요약 및 작업 진행률을 열거나 "수정"을 눌러 설정을 변경하세요.'},
+  'Tidak ada project. Klik "+ Project Baru" untuk menambah.':{en:'No projects yet. Click "+ New Project" to add one.',ko:'프로젝트가 없습니다. "+ 신규 프로젝트"를 눌러 추가하세요.'},
+  'Area belum diisi':{en:'Area not set',ko:'구역 미입력'},
+  'Belum ada task':{en:'No tasks yet',ko:'작업 없음'},
+  'Tahap Saat Ini':{en:'Current Stage',ko:'현재 단계'},
+  'Target Selesai':{en:'Target Date',ko:'완료 목표일'},
+  'Aksi':{en:'Actions',ko:'작업'},
+  'Edit':{en:'Edit',ko:'수정'},
+  'RINGKASAN & PROGRES PROJECT':{en:'PROJECT SUMMARY & PROGRESS',ko:'프로젝트 요약 및 진행률'},
+  '← Kembali':{en:'← Back',ko:'← 뒤로'},
+  '← Sebelumnya':{en:'← Previous',ko:'← 이전'},
+  'Berikutnya →':{en:'Next →',ko:'다음 →'},
+  'Kembali ke Detail':{en:'Back to Details',ko:'상세 화면으로'},
+  'Edit Pengaturan Project':{en:'Edit Project Settings',ko:'프로젝트 설정 수정'},
+  'Total Progres':{en:'Total Progress',ko:'전체 진행률'},
+  'Jadwal Project':{en:'Project Schedule',ko:'프로젝트 일정'},
+  'Vendor & PO':{en:'Vendor & PO',ko:'공급업체 및 발주서'},
+  'Budget vs Komitmen':{en:'Budget vs Committed',ko:'예산 대비 약정액'},
+  'Budget vs Komitmen per Project':{en:'Budget vs Committed per Project',ko:'프로젝트별 예산 대비 약정액'},
+  '· hanya untuk project yang punya budget':{en:'· only for projects with a budget set',ko:'· 예산이 설정된 프로젝트만 표시'},
+  'Alur Tahapan Task':{en:'Task Stage Pipeline',ko:'작업 단계 파이프라인'},
+  'Belum ada tahapan / task pada project ini.':{en:'No stages / tasks in this project yet.',ko:'이 프로젝트에 등록된 작업 단계가 없습니다.'},
+  '+ Tambah Task / Muat Template':{en:'+ Add Task / Load Template',ko:'+ 작업 추가 / 템플릿 불러오기'},
+  'Catatan & Riwayat':{en:'Notes & History',ko:'메모 및 이력'},
+  'Geser slider atau klik tombol % untuk memperbarui progres setiap task secara langsung (tersimpan otomatis).':{en:'Drag the slider or click the % buttons to update each task progress directly (auto-saved).',ko:'슬라이더를 움직이거나 % 버튼을 클릭하여 각 작업 진행률을 바로 업데이트하세요 (자동 저장).'},
+  'Rincian jadwal rencana dan progres setiap task.':{en:'Planned schedule details and progress for each task.',ko:'각 작업의 계획 일정 및 진행률 상세 내역입니다.'},
+  'Atur Jadwal / Tambah Task':{en:'Manage Schedule / Add Tasks',ko:'일정 관리 / 작업 추가'},
+  'Belum ada tahapan task.':{en:'No task stages yet.',ko:'등록된 작업 단계가 없습니다.'},
+  'Task / Tahapan':{en:'Task / Stage',ko:'작업 / 단계'},
+  'Task / Tahap':{en:'Task / Stage',ko:'작업 / 단계'},
+  'Rencana (Plan)':{en:'Planned',ko:'계획 (Plan)'},
+  'Progres Task':{en:'Task Progress',ko:'작업 진행률'},
+  'Status & Deviasi':{en:'Status & Deviation',ko:'상태 및 편차'},
+  'Realisasi (Actual)':{en:'Actual',ko:'실적 (Actual)'},
+  'Dokumentasi':{en:'Documentation',ko:'문서'},
+  '✓ Selesai':{en:'✓ Done',ko:'✓ 완료'},
+  'Tepat waktu':{en:'On time',ko:'정시 완료'},
+  'Tepat':{en:'On time',ko:'정시'},
+  'Belum mulai':{en:'Not started',ko:'시작 전'},
+  '+ Bukti':{en:'+ Proof',ko:'+ 증빙'},
+  'Tulis catatan task...':{en:'Write task notes...',ko:'작업 메모 입력...'},
+  '+ Tambah / Edit Milestone':{en:'+ Add / Edit Milestones',ko:'+ 마일스톤 추가 / 수정'},
+  'Nama Milestone':{en:'Milestone Name',ko:'마일스톤 이름'},
+  'Target Tanggal':{en:'Target Date',ko:'목표 날짜'},
+  'Tercapai':{en:'Achieved',ko:'달성됨'},
+  'Menunggu':{en:'Pending',ko:'대기 중'},
+  'Belum ada milestone.':{en:'No milestones yet.',ko:'등록된 마일스톤이 없습니다.'},
+  'Belum ada milestone (contoh: PO terbit, FAT, instalasi, SAT).':{en:'No milestones yet (e.g. PO issued, FAT, installation, SAT).',ko:'마일스톤이 없습니다 (예: PO 발행, FAT, 설치, SAT).'},
+  'Deskripsi & Catatan Project':{en:'Project Description & Notes',ko:'프로젝트 설명 및 메모'},
+  'Edit Info':{en:'Edit Info',ko:'정보 수정'},
+  'Belum ada deskripsi atau catatan tambahan.':{en:'No description or additional notes yet.',ko:'추가 설명이나 메모가 없습니다.'},
+  'Riwayat Perubahan':{en:'Change History',ko:'변경 이력'},
+  'Project dibuat':{en:'Project created',ko:'프로젝트 생성됨'},
+  'PENGATURAN & UPDATE PROJECT':{en:'PROJECT SETTINGS & UPDATE',ko:'프로젝트 설정 및 업데이트'},
+  'Buat Project Baru':{en:'Create New Project',ko:'신규 프로젝트 생성'},
+  'Isi informasi utama dan tahapan project baru di bawah ini.':{en:'Fill in the main information and stages for the new project below.',ko:'아래에 신규 프로젝트의 기본 정보와 단계를 입력하세요.'},
+  'Klik lingkaran langkah di bawah untuk berpindah bagian, lalu klik Simpan.':{en:'Click the step circles below to switch sections, then click Save.',ko:'아래 단계 원을 클릭하여 섹션을 이동한 후 저장을 클릭하세요.'},
+  'Langkah 1 · Informasi Utama Project':{en:'Step 1 · Main Project Information',ko:'1단계 · 프로젝트 기본 정보'},
+  'Langkah 2 · Susun Jadwal & Progres Task (Stage)':{en:'Step 2 · Schedule & Task Progress (Stages)',ko:'2단계 · 작업 일정 및 진행률 (단계)'},
+  'Langkah 3 · Penawaran Vendor (Quotation) & PO':{en:'Step 3 · Vendor Quotations & POs',ko:'3단계 · 공급업체 견적 및 발주서'},
+  'Langkah 4 · Target Milestone Project':{en:'Step 4 · Project Milestone Targets',ko:'4단계 · 프로젝트 마일스톤 목표'},
+  'Langkah 5 · Periksa Ringkasan Sebelum Disimpan':{en:'Step 5 · Review Summary Before Saving',ko:'5단계 · 저장 전 요약 확인'},
+  'Pastikan seluruh data di bawah ini sudah sesuai sebelum disimpan.':{en:'Please verify that all information below is accurate before saving.',ko:'저장하기 전에 아래 모든 정보가 정확한지 확인하세요.'},
+  'Kode & Nama Project':{en:'Project Code & Name',ko:'프로젝트 코드 및 이름'},
+  '(Nama belum diisi)':{en:'(Name not entered)',ko:'(이름 미입력)'},
+  'PIC & Area':{en:'Owner & Area',ko:'담당자 및 구역'},
+  'Status & Progres':{en:'Status & Progress',ko:'상태 및 진행률'},
+  'Tanpa tahapan':{en:'No stages',ko:'단계 없음'},
+  'Periode Project':{en:'Project Period',ko:'프로젝트 기간'},
+  'Quotation & Vendor':{en:'Quotations & Vendor',ko:'견적 및 공급업체'},
+  'Ubah Info Utama':{en:'Edit Main Info',ko:'기본 정보 수정'},
+  'Hapus Project':{en:'Delete Project',ko:'프로젝트 삭제'},
+  'Simpan Perubahan':{en:'Save Changes',ko:'변경사항 저장'},
+  'Kode Project':{en:'Project Code',ko:'프로젝트 코드'},
+  'PIC Utama':{en:'Primary Owner (PIC)',ko:'주 담당자 (PIC)'},
+  'Progres Keseluruhan (%)':{en:'Overall Progress (%)',ko:'전체 진행률 (%)'},
+  'Atur Progres Task':{en:'Manage Task Progress',ko:'작업 진행률 관리'},
+  'Isi Progres per Task →':{en:'Update Task Progress →',ko:'작업별 진행률 입력 →'},
+  'Deskripsi / Catatan Project':{en:'Project Description / Notes',ko:'프로젝트 설명 / 메모'},
+  'Belum ada PO. Ubah status quotation menjadi Terpilih, lalu klik Buat PO pada quotation tersebut.':{en:'No POs yet. Set a quotation status to Selected, then click Create PO on that quotation.',ko:'발주서가 없습니다. 견적 상태를 선정됨으로 변경한 후 발주서 만들기를 클릭하세요.'},
+  'PO dibuat dari quotation berstatus Terpilih: klik "Kelola Quotation & PO" pada project, lalu klik Buat PO.':{en:'POs are created from Selected quotations: click "Manage Quotations & POs" on a project, then click Create PO.',ko:'발주서는 선정된 견적에서 생성됩니다. 프로젝트에서 "견적 및 발주 관리"를 클릭한 후 발주서 만들기를 누르세요.'},
+  'Muat Template':{en:'Load Template',ko:'템플릿 불러오기'},
+  '+ Sisipkan dari Template':{en:'+ Append from Template',ko:'+ 템플릿에서 추가'},
+  'Susun Ulang Jadwal':{en:'Reflow Schedule',ko:'일정 자동 재정렬'},
+  'Simpan Jadi Template':{en:'Save as Template',ko:'템플릿으로 저장'},
+  'Kelola Template':{en:'Manage Templates',ko:'템플릿 관리'},
+  'Ganti daftar task dengan template yang dipilih':{en:'Replace task list with the selected template',ko:'선택한 템플릿으로 작업 목록 교체'},
+  'Tambahkan tahapan dari template ke daftar task saat ini tanpa menghapus yang sudah ada':{en:'Append stages from template to the current task list without removing existing tasks',ko:'기존 작업을 유지하면서 선택한 템플릿의 단계를 뒤에 추가'},
+  'Hitung ulang tanggal Plan Mulai & Selesai berurutan/paralel dari tanggal Mulai plan':{en:'Recalculate sequential/parallel Plan Start & End dates from the Plan Start date',ko:'계획 시작일 기준으로 순차/병렬 계획 시작 및 종료일 자동 재계산'},
+  'Simpan susunan task project ini sebagai template baru untuk Anda / PIC':{en:'Save this project task structure as a new reusable template for you / PIC',ko:'현재 프로젝트 작업 구성을 나 / 담당자용 새 템플릿으로 저장'},
+  'Buat atau ubah daftar template stage':{en:'Create or edit stage templates',ko:'단계 템플릿 생성 또는 수정'},
+  '+ Tambah Task Manual':{en:'+ Add Manual Task',ko:'+ 작업 수동 추가'},
+  '+ Tambah Task':{en:'+ Add Task',ko:'+ 작업 추가'},
+  'Hari':{en:'Days',ko:'일수'},
+  'Deviasi':{en:'Deviation',ko:'편차'},
+  'Bukti & Urutan':{en:'Proof & Order',ko:'증빙 및 순서'},
+  'Paralel':{en:'Parallel',ko:'병렬'},
+  'Nama task / tahap':{en:'Task / stage name',ko:'작업 / 단계 이름'},
+  'catatan':{en:'notes',ko:'메모'},
+  'Jalan bersamaan (paralel) dengan task sebelumnya saat jadwal disusun ulang':{en:'Run in parallel with the previous task when the schedule is reflowed',ko:'일정 재정렬 시 이전 작업과 병렬(동시)로 진행'},
+  'Tandai 100% Selesai':{en:'Mark 100% Completed',ko:'100% 완료로 표시'},
+  'Fleksibel per Project / PIC:':{en:'Flexible per Project / Owner:',ko:'프로젝트 / 담당자별 맞춤 설정:'},
+  'Anda bebas menambah, menghapus, mengubah urutan (▲/▼), atau memodifikasi tahapan sesuai kebutuhan project ini, lalu klik':{en:'You can freely add, remove, reorder (▲/▼), or customize stages for this project, then click',ko:'이 프로젝트에 맞게 단계를 자유롭게 추가, 삭제, 순서 변경(▲/▼) 또는 수정한 후'},
+  'bila ingin menjadikannya template andalan Anda berikutnya.':{en:'if you want to save it as your go-to template for future projects.',ko:'버튼을 눌러 향후 프로젝트를 위한 나만의 템플릿으로 저장할 수 있습니다.'},
+  'Kelola Template Stage (Fleksibel per PIC / Kategori)':{en:'Manage Stage Templates (Flexible per Owner / Category)',ko:'단계 템플릿 관리 (담당자 / 분류별 맞춤)'},
+  '+ Buat Template Saya':{en:'+ Create My Template',ko:'+ 내 템플릿 만들기'},
+  'Nama Template':{en:'Template Name',ko:'템플릿 이름'},
+  'Contoh: Standar Mesin Filling':{en:'Example: Filling Machine Standard',ko:'예: 충진 설비 표준 템플릿'},
+  'PIC / Pemilik Template':{en:'Template Owner (PIC)',ko:'템플릿 소유자 (PIC)'},
+  'Kosongkan = Umum (Semua PIC)':{en:'Leave blank = General (All Owners)',ko:'비워둠 = 공통 (모든 담당자)'},
+  'Isi nama Anda/PIC agar otomatis diprioritaskan pada project milik PIC tersebut':{en:'Enter your/PIC name so this template is prioritized for that owner\'s projects',ko:'담당자 이름을 입력하면 해당 담당자의 프로젝트에서 이 템플릿이 우선 선택됩니다'},
+  'Klasifikasi Tujuan':{en:'Target Category',ko:'대상 분류'},
+  'Nama Task / Stage':{en:'Task / Stage Name',ko:'작업 / 단계 이름'},
+  'Nama tahap...':{en:'Stage name...',ko:'단계 이름...'},
+  'PIC Default':{en:'Default Owner',ko:'기본 담당자'},
+  'Mengikuti PIC project':{en:'Follows project owner',ko:'프로젝트 담당자 따름'},
+  'dgn sebelumnya':{en:'with previous',ko:'이전 단계와 병렬'},
+  'Setiap PIC bebas membuat atau menduplikasi template sesuai alur kerja masing-masing. Jika kolom':{en:'Every owner can freely create or duplicate templates for their workflow. If',ko:'각 담당자는 업무 흐름에 맞게 템플릿을 생성하거나 복제할 수 있습니다.'},
+  'dikosongkan, maka saat template dimuat ke project, task akan otomatis menggunakan nama PIC project tersebut.':{en:'is left blank, tasks will automatically use the project owner\'s name when loaded.',ko:'칸을 비워두면 템플릿을 불러올 때 프로젝트 담당자 이름이 자동 적용됩니다.'},
+  'Duplikat & Sesuaikan untuk Saya':{en:'Duplicate & Customize for Me',ko:'복제하여 내 템플릿으로 맞춤 설정'},
+  'Hapus Template Ini':{en:'Delete This Template',ko:'이 템플릿 삭제'},
+  'Simpan Semua Template':{en:'Save All Templates',ko:'모든 템플릿 저장'},
+  '+ Milestone':{en:'+ Milestone',ko:'+ 마일스톤'},
+  'Nama milestone':{en:'Milestone name',ko:'마일스톤 이름'},
   'Kode':{en:'Code',ko:'코드'},
   'Project':{en:'Project',ko:'프로젝트'},
   'project':{en:'project',ko:'프로젝트'},
@@ -566,9 +884,12 @@ const LANG_TEXT={
   'Purchase Order':{en:'Purchase Orders',ko:'구매 발주서'},
   'Ringkasan Vendor':{en:'Vendor Summary',ko:'공급업체 요약'},
   'Tanggal':{en:'Date',ko:'날짜'},
+  'Tanggal PO':{en:'PO Date',ko:'발주 날짜'},
+  'Mata uang PO':{en:'PO Currency',ko:'발주 통화'},
+  'Ref. No. Quotation':{en:'Quotation Ref. No.',ko:'견적 참조 번호'},
   'No. Quotation':{en:'Quotation No.',ko:'견적 번호'},
   'Harga':{en:'Price',ko:'가격'},
-  'Diterima':{en:'Received',ko:'접수일'},
+  'Diterima':{en:'Received',ko:'접수됨'},
   'Berlaku s/d':{en:'Valid until',ko:'유효 기간'},
   'File':{en:'File',ko:'파일'},
   'No. PO':{en:'PO No.',ko:'발주 번호'},
@@ -587,6 +908,7 @@ const LANG_TEXT={
   'Batal':{en:'Cancel',ko:'취소'},
   'Simpan':{en:'Save',ko:'저장'},
   'Simpan Project':{en:'Save Project',ko:'프로젝트 저장'},
+  'Simpan PO':{en:'Save PO',ko:'발주서 저장'},
   'Template':{en:'Template',ko:'템플릿'},
   'Mulai plan':{en:'Plan start',ko:'계획 시작일'},
   'Muat template':{en:'Load template',ko:'템플릿 불러오기'},
@@ -599,9 +921,16 @@ const LANG_TEXT={
   'Catatan (lead time, termin pembayaran, garansi, dll.)':{en:'Notes (lead time, payment terms, warranty, etc.)',ko:'메모 (납기, 결제 조건, 보증 등)'},
   'Tambah pengguna':{en:'Add user',ko:'사용자 추가'},
   'Kelola pengguna':{en:'Manage users',ko:'사용자 관리'},
+  'PIN awal':{en:'Initial PIN',ko:'초기 PIN'},
+  'Kontributor':{en:'Contributor',ko:'기여자'},
+  'Kontributor (akses terbatas)':{en:'Contributor (limited access)',ko:'기여자 (제한된 권한)'},
+  'Masuk sebagai Kontributor':{en:'Sign in as Contributor',ko:'기여자로 로그인'},
+  'Belum ada akun Kontributor. Minta admin membuat akun melalui Pengaturan > Kelola pengguna.':{en:'No Contributor accounts yet. Ask an admin to create one in Settings > Manage users.',ko:'기여자 계정이 없습니다. 관리자에게 설정 > 사용자 관리에서 계정 생성을 요청하세요.'},
+  'Beri tahu PIN awal ke yang bersangkutan; mereka bisa menggantinya di Pengaturan > Ganti PIN saya.':{en:'Share the initial PIN with the user; they can change it in Settings > Change my PIN.',ko:'초기 PIN을 해당 사용자에게 안내하세요. 설정 > 내 PIN 변경에서 변경할 수 있습니다.'},
   'Ganti PIN':{en:'Change PIN',ko:'PIN 변경'},
   'PIN lama':{en:'Current PIN',ko:'현재 PIN'},
   'PIN baru (minimal 4 karakter)':{en:'New PIN (at least 4 characters)',ko:'새 PIN (4자 이상)'},
+  'PIN baru (minimal 6 karakter)':{en:'New PIN (at least 6 characters)',ko:'새 PIN (6자 이상)'},
   'Ulangi PIN baru':{en:'Confirm new PIN',ko:'새 PIN 확인'},
   'Masuk':{en:'Log in',ko:'로그인'},
   'Masuk untuk melanjutkan.':{en:'Sign in to continue.',ko:'계속하려면 로그인하세요.'},
@@ -640,17 +969,21 @@ const LANG_TEXT={
   'Aplikasi':{en:'Application',ko:'애플리케이션'},
   'Nama aplikasi (tampil di header dan tab browser)':{en:'Application name (shown in the header and browser tab)',ko:'애플리케이션 이름 (헤더와 브라우저 탭에 표시)'},
   'Stage & PO':{en:'Stages & POs',ko:'단계 및 발주서'},
+  'Template Stage & PO':{en:'Stage & PO Templates',ko:'단계 및 발주서 템플릿'},
   'Template & nomor PO':{en:'PO template & numbering',ko:'발주서 템플릿 및 번호'},
+  'Template PO, kategori, dan pengaturan sistem dikelola oleh admin.':{en:'PO templates, categories, and system settings are managed by admins.',ko:'발주서 템플릿, 분류 및 시스템 설정은 관리자가 관리합니다.'},
   'Fitur':{en:'Features',ko:'기능'},
   'Pakai kolom budget (opsional, tidak tampil di Dashboard)':{en:'Enable budget fields (optional; hidden from Dashboard)',ko:'예산 필드 사용 (선택 사항, 대시보드에 숨김)'},
   'Progres project dihitung otomatis dari stage yang selesai':{en:'Calculate project progress from completed stages',ko:'완료된 단계로 프로젝트 진행률 자동 계산'},
   'Tanggal mulai dan target project mengikuti plan stage':{en:'Use stage plans for project start and target dates',ko:'단계 계획에 따라 프로젝트 시작일과 목표일 설정'},
   'Mata uang':{en:'Currency',ko:'통화'},
   'Klasifikasi / kategori project':{en:'Project categories',ko:'프로젝트 분류'},
+  '+ Kategori':{en:'+ Category',ko:'+ 분류 추가'},
   'Tampilan':{en:'Appearance',ko:'화면 설정'},
   'Terang':{en:'Light',ko:'라이트'},
   'Gelap':{en:'Dark',ko:'다크'},
   'Ekspor':{en:'Export',ko:'내보내기'},
+  'Ekspor / Impor':{en:'Export / Import',ko:'내보내기 / 가져오기'},
   'Impor':{en:'Import',ko:'가져오기'},
   'Project (CSV)':{en:'Projects (CSV)',ko:'프로젝트 (CSV)'},
   'Stage Plan vs Actual (CSV)':{en:'Stage Plan vs Actual (CSV)',ko:'단계 계획 및 실적 (CSV)'},
@@ -668,7 +1001,6 @@ const LANG_TEXT={
   'Actual Selesai':{en:'Actual End',ko:'실제 종료'},
   'Catatan':{en:'Notes',ko:'메모'},
   'PIC':{en:'Owner',ko:'담당자'},
-  'Prioritas':{en:'Priority',ko:'우선순위'},
   'Kepada (TO) - vendor, isi manual':{en:'To (vendor; enter manually)',ko:'수신 (공급업체, 직접 입력)'},
   'Kirim ke (SHIP TO)':{en:'Ship to',ko:'배송지'},
   'Dokumen':{en:'Document',ko:'문서'},
@@ -678,7 +1010,6 @@ const LANG_TEXT={
   'Telp vendor':{en:'Vendor phone',ko:'공급업체 전화번호'},
   'E-mail vendor':{en:'Vendor email',ko:'공급업체 이메일'},
   'Alamat vendor':{en:'Vendor address',ko:'공급업체 주소'},
-  'Nama':{en:'Name',ko:'이름'},
   'Telp':{en:'Phone',ko:'전화'},
   'Attn':{en:'Attention',ko:'담당자'},
   'Alamat pengiriman':{en:'Shipping address',ko:'배송 주소'},
@@ -702,18 +1033,49 @@ const LANG_TEXT={
   'Unduh Word':{en:'Download Word',ko:'Word 다운로드'},
   'Pratinjau':{en:'Preview',ko:'미리보기'},
   'Buka':{en:'Open',ko:'열기'},
+  'Lepas':{en:'Remove',ko:'제거'},
   'Lepas file':{en:'Remove file',ko:'파일 제거'},
-  'Tambah pengguna':{en:'Add user',ko:'사용자 추가'},
+  'Kop dokumen':{en:'Document Header',ko:'문서 머리글'},
+  'Nama perusahaan':{en:'Company name',ko:'회사명'},
+  'Kode dokumen (pojok kanan atas)':{en:'Document code (top-right corner)',ko:'문서 코드 (우측 상단)'},
+  'Judul dokumen':{en:'Document title',ko:'문서 제목'},
+  'Alamat perusahaan':{en:'Company address',ko:'회사 주소'},
+  'Telp / Fax / Website':{en:'Phone / Fax / Website',ko:'전화 / 팩스 / 웹사이트'},
+  'Logo perusahaan:':{en:'Company logo:',ko:'회사 로고:'},
+  'Belum ada gambar':{en:'No image uploaded',ko:'이미지 없음'},
+  'Unggah logo':{en:'Upload logo',ko:'로고 업로드'},
+  'PNG atau JPG. Gambar otomatis diperkecil. Logo dengan latar transparan (PNG) paling bagus.':{en:'PNG or JPG. Automatically resized. Transparent PNG works best.',ko:'PNG 또는 JPG. 자동 크기 조정됨. 투명 배경(PNG) 권장.'},
+  'Nomor, tanggal, bahasa':{en:'Numbering, Date & Language',ko:'번호, 날짜 및 언어'},
+  'Format nomor PO':{en:'PO number format',ko:'발주 번호 형식'},
+  'Format tanggal':{en:'Date format',ko:'날짜 형식'},
+  'Bahasa label PO':{en:'PO label language',ko:'발주서 라벨 언어'},
+  'PPN / Tax default (%)':{en:'Default Tax / VAT (%)',ko:'기본 세율 (%)'},
+  'Ship To standar':{en:'Default Ship To',ko:'기본 배송지 (Ship To)'},
+  'Ketentuan standar':{en:'Default Terms',ko:'기본 조건'},
+  'Payment (termin pembayaran) standar':{en:'Default payment terms',ko:'기본 결제 조건'},
+  'Lead Time standar':{en:'Default lead time',ko:'기본 납기'},
+  'Delivery Place standar':{en:'Default delivery location',ko:'기본 배송 장소'},
+  'Daftar dokumen penagihan':{en:'Billing document checklist',ko:'청구 시 첨부 서류 목록'},
+  'Baris pertama menjadi judul (tebal dan bergaris bawah), baris berikutnya berupa daftar.':{en:'First line becomes the bold underlined heading; subsequent lines form the list.',ko:'첫 줄은 굵고 밑줄 친 제목이 되며, 다음 줄부터 목록으로 표시됩니다.'},
+  'Pernyataan standar (anti-suap, whistleblower, dan sejenisnya)':{en:'Standard compliance notice (anti-bribery, whistleblower, etc.)',ko:'표준 준법 문구 (부패 방지, 내부 고발자 보호 등)'},
+  'Tampil di tengah dengan huruf tebal. Pisahkan paragraf dengan satu baris kosong. Kosongkan kalau tidak diperlukan.':{en:'Centered in bold. Separate paragraphs with a blank line. Leave empty if not needed.',ko:'가운데 굵은 글씨로 표시됩니다. 빈 줄로 문단을 구분하며, 필요 없으면 비워두세요.'},
+  'Catatan kaki standar (opsional)':{en:'Default footer note (optional)',ko:'기본 바닥글 메모 (선택 사항)'},
+  'Tanda tangan':{en:'Signatures',ko:'서명란'},
+  'Cetak tanda tangan digital secara default pada PO baru (matikan untuk tanda tangan basah)':{en:'Print digital signatures by default on new POs (uncheck for wet signatures)',ko:'신규 발주서에 기본적으로 전자 서명 인쇄 (수기 서명 시 해제)'},
+  'Cetak tanda tangan digital pada PO ini (kalau tidak dicentang, kolom dikosongkan untuk tanda tangan basah)':{en:'Print digital signature on this PO (leave unchecked for wet signature)',ko:'이 발주서에 전자 서명 인쇄 (해제 시 수기 서명용 공란 유지)'},
+  'Belum ada gambar tanda tangan digital. Unggah di Pengaturan > Template & nomor PO.':{en:'No digital signature image uploaded yet. Upload in Settings > PO template & numbering.',ko:'전자 서명 이미지가 없습니다. 설정 > 발주서 템플릿 및 번호에서 업로드하세요.'},
+  'Kop surat, logo, nomor, tanda tangan, dan teks standar PO diatur di Pengaturan > Template & nomor PO. PO baru tersimpan untuk seluruh tim setelah Anda klik Simpan PO.':{en:'Letterhead, logo, numbering, signatures, and standard PO text are configured in Settings > PO template & numbering. New POs are saved for the team once you click Save PO.',ko:'머리글, 로고, 번호, 서명 및 기본 문구는 설정 > 발주서 템플릿 및 번호에서 관리합니다. 발주서 저장을 누르면 전체 팀에 공유됩니다.'},
+  'Kosongkan "Judul" kalau kolom itu tidak dipakai. Gambar tanda tangan hanya tercetak kalau opsi digital dicentang di PO yang bersangkutan. Latar putih pada gambar tanda tangan dihapus otomatis.':{en:'Leave "Title" blank if unused. Signature images print only when digital signature is enabled on the PO. White backgrounds are removed automatically.',ko:'사용하지 않는 서명란은 "제목"을 비워두세요. 전자 서명 옵션이 체크된 경우에만 인쇄되며 흰색 배경은 자동 제거됩니다.'},
+  'Jabatan':{en:'Job Title',ko:'직책'},
+  'Unggah TTD digital':{en:'Upload digital signature',ko:'전자 서명 업로드'},
   'PIN (minimal 4 karakter)':{en:'PIN (at least 4 characters)',ko:'PIN (4자 이상)'},
   'PIN baru':{en:'New PIN',ko:'새 PIN'},
-  'Ulangi PIN':{en:'Confirm PIN',ko:'PIN 확인'},
   'Hanya admin':{en:'Admins only',ko:'관리자 전용'},
   'Terendah':{en:'Lowest',ko:'최저가'},
   'TERENDAH':{en:'LOWEST',ko:'최저가'},
   'Terlambat':{en:'Overdue',ko:'지연'},
   'Berisiko':{en:'At risk',ko:'위험'},
   'Deadline':{en:'Deadline',ko:'마감일'},
-  'Terlambat':{en:'Overdue',ko:'지연'},
   'Target hari ini':{en:'Due today',ko:'오늘 마감'},
   'hari lagi':{en:'days left',ko:'일 남음'},
   'hari lewat target':{en:'days overdue',ko:'일 지남'},
@@ -726,15 +1088,12 @@ const LANG_TEXT={
   'Klik untuk memuat ulang data sekarang':{en:'Click to reload data now',ko:'눌러서 데이터를 새로고침'},
   'Data dimuat ulang':{en:'Data reloaded',ko:'데이터를 새로고침했습니다'},
   'Gagal sinkron':{en:'Sync failed',ko:'동기화 실패'},
-  'Tidak ada yang perlu perhatian.':{en:'Nothing needs attention.',ko:'확인이 필요한 항목이 없습니다.'},
   'Tidak ada project untuk ditampilkan.':{en:'No projects to display.',ko:'표시할 프로젝트가 없습니다.'},
   'Belum ada project. Klik "+ Project" untuk memulai.':{en:'No projects yet. Select "+ Project" to get started.',ko:'프로젝트가 없습니다. "+ 프로젝트"를 눌러 시작하세요.'},
   'Belum ada data budget.':{en:'No budget data yet.',ko:'예산 데이터가 없습니다.'},
   'Belum ada quotation.':{en:'No quotations yet.',ko:'견적이 없습니다.'},
-  'Belum ada PO.':{en:'No POs yet.',ko:'발주서가 없습니다.'},
   'Ringkasan':{en:'Overview',ko:'요약'},
   'Pekerjaan Saya':{en:'My Work',ko:'내 작업'},
-  'Daftar Project':{en:'Project List',ko:'프로젝트 목록'},
   'Project Baru':{en:'New Project',ko:'신규 프로젝트'},
   'Daftar Improvement':{en:'Improvement List',ko:'개선 과제 목록'},
   'Tinjauan PI':{en:'PI Review',ko:'PI 검토'},
@@ -755,44 +1114,139 @@ const LANG_TEXT={
   'Berikutnya':{en:'Next',ko:'다음'},
   'Detail':{en:'Details',ko:'상세 보기'},
   'Edit Form':{en:'Edit Form',ko:'양식 수정'},
-  'Update Task':{en:'Update Tasks',ko:'작업 업데이트'}
+  'Update Task':{en:'Update Tasks',ko:'작업 업데이트'},
+  'Kode: {NNN} nomor urut, {YYYY} tahun 4 digit, {YY} tahun 2 digit, {MM} bulan angka, {RM} bulan Romawi. Contoh: {NNN}/PO/PI/{RM}/{YYYY}. Nomor berikutnya:':{en:'Tokens: {NNN} sequence number, {YYYY} 4-digit year, {YY} 2-digit year, {MM} numeric month, {RM} Roman month. Example: {NNN}/PO/PI/{RM}/{YYYY}. Next number:',ko:'코드: {NNN} 일련번호, {YYYY} 4자리 연도, {YY} 2자리 연도, {MM} 숫자 월, {RM} 로마 숫자 월. 예: {NNN}/PO/PI/{RM}/{YYYY}. 다음 번호:'},
+  '. Nomor urut mulai lagi dari 001 bila kode bulan atau tahun berubah.':{en:'. Sequence resets to 001 when the month or year token changes.',ko:'. 월 또는 연도 코드가 바뀌면 일련번호가 001부터 다시 시작됩니다.'}
 };
-const LANG_SOURCE={};
-Object.entries(LANG_TEXT).forEach(([source,values])=>{LANG_SOURCE[source]=source;Object.values(values).forEach(value=>{LANG_SOURCE[value]=source;});});
-const LANG_VARIANTS=Object.keys(LANG_SOURCE).sort((a,b)=>b.length-a.length);
+function trExact(s){
+  if(APP_LANG==='id')return s;
+  const entry=LANG_TEXT[s];
+  return entry?(entry[APP_LANG]||s):null;
+}
 function translatedText(value){
-  const trimmed=value.trim(),source=LANG_SOURCE[trimmed];
-  if(source){
-    const replacement=APP_LANG==='id'?source:(LANG_TEXT[source][APP_LANG]||source);
-    return value.replace(trimmed,replacement);
-  }
-  let match=trimmed.match(/^(?:Perlu Perhatian|Needs Attention|확인 필요) \((\d+)\)$/);
-  if(match)return value.replace(trimmed,APP_LANG==='id'?`Perlu Perhatian (${match[1]})`:APP_LANG==='en'?`Needs Attention (${match[1]})`:`확인 필요 (${match[1]})`);
-  match=trimmed.match(/^(?:(\d+) dari (\d+) project|(\d+) of (\d+) projects|(\d+) \/ (\d+)개 프로젝트|(\d+) dari (\d+) issue|(\d+) of (\d+) issues|(\d+) \/ (\d+)개 이슈)$/);
-  if(match){const first=match[1]||match[3]||match[5]||match[7]||match[9]||match[11],second=match[2]||match[4]||match[6]||match[8]||match[10]||match[12],isIssue=!!(match[7]||match[9]||match[11]);return value.replace(trimmed,APP_LANG==='id'?`${first} dari ${second} ${isIssue?'issue':'project'}`:APP_LANG==='en'?`${first} of ${second} ${isIssue?'issues':'projects'}`:`${first} / ${second}개 ${isIssue?'이슈':'프로젝트'}`);}
-  match=trimmed.match(/^(?:(\d+) project belum ada quotation|(\d+) projects have no quotations|견적이 없는 프로젝트 (\d+)개)$/);
-  if(match){const count=match[1]||match[2]||match[3];return value.replace(trimmed,APP_LANG==='id'?`${count} project belum ada quotation`:APP_LANG==='en'?`${count} projects have no quotations`:`견적이 없는 프로젝트 ${count}개`);}
-  match=trimmed.match(/^(?:(\d+) quotation terpilih belum di-PO|(\d+) selected quotations have no PO yet|발주서가 없는 선정 견적 (\d+)개)$/);
-  if(match){const count=match[1]||match[2]||match[3];return value.replace(trimmed,APP_LANG==='id'?`${count} quotation terpilih belum di-PO`:APP_LANG==='en'?`${count} selected quotations have no PO yet`:`발주서가 없는 선정 견적 ${count}개`);}
-  match=trimmed.match(/^(?:Template stage|Stage templates|단계 템플릿) \((\d+)\)$/);
-  if(match)return value.replace(trimmed,APP_LANG==='id'?`Template stage (${match[1]})`:APP_LANG==='en'?`Stage templates (${match[1]})`:`단계 템플릿 (${match[1]})`);
-  match=trimmed.match(/^(\d+) hari lagi$/);
-  if(match)return value.replace(trimmed,APP_LANG==='id'?`${match[1]} hari lagi`:APP_LANG==='en'?`${match[1]} days left`:`${match[1]}일 남음`);
-  match=trimmed.match(/^Terlambat (\d+) hari$/);
-  if(match)return value.replace(trimmed,APP_LANG==='id'?`Terlambat ${match[1]} hari`:APP_LANG==='en'?`${match[1]} days overdue`:`${match[1]}일 지연`);
-  match=trimmed.match(/^(?:Langkah (\d+) dari (\d+)|Step (\d+) of (\d+)|(\d+)\/(\d+) 단계)$/);
-  if(match){const s=match[1]||match[3]||match[5],t=match[2]||match[4]||match[6];return value.replace(trimmed,APP_LANG==='id'?`Langkah ${s} dari ${t}`:APP_LANG==='en'?`Step ${s} of ${t}`:`${s}/${t} 단계`);}
+  if(APP_LANG==='id'||!value)return value;
+  const trimmed=value.trim();
+  if(!trimmed)return value;
+  const exact=trExact(trimmed);
+  if(exact!==null)return value.replace(trimmed,exact);
 
-  let translated=value;
-  LANG_VARIANTS.forEach(variant=>{
-    if(!translated.includes(variant))return;
-    const key=LANG_SOURCE[variant],replacement=APP_LANG==='id'?key:(LANG_TEXT[key][APP_LANG]||key);
-    if(variant===replacement)return;
-    const escaped=variant.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
-    const matcher=new RegExp('(^|[^A-Za-z0-9])('+escaped+')(?=$|[^A-Za-z0-9])','g');
-    translated=translated.replace(matcher,(_match,before)=>before+replacement);
-  });
-  return translated;
+  const L=(en,ko)=>APP_LANG==='en'?en:ko;
+  let m;
+  if((m=trimmed.match(/^Perlu Perhatian \((\d+)\)$/)))return value.replace(trimmed,L(`Needs Attention (${m[1]})`,`확인 필요 (${m[1]})`));
+  if((m=trimmed.match(/^Pekerjaan Saya \((.+)\)$/)))return value.replace(trimmed,L(`My Work (${m[1]})`,`내 작업 (${m[1]})`));
+  if((m=trimmed.match(/^Belum ada project untuk (.+)\. Klik "\+ Project Baru" untuk menambahkan\.$/)))return value.replace(trimmed,L(`No projects for ${m[1]} yet. Click "+ New Project" to add one.`,`${m[1]}님의 프로젝트가 없습니다. "+ 신규 프로젝트"를 눌러 추가하세요.`));
+  if((m=trimmed.match(/^(\d+) dari (\d+) (project|issue|usulan)$/)))return value.replace(trimmed,L(`${m[1]} of ${m[2]} ${m[3]==='project'?'projects':'proposals'}`,`${m[1]} / ${m[2]}개 ${m[3]==='project'?'프로젝트':'제안'}`));
+  if((m=trimmed.match(/^(\d+) project$/)))return value.replace(trimmed,L(`${m[1]} projects`,`${m[1]}개 프로젝트`));
+  if((m=trimmed.match(/^(\d+) improvement$/)))return value.replace(trimmed,L(`${m[1]} improvements`,`${m[1]}개 개선 과제`));
+  if((m=trimmed.match(/^Total \((\d+) project\)$/)))return value.replace(trimmed,L(`Total (${m[1]} projects)`,`합계 (${m[1]}개 프로젝트)`));
+  if((m=trimmed.match(/^(\d+) baru$/)))return value.replace(trimmed,L(`${m[1]} new`,`신규 ${m[1]}건`));
+  if((m=trimmed.match(/^(\d+) project belum ada quotation$/)))return value.replace(trimmed,L(`${m[1]} projects have no quotations`,`견적이 없는 프로젝트 ${m[1]}개`));
+  if((m=trimmed.match(/^(\d+) quotation terpilih belum di-PO$/)))return value.replace(trimmed,L(`${m[1]} selected quotations have no PO yet`,`발주서가 없는 선정 견적 ${m[1]}개`));
+  if((m=trimmed.match(/^(?:Template stage|Kelola Template Stage) \((\d+)\)$/i)))return value.replace(trimmed,L(`Manage Stage Templates (${m[1]})`,`단계 템플릿 관리 (${m[1]})`));
+  if((m=trimmed.match(/^(\d+) hari lagi$/)))return value.replace(trimmed,L(`${m[1]} days left`,`${m[1]}일 남음`));
+  if((m=trimmed.match(/^(\d+) hari$/)))return value.replace(trimmed,L(`${m[1]} days`,`${m[1]}일`));
+  if((m=trimmed.match(/^([+-]?\d+) hr$/)))return value.replace(trimmed,L(`${m[1]}d`,`${m[1]}일`));
+  if((m=trimmed.match(/^Telat \+(\d+) hr(?: \((\d+)%\))?$/)))return value.replace(trimmed,m[2]?L(`Overdue +${m[1]}d (${m[2]}%)`,`+${m[1]}일 지연 (${m[2]}%)`):L(`Overdue +${m[1]}d`,`+${m[1]}일 지연`));
+  if((m=trimmed.match(/^Terlambat \+(\d+)h$/)))return value.replace(trimmed,L(`Overdue +${m[1]}d`,`+${m[1]}일 지연`));
+  if((m=trimmed.match(/^Terlambat (\d+) hari$/)))return value.replace(trimmed,L(`${m[1]} days overdue`,`${m[1]}일 지연`));
+  if((m=trimmed.match(/^Terlambat: (.+)$/)))return value.replace(trimmed,L(`Overdue: ${m[1].replace(/\+(\d+) hr/g,'+$1d')}`,`지연: ${m[1].replace(/\+(\d+) hr/g,'+$1일')}`));
+  if((m=trimmed.match(/^Lewat plan mulai: (.+)$/)))return value.replace(trimmed,L(`Past planned start: ${m[1]}`,`계획 시작일 경과: ${m[1]}`));
+  if((m=trimmed.match(/^Progres (\d+)% vs rencana (\d+)%$/)))return value.replace(trimmed,L(`Progress ${m[1]}% vs planned ${m[2]}%`,`진행률 ${m[1]}% vs 계획 ${m[2]}%`));
+  if((m=trimmed.match(/^Rencana (\d+)%$/)))return value.replace(trimmed,L(`Planned ${m[1]}%`,`계획 ${m[1]}%`));
+  if((m=trimmed.match(/^(\d+) hari lewat target · progres (\d+)%$/)))return value.replace(trimmed,L(`${m[1]} days overdue · progress ${m[2]}%`,`목표일 ${m[1]}일 경과 · 진행률 ${m[2]}%`));
+  if((m=trimmed.match(/^(\d+) hari lagi · progres (\d+)%$/)))return value.replace(trimmed,L(`${m[1]} days left · progress ${m[2]}%`,`${m[1]}일 남음 · 진행률 ${m[2]}%`));
+  if((m=trimmed.match(/^Quotation (.+) berlaku (\d+) hari lagi$/)))return value.replace(trimmed,L(`Quotation ${m[1]} expires in ${m[2]} days`,`${m[1]} 견적 유효기간 ${m[2]}일 남음`));
+  if((m=trimmed.match(/^Quotation (.+) terpilih, PO belum dibuat$/)))return value.replace(trimmed,L(`Quotation ${m[1]} selected, PO not created yet`,`${m[1]} 견적 선정됨, 발주서 미작성`));
+  if((m=trimmed.match(/^Langkah (\d+) dari (\d+)$/)))return value.replace(trimmed,L(`Step ${m[1]} of ${m[2]}`,`${m[1]}/${m[2]} 단계`));
+  if((m=trimmed.match(/^Edit Project · (.+)$/)))return value.replace(trimmed,L(`Edit Project · ${m[1]}`,`프로젝트 수정 · ${m[1]}`));
+  if((m=trimmed.match(/^\((\d+)\/(\d+) selesai\)(.*)$/)))return value.replace(trimmed,L(`(${m[1]}/${m[2]} completed)${m[3]}`,`(${m[1]}/${m[2]} 완료)${m[3]}`));
+  if((m=trimmed.match(/^(\d+)\/(\d+) selesai$/)))return value.replace(trimmed,L(`${m[1]}/${m[2]} completed`,`${m[1]}/${m[2]} 완료`));
+  if((m=trimmed.match(/^\((\d+)\/(\d+) task\)$/)))return value.replace(trimmed,L(`(${m[1]}/${m[2]} tasks)`,`(${m[1]}/${m[2]} 작업)`));
+  if((m=trimmed.match(/^Selesai (\d+) dari (\d+) task$/)))return value.replace(trimmed,L(`Completed ${m[1]} of ${m[2]} tasks`,`총 ${m[2]}개 중 ${m[1]}개 작업 완료`));
+  if((m=trimmed.match(/^Selesai (\d{2} .+ \d{4})$/)))return value.replace(trimmed,L(`Completed ${m[1]}`,`${m[1]} 완료`));
+  if((m=trimmed.match(/^Target (\d{2} .+ \d{4})$/)))return value.replace(trimmed,L(`Target ${m[1]}`,`목표 ${m[1]}`));
+  if((m=trimmed.match(/^100% Selesai$/)))return value.replace(trimmed,L(`100% Completed`,`100% 완료`));
+  if((m=trimmed.match(/^(\d+)% berjalan$/)))return value.replace(trimmed,L(`${m[1]}% in progress`,`${m[1]}% 진행 중`));
+  if((m=trimmed.match(/^(\d+) stage terlambat$/)))return value.replace(trimmed,L(`${m[1]} overdue stages`,`지연 단계 ${m[1]}개`));
+  if((m=trimmed.match(/^(\d+) telat$/)))return value.replace(trimmed,L(`${m[1]} overdue`,`${m[1]} 지연`));
+  if((m=trimmed.match(/^(\d+) · terendah (.+)$/)))return value.replace(trimmed,L(`${m[1]} · lowest ${m[2]}`,`${m[1]}건 · 최저 ${m[2]}`));
+  if((m=trimmed.match(/^· (\d+) quotation$/)))return value.replace(trimmed,L(`· ${m[1]} quotations`,`· 견적 ${m[1]}건`));
+  if((m=trimmed.match(/^· Terendah: (.+)$/)))return value.replace(trimmed,L(`· Lowest: ${m[1]}`,`· 최저가: ${m[1]}`));
+  if((m=trimmed.match(/^Semua Quotation \((\d+)\)$/)))return value.replace(trimmed,L(`All Quotations (${m[1]})`,`전체 견적 (${m[1]})`));
+  if((m=trimmed.match(/^Quotation Vendor \((\d+)\)$/)))return value.replace(trimmed,L(`Vendor Quotations (${m[1]})`,`공급업체 견적 (${m[1]})`));
+  if((m=trimmed.match(/^Purchase Order \((\d+)\)$/)))return value.replace(trimmed,L(`Purchase Orders (${m[1]})`,`구매 발주서 (${m[1]})`));
+  if((m=trimmed.match(/^Purchase Order (.+)$/)))return value.replace(trimmed,L(`Purchase Order ${m[1]}`,`구매 발주서 ${m[1]}`));
+  if((m=trimmed.match(/^Lihat PO (.+)$/)))return value.replace(trimmed,L(`View PO ${m[1]}`,`발주서 보기 ${m[1]}`));
+  if((m=trimmed.match(/^Kembalikan status quotation ke (.+)$/)))return value.replace(trimmed,L(`Revert quotation status to ${trExact(m[1])||m[1]}`,`견적 상태를 ${trExact(m[1])||m[1]}(으)로 되돌리기`));
+  if((m=trimmed.match(/^Target Milestone \((\d+)\)$/)))return value.replace(trimmed,L(`Target Milestones (${m[1]})`,`마일스톤 목표 (${m[1]})`));
+  if((m=trimmed.match(/^Milestone \((\d+)\)$/)))return value.replace(trimmed,L(`Milestones (${m[1]})`,`마일스톤 (${m[1]})`));
+  if((m=trimmed.match(/^Quotation & PO \((\d+)\/(\d+)\)$/)))return value.replace(trimmed,L(`Quotations & POs (${m[1]}/${m[2]})`,`견적 및 발주서 (${m[1]}/${m[2]})`));
+  if((m=trimmed.match(/^Tahapan & Progres Task \((\d+)\)$/)))return value.replace(trimmed,L(`Task Stages & Progress (${m[1]})`,`작업 단계 및 진행률 (${m[1]})`));
+  if((m=trimmed.match(/^Daftar Tahapan & Progres Task \((\d+)\)$/)))return value.replace(trimmed,L(`Task Stages & Progress List (${m[1]})`,`작업 단계 및 진행률 목록 (${m[1]})`));
+  if((m=trimmed.match(/^Daftar Task \/ Stage \((\d+)\)$/)))return value.replace(trimmed,L(`Task / Stage List (${m[1]})`,`작업 / 단계 목록 (${m[1]})`));
+  if((m=trimmed.match(/^· estimasi durasi sekitar (\d+) hari$/)))return value.replace(trimmed,L(`· estimated duration ~${m[1]} days`,`· 예상 소요 기간 약 ${m[1]}일`));
+  if((m=trimmed.match(/^· selesai (\d+), saat ini: (.+) · Total (\d+)%$/)))return value.replace(trimmed,L(`· completed ${m[1]}, current: ${m[2]} · Total ${m[3]}%`,`· 완료 ${m[1]}, 현재: ${m[2]} · 전체 ${m[3]}%`));
+  if((m=trimmed.match(/^(\d+) task\/tahapan$/)))return value.replace(trimmed,L(`${m[1]} tasks/stages`,`${m[1]}개 작업/단계`));
+  if((m=trimmed.match(/^Project ini memiliki$/)))return value.replace(trimmed,L(`This project has`,`이 프로젝트에는`));
+  if((m=trimmed.match(/^\. Tanggal mulai & target mengikuti jadwal task\. Total progres dihitung otomatis dari progres tiap task\.$/)))return value.replace(trimmed,L(`. Start & target dates follow the task schedule. Total progress is calculated automatically from each task.`,`이 있습니다. 시작일 및 목표일은 작업 일정을 따르며, 전체 진행률은 각 작업 진행률에서 자동 계산됩니다.`));
+  if((m=trimmed.match(/^\(otomatis dari (\d+) task — klik langkah 2 untuk mengubah progres per task\)$/)))return value.replace(trimmed,L(`(auto-calculated from ${m[1]} tasks — click Step 2 to update task progress)`,`(${m[1]}개 작업 기준 자동 계산 — 작업별 진행률 변경은 2단계 클릭)`));
+  if((m=trimmed.match(/^(.+) \((\d+) task\) · Umum$/)))return value.replace(trimmed,L(`${m[1]} (${m[2]} tasks) · General`,`${m[1]} (${m[2]}개 작업) · 공통`));
+  if((m=trimmed.match(/^(.+) \((\d+) task\) · PIC: (.+)$/)))return value.replace(trimmed,L(`${m[1]} (${m[2]} tasks) · Owner: ${m[3]}`,`${m[1]} (${m[2]}개 작업) · 담당자: ${m[3]}`));
+  if((m=trimmed.match(/^Umum \(Semua PIC\)(.*)$/)))return value.replace(trimmed,L(`General (All Owners)${m[1]}`,`공통 (모든 담당자)${m[1]}`));
+  if((m=trimmed.match(/^📎 Bukti \((\d+)\)$/)))return value.replace(trimmed,L(`📎 Proof (${m[1]})`,`📎 증빙 (${m[1]})`));
+  if((m=trimmed.match(/^📎 Lihat \((\d+)\)$/)))return value.replace(trimmed,L(`📎 View (${m[1]})`,`📎 보기 (${m[1]})`));
+  if((m=trimmed.match(/^Bukti \((\d+)\)$/)))return value.replace(trimmed,L(`Proof (${m[1]})`,`증빙 (${m[1]})`));
+  if((m=trimmed.match(/^Dokumentasi · (.+)$/)))return value.replace(trimmed,L(`Documentation · ${m[1]}`,`문서 · ${m[1]}`));
+  if((m=trimmed.match(/^Dokumentasi stage \((\d+)\)$/)))return value.replace(trimmed,L(`Stage documentation (${m[1]})`,`단계 문서 (${m[1]})`));
+  if((m=trimmed.match(/^Ubah Task \((\d+)\)$/)))return value.replace(trimmed,L(`Edit Tasks (${m[1]})`,`작업 수정 (${m[1]})`));
+  if((m=trimmed.match(/^Ubah Quotation & PO \((\d+)\/(\d+)\)$/)))return value.replace(trimmed,L(`Edit Quotations & POs (${m[1]}/${m[2]})`,`견적 및 발주 수정 (${m[1]}/${m[2]})`));
+  if((m=trimmed.match(/^Ubah Milestone \((\d+)\)$/)))return value.replace(trimmed,L(`Edit Milestones (${m[1]})`,`마일스톤 수정 (${m[1]})`));
+  if((m=trimmed.match(/^Tahap aktif: (.+)$/)))return value.replace(trimmed,L(`Active stage: ${m[1]}`,`진행 단계: ${m[1]}`));
+  if((m=trimmed.match(/^(\d+) task · (\d+) milestone$/)))return value.replace(trimmed,L(`${m[1]} tasks · ${m[2]} milestones`,`작업 ${m[1]}개 · 마일스톤 ${m[2]}개`));
+  if((m=trimmed.match(/^(\d+) Quotation$/)))return value.replace(trimmed,L(`${m[1]} Quotations`,`견적 ${m[1]}건`));
+  if((m=trimmed.match(/^Terpilih: (.+)$/)))return value.replace(trimmed,L(`Selected: ${m[1]}`,`선정됨: ${m[1]}`));
+  if((m=trimmed.match(/^Terendah: (.+)$/)))return value.replace(trimmed,L(`Lowest: ${m[1]}`,`최저가: ${m[1]}`));
+  if((m=trimmed.match(/^Prioritas: (.+)$/)))return value.replace(trimmed,L(`Priority: ${m[1]}`,`우선순위: ${m[1]}`));
+  if((m=trimmed.match(/^(.+) · Prioritas (.+)$/)))return value.replace(trimmed,L(`${m[1]} · Priority ${m[2]}`,`${m[1]} · 우선순위 ${m[2]}`));
+  if((m=trimmed.match(/^Budget: (.+) \((.+)\)$/)))return value.replace(trimmed,L(`Budget: ${m[1]} (${trExact(m[2])||m[2]})`,`예산: ${m[1]} (${trExact(m[2])||m[2]})`));
+  if((m=trimmed.match(/^PIC: (.+)$/)))return value.replace(trimmed,L(`Owner: ${m[1]}`,`담당자: ${m[1]}`));
+  if((m=trimmed.match(/^· Diperbarui (.+) oleh (.+)$/)))return value.replace(trimmed,L(`· Updated ${m[1]} by ${m[2]}`,`· ${m[2]}님이 ${m[1]}에 수정`));
+  if((m=trimmed.match(/^Lihat Semua Issue \((\d+)\)$/)))return value.replace(trimmed,L(`View All Issues (${m[1]})`,`전체 이슈 보기 (${m[1]})`));
+  if((m=trimmed.match(/^Menunggu Keputusan PI \((\d+)\)$/)))return value.replace(trimmed,L(`Awaiting PI Decision (${m[1]})`,`PI 결정 대기 (${m[1]})`));
+  if((m=trimmed.match(/^Evaluasi Improvement · (.+)$/)))return value.replace(trimmed,L(`Evaluate Improvement · ${m[1]}`,`개선 과제 평가 · ${m[1]}`));
+  if((m=trimmed.match(/^Tinjau laporan dari$/)))return value.replace(trimmed,L(`Review the submission from`,`제출된 보고서 검토:`));
+  if((m=trimmed.match(/^dan tentukan tindak lanjut\.$/)))return value.replace(trimmed,L(`and determine the follow-up action.`,`후속 조치를 결정하세요.`));
+  if((m=trimmed.match(/^· Dilaporkan oleh$/)))return value.replace(trimmed,L(`· Submitted by`,`· 제출자:`));
+  if((m=trimmed.match(/^pada (.+)$/)))return value.replace(trimmed,L(`on ${m[1]}`,`(${m[1]})`));
+  if((m=trimmed.match(/^(\d+) file · (\d+) link$/)))return value.replace(trimmed,L(`${m[1]} files · ${m[2]} links`,`파일 ${m[1]}개 · 링크 ${m[2]}개`));
+  if((m=trimmed.match(/^Judul (\d+)$/)))return value.replace(trimmed,L(`Title ${m[1]}`,`서명란 제목 ${m[1]}`));
+  if((m=trimmed.match(/^PIN (?:baru )?\(minimal (\d+) karakter\)$/)))return value.replace(trimmed,L(`New PIN (at least ${m[1]} characters)`,`새 PIN (최소 ${m[1]}자 이상)`));
+  if((m=trimmed.match(/^\((admin|viewer|kontributor|pengguna)\)\. Nama ini dicatat di riwayat perubahan\.$/))){
+    const roleMap={admin:L('admin','관리자'),viewer:L('viewer','뷰어'),kontributor:L('contributor','기여자'),pengguna:L('user','사용자')};
+    return value.replace(trimmed,L(`(${roleMap[m[1]]}). This name is recorded in the change history.`,`(${roleMap[m[1]]}). 이 이름은 변경 이력에 기록됩니다.`));
+  }
+  if((m=trimmed.match(/^(Kode|Project|Klasifikasi|PIC|Status|Progres|Tahap saat ini|Mulai|Target|Vendor|Budget|Komitmen|Quotation|PO) ([▲▼])$/))){
+    const col=trExact(m[1])||m[1];
+    return value.replace(trimmed,`${col} ${m[2]}`);
+  }
+  if((m=trimmed.match(/^• (.+)$/))){
+    const inner=translatedText(m[1]);
+    return value.replace(trimmed,`• ${inner}`);
+  }
+  if(trimmed.includes(' · ')){
+    const parts=trimmed.split(' · ');
+    const mapped=parts.map(p=>{
+      const t=p.trim();
+      const ex=trExact(t);
+      if(ex!==null)return ex;
+      if(/^Pelapor: (.+)$/.test(t)){const n=t.slice(9);return L(`Submitter: ${n}`,`제출자: ${n}`);}
+      if(/^PIC: (.+)$/.test(t)){const n=t.slice(5);return L(`Owner: ${n}`,`담당자: ${n}`);}
+      if(/^Tahap:$/.test(t))return L('Current stage:','현재 단계:');
+      return translatedText(t);
+    });
+    return value.replace(trimmed,mapped.join(' · '));
+  }
+  return value;
 }
 let APPLYING_LANG=false;
 function applyLanguage(){
@@ -807,13 +1261,24 @@ function applyLanguage(){
     let node;
     while((node=walker.nextNode())){
       if(node.parentElement&&node.parentElement.closest('script,style,textarea,[data-no-translate]'))continue;
-      const next=translatedText(node.nodeValue);
+      if(node.__orig===undefined||node.nodeValue!==node.__lastOut){
+        node.__orig=node.nodeValue;
+      }
+      const next=APP_LANG==='id'?node.__orig:translatedText(node.__orig);
+      node.__lastOut=next;
       if(next!==node.nodeValue)node.nodeValue=next;
     }
     document.querySelectorAll('[placeholder],[title],[aria-label]').forEach(el=>{
+      if(!el.__origAttr)el.__origAttr={};
+      if(!el.__lastAttr)el.__lastAttr={};
       ['placeholder','title','aria-label'].forEach(attr=>{
         if(el.hasAttribute(attr)){
-          const cur=el.getAttribute(attr),next=translatedText(cur);
+          const cur=el.getAttribute(attr);
+          if(el.__origAttr[attr]===undefined||cur!==el.__lastAttr[attr]){
+            el.__origAttr[attr]=cur;
+          }
+          const next=APP_LANG==='id'?el.__origAttr[attr]:translatedText(el.__origAttr[attr]);
+          el.__lastAttr[attr]=next;
           if(next!==cur)el.setAttribute(attr,next);
         }
       });
@@ -1245,7 +1710,8 @@ function rGantt(){
   const W=Math.round(diffDays(rs,reEx)*dw);
   const x=d=>Math.round(diffDays(rs,d)*dw*100)/100;
   const topU=GS==='week'?'month':'year',botU=GS==='week'?'week':(GS==='month'?'month':'quarter');
-  const lbl=(s,u)=>u==='month'?(GS==='week'?s.toLocaleDateString('id-ID',{month:'long',year:'numeric'}):s.toLocaleDateString('id-ID',{month:'short'})):u==='year'?String(s.getFullYear()):u==='quarter'?'Q'+(Math.floor(s.getMonth()/3)+1):String(s.getDate());
+  const gLoc={id:'id-ID',en:'en-US',ko:'ko-KR'}[APP_LANG]||'id-ID';
+  const lbl=(s,u)=>u==='month'?(GS==='week'?s.toLocaleDateString(gLoc,{month:'long',year:'numeric'}):s.toLocaleDateString(gLoc,{month:'short'})):u==='year'?String(s.getFullYear()):u==='quarter'?'Q'+(Math.floor(s.getMonth()/3)+1):String(s.getDate());
   const top=segments(rs,reEx,topU).map(g=>`<div class="gseg t" style="left:${x(g.s)}px;width:${x(g.e)-x(g.s)}px">${lbl(g.s,topU)}</div>`).join('');
   const botSeg=segments(rs,reEx,botU);
   const bot=botSeg.map(g=>`<div class="gseg b" style="left:${x(g.s)}px;width:${x(g.e)-x(g.s)}px">${lbl(g.s,botU)}</div>`).join('');

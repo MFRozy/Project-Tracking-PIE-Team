@@ -19,7 +19,13 @@ function normSigners(a){a=Array.isArray(a)?a:[];const o=[];for(let i=0;i<3;i++){
 function normP(p){
   const o=Object.assign({id:uid(),code:'',name:'',category:'',status:'Not Started',priority:'Medium',pic:'',area:'',start:'',end:'',progress:0,desc:'',vendor:'',budget:0,actual:0,po:'',quotations:[],milestones:[],stages:[],pos:[],log:[],updatedAt:0,updatedBy:''},p||{});
   o.quotations=(o.quotations||[]).map(q=>Object.assign({id:uid(),vendor:'',amount:0,status:'Diterima',date:'',valid:'',no:'',link:'',file:'',fileName:'',note:''},q));
-  o.stages=(o.stages||[]).map(s=>Object.assign({id:uid(),name:'',pic:'',ps:'',pf:'',as:'',af:'',status:'Not Started',note:'',par:false},s));
+  o.stages=(o.stages||[]).map(s=>{
+    const stg=Object.assign({id:uid(),name:'',pic:'',ps:'',pf:'',as:'',af:'',status:'Not Started',prog:0,note:'',par:false},s);
+    if(stg.af||stg.status==='Completed')stg.prog=100;
+    else if(stg.status==='Not Started'&&!stg.as)stg.prog=0;
+    else stg.prog=Math.max(0,Math.min(100,Number(stg.prog)||0));
+    return stg;
+  });
   o.pos=(o.pos||[]).map(x=>Object.assign({id:uid(),no:'',date:'',qid:'',vendor:'',currency:'',addr:'',attn:'',qno:'',subject:'',items:[],tax:0,terms:'',delivery:'',note:'',by:'',at:0},x));
   o.pos.forEach(x=>{x.items=(x.items||[]).map(i=>Object.assign({id:uid(),desc:'',qty:1,unit:'Unit',price:0,due:''},i));});
   o.milestones=o.milestones||[];o.log=o.log||[];

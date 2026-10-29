@@ -58,36 +58,52 @@ header.app-topbar{display:flex;align-items:center;justify-content:space-between;
 /* KPI Cards Cosmax Style */
 .kpi-icon{position:absolute;top:12px;right:14px;color:var(--muted);opacity:.65;font-size:15px}
 
-/* Stepper & Stage Pipeline (Cosmax Process Style) */
-.wiz-wrap{max-width:980px;margin:0 auto}
-.wiz-top{margin-bottom:18px}
-.wiz-step-counter{font-size:12.5px;color:var(--muted);margin-bottom:12px;font-weight:500}
-.wiz-stepper{display:flex;align-items:flex-start;justify-content:space-between;gap:4px;margin-bottom:20px;overflow-x:auto;padding-bottom:6px}
-.wiz-node{display:flex;flex-direction:column;align-items:center;gap:7px;flex:1;min-width:110px;position:relative;cursor:pointer;text-align:center}
+/* Stepper, Stage Pipeline & Task Progress (Cosmax Style) */
+.wiz-wrap{max-width:1120px;margin:0 auto}
+.wiz-top,.wiz-head{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;margin-bottom:16px;flex-wrap:wrap}
+.wiz-head h2{margin:0;font-size:20px;font-weight:700;letter-spacing:-.01em}
+.wiz-head p{margin:4px 0 0;font-size:12.5px;color:var(--muted)}
+.wiz-step-counter,.wiz-step-count{font-size:12px;color:var(--muted);margin-bottom:10px;font-weight:600}
+.wiz-stepper{display:flex;align-items:flex-start;justify-content:space-between;gap:6px;margin-bottom:16px;overflow-x:auto;padding-bottom:6px}
+.wiz-node{display:flex;flex-direction:column;align-items:center;gap:6px;flex:1;min-width:105px;position:relative;cursor:pointer;text-align:center}
 .wiz-node:not(:last-child)::after{content:'';position:absolute;top:16px;left:calc(50% + 22px);right:calc(-50% + 22px);height:1.5px;background:var(--line);z-index:1}
 .wiz-node.done:not(:last-child)::after{background:rgba(237,28,36,.55)}
-.wiz-circle{width:32px;height:32px;border-radius:50%;display:grid;place-items:center;font-size:12.5px;font-weight:700;border:1.5px solid var(--line);background:var(--card);color:var(--muted);position:relative;z-index:2;transition:.15s}
-.wiz-node.done .wiz-circle{border-color:var(--pri);color:var(--pri);background:rgba(237,28,36,.1)}
+.wiz-circle{width:32px;height:32px;border-radius:50%;display:grid;place-items:center;font-size:12px;font-weight:700;border:1.5px solid var(--line);background:var(--card);color:var(--muted);position:relative;z-index:2;transition:.15s}
+.wiz-node.done .wiz-circle{border-color:var(--pri);color:var(--pri);background:rgba(237,28,36,.12)}
 .wiz-node.active .wiz-circle{border-color:var(--pri);background:var(--pri);color:#fff;box-shadow:0 0 0 4px rgba(237,28,36,.18)}
-.wiz-node.late .wiz-circle{border-color:var(--bad);background:rgba(239,68,68,.15);color:var(--bad)}
-.wiz-title{font-size:11.5px;font-weight:600;color:var(--muted);line-height:1.25;max-width:130px}
-.wiz-node.active .wiz-title,.wiz-node.done .wiz-title{color:var(--text)}
+.wiz-node.late .wiz-circle,.wiz-node.delayed .wiz-circle{border-color:var(--bad);background:rgba(239,68,68,.15);color:var(--bad)}
+.wiz-title,.wiz-label{font-size:11.5px;font-weight:600;color:var(--muted);line-height:1.25;max-width:135px}
+.wiz-node.active .wiz-title,.wiz-node.done .wiz-title,.wiz-node.active .wiz-label,.wiz-node.done .wiz-label{color:var(--text)}
 .wiz-sub{font-size:10.5px;color:var(--muted);line-height:1.2}
-.wiz-card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:20px;margin-bottom:16px}
-.wiz-foot{display:flex;align-items:center;justify-content: flex-end;gap:10px;padding-top:14px;border-top:1px solid var(--line);flex-wrap:wrap}
+.wiz-card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:18px 20px;margin-bottom:14px}
+.wiz-foot{display:flex;align-items:center;justify-content:flex-end;gap:10px;padding-top:14px;border-top:1px solid var(--line);flex-wrap:wrap}
 .wiz-foot .l{margin-right:auto}
 
-/* Output Detail Grid & Cards */
-.out-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-bottom:14px}
-.out-kv{padding:12px 14px;border:1px solid var(--line);border-radius:10px;background:var(--soft)}
+/* Detail Grid, Sub-Tabs & Quick Task Progress */
+.out-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(195px,1fr));gap:10px;margin-bottom:14px}
+.out-kv{padding:11px 14px;border:1px solid var(--line);border-radius:10px;background:var(--soft)}
 .out-kv small{display:block;font-size:11px;color:var(--muted);margin-bottom:3px}
 .out-kv b{font-size:14px;display:block;word-break:break-word}
-.out-section{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:18px;margin-bottom:14px}
-.out-section-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.out-section{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:16px 18px;margin-bottom:14px}
+.out-section h4{margin:0 0 10px;font-size:13.5px}
+.out-section-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid var(--line);flex-wrap:wrap}
 .out-section-head h3{margin:0;font-size:15px}
 .mode-pill{display:inline-flex;align-items:center;gap:6px;padding:3px 10px;border-radius:999px;font-size:11px;font-weight:700;border:1px solid var(--line);background:var(--soft);color:var(--muted)}
 .mode-pill.output{border-color:rgba(16,185,129,.35);color:#10b981;background:rgba(16,185,129,.08)}
 .mode-pill.input{border-color:rgba(237,28,36,.4);color:var(--pri);background:rgba(237,28,36,.1)}
+.c2{grid-template-columns:repeat(auto-fit,minmax(340px,1fr))}
+.banner.ok{background:rgba(16,185,129,.1);border-color:rgba(16,185,129,.35);color:#10b981}
+.sub-tabs{display:flex;gap:6px;margin-bottom:14px;border-bottom:1px solid var(--line);padding-bottom:10px;overflow-x:auto;flex-wrap:wrap}
+.sub-tabs button{border:1px solid var(--line);background:var(--card);color:var(--muted);padding:7px 14px;border-radius:8px;font-size:12.5px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:.15s}
+.sub-tabs button:hover{background:var(--soft);color:var(--text)}
+.sub-tabs button.on{background:var(--pri);border-color:var(--pri);color:#fff}
+.task-prog-box{display:flex;align-items:center;gap:8px;min-width:170px}
+.task-prog-box input[type=range]{flex:1;min-width:75px;accent-color:var(--pri);cursor:pointer;padding:0;margin:0}
+.task-prog-box input[type=number]{width:54px!important;padding:4px 6px!important;text-align:right;font-weight:700;font-size:12px!important;margin:0!important}
+.task-qbtns{display:inline-flex;gap:4px;align-items:center}
+.task-qbtns button{border:1px solid var(--line);background:var(--soft);color:var(--muted);padding:3px 7px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer}
+.task-qbtns button:hover{color:var(--text);border-color:var(--muted)}
+.task-qbtns button.done-btn{border-color:rgba(16,185,129,.45);color:#10b981;background:rgba(16,185,129,.08)}
 
 .reminder-period{display:flex;gap:4px;margin:0}.reminder-period button{border:1px solid var(--line);background:var(--card);padding:5px 10px;border-radius:6px;cursor:pointer;font-weight:600;color:var(--muted)}.reminder-period button.on{background:var(--pri);border-color:var(--pri);color:#fff}.priority-controls{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .imp-row{padding:12px 0;border-bottom:1px solid var(--line);display:grid;grid-template-columns:minmax(180px,1.3fr) minmax(140px,.8fr) 150px 130px auto;gap:12px;align-items:center}.imp-row:last-child{border-bottom:0}.imp-row:hover{background:var(--soft)}.imp-desc{white-space:normal;color:var(--muted);font-size:12px}
@@ -277,11 +293,11 @@ body.auth-mode>#modal{min-height:100vh}
         </button>
         <button class="sb-item" data-v="list" onclick="go('list')">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-          <span>Pemantauan Proses</span>
+          <span>Daftar Project</span>
         </button>
         <button class="sb-item" id="sb-new-proj" data-v="project_form" onclick="newP()">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
-          <span>Input Project Baru</span>
+          <span>Project Baru</span>
         </button>
       </div>
 
@@ -289,16 +305,16 @@ body.auth-mode>#modal{min-height:100vh}
         <div class="sb-label">Improvement</div>
         <button class="sb-item" data-v="improvements" onclick="go('improvements')">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
-          <span>Pemantauan Issue</span>
+          <span>Daftar Improvement</span>
         </button>
         <button class="sb-item" id="sb-imp-rev" data-v="imp_review" onclick="go('imp_review')">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-          <span>Perlu Ditinjau PI</span>
+          <span>Tinjauan PI</span>
           <span class="sb-badge" id="sb-imp-cnt">0</span>
         </button>
         <button class="sb-item" id="sb-new-imp" data-v="imp_form" onclick="newImprovement()">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
-          <span>Catat Issue Baru</span>
+          <span>Ajukan Improvement</span>
         </button>
       </div>
 
@@ -718,26 +734,28 @@ const LANG_TEXT={
   'Belum ada PO.':{en:'No POs yet.',ko:'발주서가 없습니다.'},
   'Ringkasan':{en:'Overview',ko:'요약'},
   'Pekerjaan Saya':{en:'My Work',ko:'내 작업'},
-  'Pemantauan Proses':{en:'Process Monitoring',ko:'프로세스 모니터링'},
-  'Input Project Baru':{en:'New Project Input',ko:'신규 프로젝트 입력'},
-  'Pemantauan Issue':{en:'Issue Monitoring',ko:'이슈 모니터링'},
-  'Perlu Ditinjau PI':{en:'Needs PI Review',ko:'PI 검토 필요'},
-  'Catat Issue Baru':{en:'Submit New Issue',ko:'신규 이슈 등록'},
+  'Daftar Project':{en:'Project List',ko:'프로젝트 목록'},
+  'Project Baru':{en:'New Project',ko:'신규 프로젝트'},
+  'Daftar Improvement':{en:'Improvement List',ko:'개선 과제 목록'},
+  'Tinjauan PI':{en:'PI Review',ko:'PI 검토'},
+  'Ajukan Improvement':{en:'Submit Improvement',ko:'개선 과제 등록'},
   'Pengadaan & Laporan':{en:'Procurement & Reports',ko:'조달 및 보고서'},
   'Master & Sistem':{en:'Master & System',ko:'마스터 및 시스템'},
   'Template Stage':{en:'Stage Templates',ko:'단계 템플릿'},
   'Template & Nomor PO':{en:'PO Template & Numbering',ko:'PO 템플릿 및 번호'},
   'Pengaturan & Ekspor':{en:'Settings & Export',ko:'설정 및 내보내기'},
-  'Informasi Header':{en:'Header Information',ko:'기본 헤더 정보'},
-  'Rencana & Update Stage':{en:'Stage Plan & Execution',ko:'단계 계획 및 실행'},
+  'Info Utama':{en:'Main Info',ko:'기본 정보'},
+  'Tahapan & Task':{en:'Stages & Tasks',ko:'단계 및 작업'},
+  'Tahapan & Progres Task':{en:'Task Stages & Progress',ko:'단계 및 진행률'},
   'Tinjau & Simpan':{en:'Review & Save',ko:'검토 및 저장'},
   'Tinjau & Kirim':{en:'Review & Submit',ko:'검토 및 제출'},
   'Identifikasi Masalah':{en:'Issue Identification',ko:'문제 식별'},
   'Tujuan & Lampiran':{en:'Goals & Attachments',ko:'목표 및 첨부파일'},
   'Kembali':{en:'Back',ko:'이전'},
   'Berikutnya':{en:'Next',ko:'다음'},
-  'Lihat Output':{en:'View Output',ko:'결과 보기'},
-  'Update Proses':{en:'Update Process',ko:'프로세스 업데이트'}
+  'Detail':{en:'Details',ko:'상세 보기'},
+  'Edit Form':{en:'Edit Form',ko:'양식 수정'},
+  'Update Task':{en:'Update Tasks',ko:'작업 업데이트'}
 };
 const LANG_SOURCE={};
 Object.entries(LANG_TEXT).forEach(([source,values])=>{LANG_SOURCE[source]=source;Object.values(values).forEach(value=>{LANG_SOURCE[value]=source;});});
@@ -843,7 +861,7 @@ function buildStages(defs,base){
     const days=Math.max(1,Number(def.days)||1);
     const ps=(def.par&&out.length)?prevS:cur;
     const pf=addDays(ps,days-1);
-    out.push({id:uid(),name:def.name,pic:def.pic||'',ps:fd(ps),pf:fd(pf),as:'',af:'',status:'Not Started',note:'',par:!!def.par});
+    out.push({id:uid(),name:def.name,pic:def.pic||'',ps:fd(ps),pf:fd(pf),as:'',af:'',status:'Not Started',prog:0,note:'',par:!!def.par});
     prevS=ps;const nx=addDays(pf,1);if(nx>cur)cur=nx;
   });
   return out;
@@ -887,11 +905,18 @@ function budgetState(p){
 /* ---- stage ---- */
 const useBud=()=>!!(DB&&DB.settings&&DB.settings.useBudget);
 function gset(k){return (DB&&DB.settings&&DB.settings[k]!==undefined)?DB.settings[k]:true;}
+function stProg(s){
+  if(s.af||s.status==='Completed')return 100;
+  if(s.status==='Not Started'&&!s.as&&!(Number(s.prog)>0))return 0;
+  const p=Number(s.prog);
+  if(!isNaN(p)&&p>0)return Math.max(0,Math.min(100,Math.round(p)));
+  return (s.as||s.status==='On Progress')?50:0;
+}
 function stEff(s){
-  if(s.af||s.status==='Completed')return 'Completed';
+  if(s.af||s.status==='Completed'||Number(s.prog)>=100)return 'Completed';
   if(s.status==='On Hold')return 'On Hold';
   const pf=pd(s.pf);if(pf&&pf<today())return 'Delayed';
-  if(s.as||s.status==='On Progress')return 'On Progress';
+  if(s.as||s.status==='On Progress'||Number(s.prog)>0)return 'On Progress';
   return 'Not Started';
 }
 function stLateStart(s){const e=stEff(s),ps=pd(s.ps);return e==='Not Started'&&ps&&ps<today();}
@@ -899,7 +924,7 @@ function stDev(s){const pf=pd(s.pf);if(!pf)return null;if(s.af)return diffDays(p
 function stageDays(s){return (s.ps&&s.pf)?Math.max(1,diffDays(pd(s.ps),pd(s.pf))+1):1;}
 function stageCalc(p){
   const st=p.stages||[];if(!st.length)return null;
-  let tot=0,done=0;st.forEach(s=>{const w=stageDays(s);tot+=w;if(stEff(s)==='Completed')done+=w;});
+  let tot=0,done=0;st.forEach(s=>{const w=stageDays(s);tot+=w;done+=w*(stProg(s)/100);});
   return tot?Math.round(done/tot*100):0;
 }
 function applyAuto(p){
@@ -1025,10 +1050,13 @@ function renderFilters(){
   const vs=new Set();DB.projects.forEach(p=>{if(p.vendor)vs.add(p.vendor);quotes(p).forEach(q=>q.vendor&&vs.add(q.vendor));});
   $('#vlist').innerHTML=[...vs].sort().map(v=>`<option value="${esc(v)}">`).join('');
 }
-function myProjectsList(){
+function isMyProject(p){
   const me=(ME||'').trim().toLowerCase();
-  if(!me)return [];
-  return DB.projects.filter(p=>((p.pic||'').trim().toLowerCase()===me)||((p.createdBy||'').trim().toLowerCase()===me)||(p.stages||[]).some(s=>((s&&s.pic)||'').trim().toLowerCase()===me));
+  if(!me||!p)return false;
+  return ((p.pic||'').trim().toLowerCase()===me)||((p.createdBy||'').trim().toLowerCase()===me)||(p.stages||[]).some(s=>((s&&s.pic)||'').trim().toLowerCase()===me);
+}
+function myProjectsList(){
+  return DB.projects.filter(p=>isMyProject(p));
 }
 function updateBreadcrumb(){
   const el=$('#breadcrumb');if(!el)return;
@@ -1036,15 +1064,15 @@ function updateBreadcrumb(){
     dash:['Ringkasan','Dashboard'],
     gantt:['Ringkasan','Gantt Chart'],
     my_projects:['Project','Pekerjaan Saya'],
-    list:['Project','Pemantauan Proses'],
-    project_detail:['Project','Pemantauan Proses',draft?(draft.code+' · Output & Stage'):'Detail Output'],
-    project_form:['Project',isNew?'Input Project Baru':('Update Proses · '+(draft?draft.code:'')),`Langkah ${WIZ_STEP} dari 5`],
+    list:['Project','Daftar Project'],
+    project_detail:['Project','Daftar Project',draft?(draft.code+' · '+draft.name):'Detail Project'],
+    project_form:['Project',isNew?'Project Baru':('Edit Project · '+(draft?draft.code:'')),`Langkah ${WIZ_STEP} dari 5`],
     budget:['Pengadaan & Laporan','Quotation & PO'],
-    improvements:['Improvement','Pemantauan Issue'],
-    imp_review:['Improvement','Perlu Ditinjau PI'],
-    imp_detail:['Improvement','Pemantauan Issue',IDRAFT?(IDRAFT.title||'Detail Output'):'Detail Output'],
-    imp_form:['Improvement',IISNEW?'Catat Issue Baru':'Edit Laporan Issue',`Langkah ${IMP_WIZ_STEP} dari 3`],
-    imp_review_form:['Improvement','Perlu Ditinjau PI','Input Keputusan & Review PI']
+    improvements:['Improvement','Daftar Improvement'],
+    imp_review:['Improvement','Tinjauan PI'],
+    imp_detail:['Improvement','Daftar Improvement',IDRAFT?(IDRAFT.title||'Detail Improvement'):'Detail Improvement'],
+    imp_form:['Improvement',IISNEW?'Ajukan Improvement':'Edit Improvement',`Langkah ${IMP_WIZ_STEP} dari 3`],
+    imp_review_form:['Improvement','Tinjauan PI','Keputusan & Feedback PI']
   };
   const parts=map[VIEW]||['Ringkasan','Dashboard'];
   el.innerHTML=parts.map((p,i)=>i===parts.length-1?`<b>${esc(p)}</b>`:`<span>${esc(p)}</span><span class="sep">›</span>`).join('');
@@ -1253,32 +1281,32 @@ function rMyProjects(){
   const rows=L.map(p=>{
     const st=effStatus(p),cs=curStage(p),lateStg=p.stages.filter(s=>stEff(s)==='Delayed').length;
     const canMod=canEdit()&&canModifyProj(p);
-    return `<tr>
+    return `<tr onclick="viewP('${p.id}')">
       <td><b>${esc(p.code)}</b></td>
-      <td><b style="cursor:pointer;color:var(--pri)" onclick="viewP('${p.id}')">${esc(p.name)}</b><div class="small muted">${esc(p.area||'Area belum diisi')}</div></td>
+      <td><b style="color:var(--pri)">${esc(p.name)}</b><div class="small muted">${esc(p.area||'Area belum diisi')}</div></td>
       <td>${chip(p.category)}</td>
       <td>${badge(st)}</td>
       <td><span class="pbar"><div style="width:${p.progress}%"></div></span><b>${p.progress}%</b></td>
-      <td>${cs?`<span style="font-weight:600">${esc(cs.txt)}</span> <span class="muted small">(${cs.done}/${cs.total} stage)</span>`+(lateStg?` <span class="tag" style="background:#ef4444">${lateStg} telat</span>`:''):'<span class="muted">Belum ada stage</span>'}</td>
+      <td>${cs?`<span style="font-weight:600">${esc(cs.txt)}</span> <span class="muted small">(${cs.done}/${cs.total} task)</span>`+(lateStg?` <span class="tag" style="background:#ef4444">${lateStg} telat</span>`:''):'<span class="muted">Belum ada task</span>'}</td>
       <td>${fmtDate(p.end)}</td>
-      <td class="r" style="white-space:nowrap">
-        <button class="btn sm" onclick="viewP('${p.id}')">Lihat Output</button>
-        ${canMod?`<button class="btn sm pri" onclick="editP('${p.id}',2)">Update Stage</button>`:''}
+      <td class="r" style="white-space:nowrap" onclick="event.stopPropagation()">
+        <button class="btn sm" onclick="viewP('${p.id}')">Buka Detail</button>
+        ${canMod?`<button class="btn sm pri" onclick="editP('${p.id}',2)">Update Task</button>`:''}
       </td>
     </tr>`;
   }).join('');
   $('#main').innerHTML=`
     <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-bottom:14px">
-      <div><h2 style="font-size:20px;margin:0;font-weight:800">Pekerjaan Saya (${esc(ME)})</h2><div class="muted small">Daftar project yang Anda kelola sebagai PIC atau pembuat project, terpisah antara pemantauan output dan form input update.</div></div>
-      ${canEdit()?`<button class="btn pri" onclick="newP()">+ Buat Project Baru</button>`:''}
+      <div><h2 style="font-size:20px;margin:0;font-weight:800">Pekerjaan Saya (${esc(ME)})</h2><div class="muted small">Project yang menjadi tanggung jawab Anda. Klik baris project untuk melihat detail atau langsung memperbarui progres task.</div></div>
+      ${canEdit()?`<button class="btn pri" onclick="newP()">+ Project Baru</button>`:''}
     </div>
     <div class="grid kpis" style="grid-template-columns:repeat(auto-fit,minmax(170px,1fr))">
-      <div class="kpi static"><i style="background:var(--pri)"></i><b>${L.length}</b><span>Total Project Saya</span><small>PIC / Pembuat: ${esc(ME)}</small></div>
+      <div class="kpi static"><i style="background:var(--pri)"></i><b>${L.length}</b><span>Total Project Saya</span><small>PIC: ${esc(ME)}</small></div>
       <div class="kpi static"><i style="background:#3b82f6"></i><b>${active}</b><span>Sedang Berjalan</span><small>On Progress</small></div>
-      <div class="kpi static"><i style="background:#ef4444"></i><b>${late}</b><span>Terlambat / Perlu Aksi</span><small>Melewati target stage/project</small></div>
+      <div class="kpi static"><i style="background:#ef4444"></i><b>${late}</b><span>Perlu Perhatian</span><small>Melewati jadwal target</small></div>
       <div class="kpi static"><i style="background:#10b981"></i><b>${done}</b><span>Selesai</span><small>Completed 100%</small></div>
     </div>
-    <div class="card" style="padding:0"><div class="tw"><table><thead><tr><th>Kode</th><th>Project</th><th>Klasifikasi</th><th>Status</th><th>Progres</th><th>Stage Saat Ini</th><th>Target Selesai</th><th class="r">Jendela Fitur</th></tr></thead><tbody>${rows||`<tr><td colspan="8" class="empty">Belum ada project yang ditugaskan kepada ${esc(ME)}. Klik "+ Buat Project Baru" untuk memulai proses input.</td></tr>`}</tbody></table></div></div>`;
+    <div class="card" style="padding:0"><div class="tw"><table><thead><tr><th>Kode</th><th>Project</th><th>Klasifikasi</th><th>Status</th><th>Progres</th><th>Tahap Saat Ini</th><th>Target Selesai</th><th class="r">Aksi</th></tr></thead><tbody>${rows||`<tr><td colspan="8" class="empty">Belum ada project untuk ${esc(ME)}. Klik "+ Project Baru" untuk menambahkan.</td></tr>`}</tbody></table></div></div>`;
 }
 function rList(){
   const ub=useBud();
@@ -1293,12 +1321,12 @@ function rList(){
     ${ub?`<td class="r">${p.budget?money(p.budget):"-"}</td><td class="r" style="color:${bs.key==="over"?"var(--bad)":"inherit"};font-weight:${bs.key==="over"?700:400}">${cm?money(cm):(bs.c.amt?`<span class="muted">est. ${moneyC(bs.c.amt)}</span>`:"-")}</td>`:""}
     <td>${quotes(p).length?quotes(p).length+(lq?' · terendah '+poMoney(lq.amount,lq.currency):''):'-'}</td><td>${p.pos.length?esc(p.pos.map(o=>o.no).join(', ')):esc(p.po||'-')}</td>
     <td class="r" style="white-space:nowrap" onclick="event.stopPropagation()">
-      <button class="btn sm" onclick="viewP('${p.id}')">Lihat Output</button>
-      ${canMod?`<button class="btn sm pri" onclick="editP('${p.id}',1)">Update Proses</button>`:''}
+      <button class="btn sm" onclick="viewP('${p.id}')">Detail</button>
+      ${canMod?`<button class="btn sm pri" onclick="editP('${p.id}',1)">Edit</button>`:''}
     </td></tr>`;}).join('');
   const sb=L.reduce((a,p)=>a+p.budget,0),sc=L.reduce((a,p)=>a+committed(p),0);
   const foot=ub?`<tfoot><tr><td colspan="10" class="r"><b>Total (${L.length} project)</b></td><td class="r"><b>${money(sb)}</b></td><td class="r"><b>${money(sc)}</b></td><td colspan="3"></td></tr></tfoot>`:'';
-  $('#main').innerHTML=`<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px;flex-wrap:wrap"><div><h2 style="font-size:19px;margin:0;font-weight:800">Pemantauan Proses Project</h2><div class="muted small">Klik baris project atau "Lihat Output" untuk memantau stage & hasil, atau klik "Update Proses" untuk membuka jendela input bertahap.</div></div>${canEdit()?`<button class="btn pri" onclick="newP()">+ Project Baru</button>`:''}</div><div class="card" style="padding:0"><div class="tw" style="max-height:calc(100vh - 240px)"><table><thead><tr>${th}</tr></thead><tbody>${tb||`<tr><td colspan="${cols.length+1}" class="empty">Tidak ada project. Klik "+ Project Baru" untuk menambah.</td></tr>`}</tbody>${foot}</table></div></div>`;
+  $('#main').innerHTML=`<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px;flex-wrap:wrap"><div><h2 style="font-size:19px;margin:0;font-weight:800">Daftar Project</h2><div class="muted small">Klik baris project untuk membuka ringkasan &amp; progres task, atau klik "Edit" untuk mengubah pengaturan project.</div></div>${canEdit()?`<button class="btn pri" onclick="newP()">+ Project Baru</button>`:''}</div><div class="card" style="padding:0"><div class="tw" style="max-height:calc(100vh - 240px)"><table><thead><tr>${th}</tr></thead><tbody>${tb||`<tr><td colspan="${cols.length+1}" class="empty">Tidak ada project. Klik "+ Project Baru" untuk menambah.</td></tr>`}</tbody>${foot}</table></div></div>`;
 }
 
 /* ================= BUDGET & QUOTATION ================= */
@@ -1348,10 +1376,10 @@ function rImprovements(){
   const visible=(DB.improvements||[]).filter(x=>canReviewImprovement()||x.submittedBy===ME);
   const rows=visible.filter(x=>(IMPFILTER==='all'||x.status===IMPFILTER)&&(!q||[x.title,x.department,x.submittedBy,x.issue,x.type].join(' ').toLowerCase().includes(q))).slice().sort((a,b)=>(b.updatedAt||0)-(a.updatedAt||0));
   const count=s=>visible.filter(x=>x.status===s).length;
-  $('#main').innerHTML=`<div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px"><div style="flex:1"><h2 style="font-size:20px;margin:0;font-weight:800">Pemantauan Issue Improvement</h2><div class="muted small">Pantau status pengajuan improvement lintas departemen, hasil review PI, dan konversi menjadi project.</div></div>${canSubmitImprovement()?'<button class="btn pri" onclick="newImprovement()">+ Catat Issue Baru</button>':''}</div>
-  <div class="grid kpis"><div class="kpi static"><i style="background:#64748b"></i><b>${count('Baru')}</b><span>Baru</span><small>Menunggu antrean review</small></div><div class="kpi static"><i style="background:var(--pri)"></i><b>${count('Review PI')}</b><span>Review PI</span><small>Sedang dianalisa tim PI</small></div><div class="kpi static"><i style="background:#10b981"></i><b>${count('Disetujui')}</b><span>Disetujui</span><small>Dilanjutkan ke project</small></div><div class="kpi static"><i style="background:#64748b"></i><b>${count('Tidak Perlu Improvement')}</b><span>Saran Alternatif</span><small>Tidak perlu project baru</small></div></div>
-  <div class="stbar"><input style="min-width:220px" placeholder="Cari issue, departemen, pelapor..." value="${esc(IMPQ)}" oninput="IMPQ=this.value;rImprovements()"><select onchange="IMPFILTER=this.value;rImprovements()"><option value="all">Semua status</option>${statuses.map(s=>`<option value="${s}" ${IMPFILTER===s?'selected':''}>${s}</option>`).join('')}</select><span class="muted small">${rows.length} dari ${visible.length} issue</span></div>
-  <div class="card">${rows.map(x=>`<div class="imp-row" onclick="viewImprovement('${x.id}')"><div><b>${esc(x.title)}</b><div class="imp-desc">${esc(x.department||'-')} · ${esc(x.submittedBy||'-')} · ${improvementTypeLabel(x.type)}</div></div><div class="imp-desc">${esc(x.issue)}</div><span class="badge" style="background:${improvementStatusColor(x.status)}">${esc(x.status)}</span><span class="small muted">${x.projectId?'Project '+esc((byId(x.projectId)||{}).code||'terkait'):x.updatedAt?fmtDT(x.updatedAt):fmtDate(fd(new Date(x.submittedAt||Date.now())))}</span><div style="display:flex;gap:6px" onclick="event.stopPropagation()"><button class="btn sm" onclick="viewImprovement('${x.id}')">Lihat Output</button>${canReviewImprovement()?`<button class="btn sm pri" onclick="reviewImprovement('${x.id}')">Review PI</button>`:(canSubmitImprovement()&&x.submittedBy===ME&&!x.projectId?`<button class="btn sm pri" onclick="editImprovement('${x.id}')">Edit Input</button>`:'')}</div></div>`).join('')||'<div class="empty">Belum ada issue improvement.</div>'}</div>`;
+  $('#main').innerHTML=`<div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px"><div style="flex:1"><h2 style="font-size:20px;margin:0;font-weight:800">Daftar Improvement</h2><div class="muted small">Usulan perbaikan lintas departemen, status tinjauan Tim PI, dan tindak lanjut project.</div></div>${canSubmitImprovement()?'<button class="btn pri" onclick="newImprovement()">+ Ajukan Improvement</button>':''}</div>
+  <div class="grid kpis"><div class="kpi static"><i style="background:#64748b"></i><b>${count('Baru')}</b><span>Baru</span><small>Menunggu tinjauan</small></div><div class="kpi static"><i style="background:var(--pri)"></i><b>${count('Review PI')}</b><span>Review PI</span><small>Sedang ditinjau</small></div><div class="kpi static"><i style="background:#10b981"></i><b>${count('Disetujui')}</b><span>Disetujui</span><small>Lanjut ke project</small></div><div class="kpi static"><i style="background:#64748b"></i><b>${count('Tidak Perlu Improvement')}</b><span>Saran Alternatif</span><small>Solusi langsung</small></div></div>
+  <div class="stbar"><input style="min-width:220px" placeholder="Cari judul, departemen, pelapor..." value="${esc(IMPQ)}" oninput="IMPQ=this.value;rImprovements()"><select onchange="IMPFILTER=this.value;rImprovements()"><option value="all">Semua status</option>${statuses.map(s=>`<option value="${s}" ${IMPFILTER===s?'selected':''}>${s}</option>`).join('')}</select><span class="muted small">${rows.length} dari ${visible.length} usulan</span></div>
+  <div class="card">${rows.map(x=>`<div class="imp-row" onclick="viewImprovement('${x.id}')"><div><b>${esc(x.title)}</b><div class="imp-desc">${esc(x.department||'-')} · ${esc(x.submittedBy||'-')} · ${improvementTypeLabel(x.type)}</div></div><div class="imp-desc">${esc(x.issue)}</div><span class="badge" style="background:${improvementStatusColor(x.status)}">${esc(x.status)}</span><span class="small muted">${x.projectId?'Project '+esc((byId(x.projectId)||{}).code||'terkait'):x.updatedAt?fmtDT(x.updatedAt):fmtDate(fd(new Date(x.submittedAt||Date.now())))}</span><div style="display:flex;gap:6px" onclick="event.stopPropagation()"><button class="btn sm" onclick="viewImprovement('${x.id}')">Detail</button>${canReviewImprovement()?`<button class="btn sm pri" onclick="reviewImprovement('${x.id}')">Tinjau PI</button>`:(canSubmitImprovement()&&x.submittedBy===ME&&!x.projectId?`<button class="btn sm pri" onclick="editImprovement('${x.id}')">Edit</button>`:'')}</div></div>`).join('')||'<div class="empty">Belum ada usulan improvement.</div>'}</div>`;
 }
 function rImpReviewQueue(){
   if(!canReviewImprovement()){go('improvements');return;}
@@ -1481,23 +1509,23 @@ function rImpDetail(){
     <div class="wiz-wrap">
       <div class="wiz-head">
         <div>
-          <span class="mode-pill output">TAMPILAN OUTPUT &amp; STATUS STAGE</span>
-          <h2 style="margin-top:8px">${esc(x.title||'Detail Issue Improvement')}</h2>
+          <span class="mode-pill output">RINGKASAN &amp; STATUS IMPROVEMENT</span>
+          <h2 style="margin-top:8px">${esc(x.title||'Detail Improvement')}</h2>
           <p>Departemen <b>${esc(x.department||'-')}</b> · Dilaporkan oleh <b>${esc(x.submittedBy||'-')}</b> pada ${fmtDT(x.submittedAt)}</p>
         </div>
         <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
           <span class="badge" style="background:${improvementStatusColor(x.status)}">${esc(x.status)}</span>
           <button class="btn" onclick="go('${PREV_VIEW||'improvements'}')">← Kembali</button>
-          ${canEditReq?`<button class="btn" onclick="editImprovement('${x.id}')">Edit Laporan Input</button>`:''}
+          ${canEditReq?`<button class="btn" onclick="editImprovement('${x.id}')">Edit Pengajuan</button>`:''}
           ${canReview?`<button class="btn pri" onclick="reviewImprovement('${x.id}')">Tinjau &amp; Keputusan PI</button>`:''}
           ${canReview&&x.decision==='To Project'&&!x.projectId?`<button class="btn pri" onclick="promoteImprovement()">+ Konversi ke Project</button>`:''}
         </div>
       </div>
       <div class="out-section">
-        <h4>Stage Proses Improvement</h4>
+        <h4>Tahapan Proses Improvement</h4>
         ${stepper}
       </div>
-      ${proj?`<div class="banner ok" style="margin-bottom:14px"><span>Issue ini telah dikonversi menjadi Project <b>${esc(proj.code)} · ${esc(proj.name)}</b> (Status: ${esc(effStatus(proj))}, Progres: ${proj.progress}%)</span><button class="btn sm pri" onclick="viewP('${proj.id}')">Buka Output Project →</button></div>`:''}
+      ${proj?`<div class="banner ok" style="margin-bottom:14px"><span>Usulan ini telah dilanjutkan menjadi Project <b>${esc(proj.code)} · ${esc(proj.name)}</b> (Status: ${esc(effStatus(proj))}, Progres: ${proj.progress}%)</span><button class="btn sm pri" onclick="viewP('${proj.id}')">Buka Project →</button></div>`:''}
       <div class="out-grid">
         <div class="out-kv"><small>Departemen</small><b>${esc(x.department||'-')}</b></div>
         <div class="out-kv"><small>Pelapor</small><b>${esc(x.submittedBy||'-')}</b></div>
@@ -1508,16 +1536,16 @@ function rImpDetail(){
       </div>
       <div class="grid c2">
         <div class="out-section">
-          <h4>1. Detail Masalah &amp; Konteks (Input Kontributor)</h4>
+          <h4>1. Rincian Masalah &amp; Tujuan</h4>
           <div style="display:grid;gap:12px;font-size:13px">
-            <div><div class="muted small">Issue yang Terjadi</div><div style="margin-top:3px;white-space:pre-wrap">${esc(x.issue||'-')}</div></div>
-            <div><div class="muted small">Background / Kondisi Saat Ini</div><div style="margin-top:3px;white-space:pre-wrap">${esc(x.background||'-')}</div></div>
-            <div><div class="muted small">Purpose / Alasan Perlu Ditangani</div><div style="margin-top:3px;white-space:pre-wrap">${esc(x.purpose||'-')}</div></div>
-            <div><div class="muted small">Goals / Hasil yang Diharapkan</div><div style="margin-top:3px;white-space:pre-wrap">${esc(x.goals||'-')}</div></div>
+            <div><div class="muted small">Kendala / Issue yang Terjadi</div><div style="margin-top:3px;white-space:pre-wrap">${esc(x.issue||'-')}</div></div>
+            <div><div class="muted small">Kondisi Saat Ini (Background)</div><div style="margin-top:3px;white-space:pre-wrap">${esc(x.background||'-')}</div></div>
+            <div><div class="muted small">Alasan Perlu Ditangani (Purpose)</div><div style="margin-top:3px;white-space:pre-wrap">${esc(x.purpose||'-')}</div></div>
+            <div><div class="muted small">Hasil yang Diharapkan (Goals)</div><div style="margin-top:3px;white-space:pre-wrap">${esc(x.goals||'-')}</div></div>
           </div>
         </div>
         <div class="out-section">
-          <h4>2. Hasil Analisa &amp; Keputusan Tim PI (Output Review)</h4>
+          <h4>2. Hasil Tinjauan &amp; Keputusan Tim PI</h4>
           <div style="display:grid;gap:12px;font-size:13px">
             <div><div class="muted small">Status &amp; Keputusan</div><div style="margin-top:4px"><span class="badge" style="background:${improvementStatusColor(x.status)}">${esc(x.status)}</span> · <b>${x.decision==='To Project'?'Proses menjadi Project Improvement':x.decision==='Suggestion Only'?'Saran Alternatif (Tanpa Project)':'Belum Diputuskan'}</b></div></div>
             <div><div class="muted small">Feedback Tim PI</div><div style="margin-top:3px;white-space:pre-wrap">${esc(x.piFeedback||'Belum ada feedback dari Tim PI.')}</div></div>
@@ -1600,18 +1628,18 @@ function rImpForm(){
     <div class="wiz-wrap">
       <div class="wiz-head">
         <div>
-          <span class="mode-pill input">PROSES INPUT · PENGAJUAN ISSUE</span>
-          <h2 style="margin-top:8px">${IISNEW?'Catat Issue Improvement Baru':'Edit Pengajuan Improvement'}</h2>
-          <p>Isi tahapan pengajuan di bawah ini untuk dikirimkan ke antrean review Tim PI.</p>
+          <span class="mode-pill input">FORM PENGAJUAN IMPROVEMENT</span>
+          <h2 style="margin-top:8px">${IISNEW?'Ajukan Improvement Baru':'Edit Usulan Improvement'}</h2>
+          <p>Lengkapi 3 langkah singkat di bawah ini untuk mengirimkan usulan ke Tim PI.</p>
         </div>
         <span class="badge" style="background:${improvementStatusColor(x.status||'Baru')}">${esc(x.status||'Draft')}</span>
       </div>
       ${stepper}
       ${body}
       <div class="wiz-foot">
-        <button class="btn" onclick="${IMP_WIZ_STEP>1?`setImpWizStep(${IMP_WIZ_STEP-1})`:`go('${PREV_VIEW||'improvements'}')`}">${IMP_WIZ_STEP>1?'← Langkah Sebelumnya':'Batal'}</button>
-        ${!IISNEW?`<button class="btn" onclick="viewImprovement('${x.id}')">Lihat Tampilan Output</button>`:''}
-        ${IMP_WIZ_STEP<3?`<button class="btn pri" onclick="setImpWizStep(${IMP_WIZ_STEP+1})">Lanjut ke Langkah ${IMP_WIZ_STEP+1} →</button>`:`<button class="btn pri" onclick="saveImprovement()">Ajukan untuk Review PI</button>`}
+        <button class="btn" onclick="${IMP_WIZ_STEP>1?`setImpWizStep(${IMP_WIZ_STEP-1})`:`go('${PREV_VIEW||'improvements'}')`}">${IMP_WIZ_STEP>1?'← Sebelumnya':'Batal'}</button>
+        ${!IISNEW?`<button class="btn" onclick="viewImprovement('${x.id}')">Lihat Detail</button>`:''}
+        ${IMP_WIZ_STEP<3?`<button class="btn pri" onclick="setImpWizStep(${IMP_WIZ_STEP+1})">Berikutnya →</button>`:`<button class="btn pri" onclick="saveImprovement()">Kirim Usulan Improvement</button>`}
       </div>
     </div>`;
 }
@@ -1624,14 +1652,14 @@ function rImpReviewForm(){
     <div class="wiz-wrap">
       <div class="wiz-head">
         <div>
-          <span class="mode-pill input">PROSES INPUT · KEPUTUSAN TIM PI</span>
-          <h2 style="margin-top:8px">Tinjauan &amp; Keputusan PI · ${esc(x.title)}</h2>
-          <p>Tinjau laporan dari <b>${esc(x.submittedBy||'-')} (${esc(x.department||'-')})</b> dan tentukan tindak lanjut improvement.</p>
+          <span class="mode-pill input">TINJAUAN &amp; KEPUTUSAN TIM PI</span>
+          <h2 style="margin-top:8px">Evaluasi Improvement · ${esc(x.title)}</h2>
+          <p>Tinjau laporan dari <b>${esc(x.submittedBy||'-')} (${esc(x.department||'-')})</b> dan tentukan tindak lanjut.</p>
         </div>
         <span class="badge" style="background:${improvementStatusColor(x.status)}">${esc(x.status)}</span>
       </div>
       <div class="out-section">
-        <h4>Ringkasan Laporan Kontributor (Read-Only)</h4>
+        <h4>Ringkasan Usulan Pelapor</h4>
         <div class="out-grid">
           <div class="out-kv"><small>Departemen</small><b>${esc(x.department||'-')}</b></div>
           <div class="out-kv"><small>Pelapor</small><b>${esc(x.submittedBy||'-')}</b></div>
@@ -1700,22 +1728,28 @@ async function promoteImprovement(){
 }
 function printSaved(pid,oid){const p=byId(pid),o=p&&p.pos.find(x=>x.id===oid);if(o)openDoc(poHTML(o,p,true));}
 
-/* ================= PROJECT: PEMISAHAN OUTPUT (MONITORING) & INPUT (WIZARD) ================= */
+/* ================= PROJECT: DETAIL & UPDATE PROGRES TASK ================= */
 function openP(id,tab){viewP(id,tab);}
+function normDetailTab(t){
+  if(t==='budget')return 'budget';
+  if(t==='ms')return 'ms';
+  if(t==='info'||t==='log')return 'info';
+  return 'stages';
+}
 function viewP(id,tab){
   const p=byId(id);if(!p)return;
   if(!['project_detail','project_form'].includes(VIEW))PREV_VIEW=VIEW;
-  PROJECT_READ_ONLY=true;
+  PROJECT_READ_ONLY=!canModifyProj(p);
   draft=JSON.parse(JSON.stringify(p));
   baseAt=p.updatedAt;isNew=false;
-  DETAIL_TAB=tab||'stages';
+  DETAIL_TAB=normDetailTab(tab);
   TAB=tab||'info';SBASE='';
   VIEW='project_detail';
   render();
 }
 function editP(id,step){
   const p=byId(id);if(!p)return;
-  if(!canEdit()||!canModifyProj(p)){toast('Akses hanya baca untuk project ini. Menampilkan halaman output.');viewP(id);return;}
+  if(!canEdit()||!canModifyProj(p)){toast('Akses hanya baca untuk project ini.');viewP(id);return;}
   if(!['project_detail','project_form'].includes(VIEW))PREV_VIEW=VIEW;
   PROJECT_READ_ONLY=false;
   draft=JSON.parse(JSON.stringify(p));
@@ -1738,7 +1772,7 @@ function newP(cat){
 }
 function closeModal(){STAGE_DOC_ID='';STAGE_DOC_VIEW=null;$('#modal').innerHTML='';$('#modal2').innerHTML='';PD=null;}
 function closeM2(){$('#modal2').innerHTML='';STAGE_DOC_ID='';STAGE_DOC_VIEW=null;PD=null;}
-function setDetailTab(t){DETAIL_TAB=t;render();}
+function setDetailTab(t){DETAIL_TAB=normDetailTab(t);render();}
 function setWizStep(n){
   WIZ_STEP=Math.max(1,Math.min(5,n));
   TAB=(['info','stage','budget','ms','info'])[WIZ_STEP-1]||'info';
@@ -1756,173 +1790,156 @@ function setTab(t){
 function drawTab(){
   if(VIEW==='project_form'||VIEW==='project_detail'){render();}
 }
+async function quickStage(pid,sid,k,v){
+  const cur=byId(pid);if(!cur||!canEdit()||!canModifyProj(cur))return;
+  draft=JSON.parse(JSON.stringify(cur));
+  baseAt=cur.updatedAt;isNew=false;PROJECT_READ_ONLY=false;
+  setS(sid,k,v,true);
+  applyAuto(draft);
+  const items=diffLog(cur,draft);
+  draft.log=(draft.log||[]).slice(-59);
+  if(items.length)draft.log.push({t:Date.now(),by:ME||'-',items:items});
+  draft.updatedAt=Math.max(Date.now(),(cur.updatedAt||0)+1);
+  draft.updatedBy=ME||'-';
+  DB.projects[DB.projects.indexOf(cur)]=draft;
+  baseAt=draft.updatedAt;
+  render();
+  await persist();
+}
+async function quickMilestone(pid,mid,done){
+  const cur=byId(pid);if(!cur||!canEdit()||!canModifyProj(cur))return;
+  draft=JSON.parse(JSON.stringify(cur));
+  const m=draft.milestones.find(x=>x.id===mid);if(!m)return;
+  m.done=!!done;
+  draft.updatedAt=Math.max(Date.now(),(cur.updatedAt||0)+1);
+  draft.updatedBy=ME||'-';
+  draft.log=(draft.log||[]).slice(-59);
+  draft.log.push({t:Date.now(),by:ME||'-',items:[`Milestone ${m.done?'selesai':'dibuka kembali'}: ${m.name||'-'}`]});
+  DB.projects[DB.projects.indexOf(cur)]=draft;
+  baseAt=draft.updatedAt;
+  render();
+  await persist();
+}
 function rProjectDetail(){
   if(!draft){go(PREV_VIEW||'list');return;}
   const current=byId(draft.id);
   if(current&&!isNew)draft=JSON.parse(JSON.stringify(current));
   const p=draft,st=effStatus(p),cs=curStage(p),bs=budgetState(p),ub=useBud(),canMod=canEdit()&&canModifyProj(p);
   const stgStepper=p.stages.length?`<div class="wiz-stepper">${p.stages.map((s,idx)=>{
-    const e=stEff(s),cls=e==='Completed'?'done':e==='Delayed'?'delayed':e==='On Progress'?'active':'';
-    const sub=e==='Completed'?(s.af?'Selesai '+fmtDate(s.af):'Selesai'):e==='Delayed'?'Terlambat +'+stDev(s)+' hr':(s.pf?'Target '+fmtDate(s.pf):e);
-    return `<div class="wiz-node ${cls}" style="cursor:default"><div class="wiz-circle">${e==='Completed'?'✓':e==='Delayed'?'!':(idx+1)}</div><div class="wiz-label">${esc(s.name||'Stage '+(idx+1))}<br><span style="font-weight:400;font-size:10px">${esc(sub)}</span></div></div>`;
-  }).join('')}</div>`:`<div class="empty" style="padding:18px">Belum ada tahapan (stage) yang didefinisikan pada project ini.${canMod?` <button class="btn sm pri" style="margin-left:8px" onclick="editP('${p.id}',2)">+ Susun Stage Sekarang</button>`:''}</div>`;
+    const e=stEff(s),sp=stProg(s),cls=e==='Completed'?'done':e==='Delayed'?'delayed':e==='On Progress'?'active':'';
+    const sub=e==='Completed'?(s.af?'Selesai '+fmtDate(s.af):'100% Selesai'):e==='Delayed'?'Telat +'+stDev(s)+' hr ('+sp+'%)':e==='On Progress'?sp+'% berjalan':(s.pf?'Target '+fmtDate(s.pf):'Belum mulai');
+    return `<div class="wiz-node ${cls}" onclick="setDetailTab('stages')"><div class="wiz-circle">${e==='Completed'?'✓':e==='Delayed'?'!':(idx+1)}</div><div class="wiz-label">${esc(s.name||'Task '+(idx+1))}<br><span style="font-weight:400;font-size:10px">${esc(sub)}</span></div></div>`;
+  }).join('')}</div>`:`<div class="empty" style="padding:16px">Belum ada tahapan / task pada project ini.${canMod?` <button class="btn sm pri" style="margin-left:8px" onclick="editP('${p.id}',2)">+ Tambah Task / Muat Template</button>`:''}</div>`;
 
-  const stgRows=p.stages.map((s,i)=>{
-    const e=stEff(s),dv=stDev(s);
-    const dtxt=e==='Delayed'?`<span style="color:var(--bad);font-weight:700">Terlambat +${dv} hr</span>`:dv===null?'<span class="muted">-</span>':dv>0?`<span style="color:var(--bad);font-weight:700">+${dv} hr</span>`:dv<0?`<span style="color:var(--ok);font-weight:700">${dv} hr</span>`:'<span style="color:var(--ok)">Tepat waktu</span>';
-    const docCount=(s.attachments||[]).length+(s.docLinks||[]).length;
-    return `<tr>
-      <td class="muted">${i+1}</td>
-      <td><b>${esc(s.name||'-')}</b></td>
-      <td>${esc(s.pic||p.pic||'-')}</td>
-      <td>${fmtDate(s.ps)} → ${fmtDate(s.pf)}</td>
-      <td>${s.as||s.af?`${fmtDate(s.as)} → ${fmtDate(s.af)}`:'<span class="muted">Belum mulai</span>'}</td>
-      <td>${badge(e)}</td>
-      <td>${dtxt}</td>
-      <td>${esc(s.note||'-')}</td>
-      <td class="r">${docCount?`<button class="btn sm" onclick="viewStageDocs('${p.id}','${s.id}')">Lihat Bukti (${docCount})</button>`:'<span class="muted small">-</span>'}</td>
-    </tr>`;
-  }).join('');
-
-  const qRows=quotes(p).map(q=>{
-    const hasPO=(p.pos||[]).some(o=>o.qid===q.id);
-    return `<tr>
-      <td><b>${esc(q.vendor||'-')}</b></td>
-      <td>${esc(q.no||'-')}</td>
-      <td class="r"><b>${poMoney(q.amount,q.currency)}</b></td>
-      <td>${fmtDate(q.date)}</td>
-      <td>${fmtDate(q.valid)}</td>
-      <td><span class="badge" style="background:${QCOL[q.status]}">${esc(q.status)}</span>${hasPO?' <span class="tag" style="background:#3b82f6">PO</span>':''}</td>
-      <td>${esc(q.note||'-')}</td>
-      <td class="r">${(q.file||q.link)?`<button class="btn sm" onclick="openQ('${p.id}','${q.id}')">Buka File</button>`:'-'}</td>
-    </tr>`;
-  }).join('');
-
-  const poRows=(p.pos||[]).map(o=>`<tr>
-    <td><b>${esc(o.no)}</b></td>
-    <td>${fmtDate(o.date)}</td>
-    <td>${esc(o.vendor||'-')}</td>
-    <td>${esc(o.qno||'-')}</td>
-    <td class="r"><b>${poMoney(poTotals(o).total,o.currency)}</b></td>
-    <td class="r"><button class="btn sm" onclick="openDoc(poHTML(getPO('${o.id}'),draft,true))">Cetak / PDF / Word</button></td>
-  </tr>`).join('');
-
-  const msRows=(p.milestones||[]).map(m=>`<tr>
-    <td style="width:40px">${m.done?'<span class="tag" style="background:#10b981">✓</span>':'<span class="tag" style="background:#64748b">•</span>'}</td>
-    <td><b>${esc(m.name||'-')}</b></td>
-    <td>${fmtDate(m.date)}</td>
-    <td>${m.done?'<span style="color:var(--ok);font-weight:700">Tercapai</span>':'<span class="muted">Menunggu</span>'}</td>
-  </tr>`).join('');
-
-  $('#main').innerHTML=`
-    <div class="wiz-wrap">
-      <div class="wiz-head">
+  let tabContent='';
+  if(DETAIL_TAB==='stages'){
+    const stgRows=p.stages.map((s,i)=>{
+      const e=stEff(s),sp=stProg(s),dv=stDev(s);
+      const dtxt=e==='Delayed'?`<span style="color:var(--bad);font-weight:700">Telat +${dv} hr</span>`:dv===null?'<span class="muted">-</span>':dv>0?`<span style="color:var(--bad);font-weight:700">+${dv} hr</span>`:dv<0?`<span style="color:var(--ok);font-weight:700">${dv} hr</span>`:'<span style="color:var(--ok)">Tepat waktu</span>';
+      const docCount=(s.attachments||[]).length+(s.docLinks||[]).length;
+      const progCell=canMod?`
+        <div class="task-prog-box">
+          <input type="range" min="0" max="100" step="5" value="${sp}" onchange="quickStage('${p.id}','${s.id}','prog',this.value)" oninput="this.nextElementSibling.value=this.value">
+          <input type="number" min="0" max="100" value="${sp}" onchange="quickStage('${p.id}','${s.id}','prog',this.value)">
+          <span class="small muted">%</span>
+        </div>
+        <div class="task-qbtns" style="margin-top:4px">
+          <button type="button" onclick="quickStage('${p.id}','${s.id}','prog',0)">0%</button>
+          <button type="button" onclick="quickStage('${p.id}','${s.id}','prog',50)">50%</button>
+          <button type="button" class="done-btn" onclick="quickStage('${p.id}','${s.id}','prog',100)">✓ Selesai</button>
+        </div>`:`<div><span class="pbar"><div style="width:${sp}%"></div></span><b>${sp}%</b></div>`;
+      const statusCell=canMod?`<select style="padding:5px 8px;border:1px solid var(--line);border-radius:6px;background:var(--card);font-size:12px;font-weight:600" onchange="quickStage('${p.id}','${s.id}','status',this.value)">${STG_ST.map(o=>`<option value="${o}" ${o===s.status?'selected':''}>${o}</option>`).join('')}</select><div style="margin-top:4px">${badge(e)} · ${dtxt}</div>`:`${badge(e)}<div>${dtxt}</div>`;
+      const actualCell=canMod?`<div style="display:grid;gap:4px;min-width:135px">
+        <div style="display:flex;align-items:center;gap:4px"><span class="muted small" style="width:42px">Mulai:</span><input type="date" style="padding:3px 6px;border:1px solid var(--line);border-radius:6px;background:var(--card);font-size:11.5px" value="${esc(s.as)}" onchange="quickStage('${p.id}','${s.id}','as',this.value)"></div>
+        <div style="display:flex;align-items:center;gap:4px"><span class="muted small" style="width:42px">Selesai:</span><input type="date" style="padding:3px 6px;border:1px solid var(--line);border-radius:6px;background:var(--card);font-size:11.5px" value="${esc(s.af)}" onchange="quickStage('${p.id}','${s.id}','af',this.value)"></div>
+      </div>`:`${s.as||s.af?`${fmtDate(s.as)} → ${fmtDate(s.af)}`:'<span class="muted">Belum mulai</span>'}`;
+      const noteCell=canMod?`<input style="padding:5px 8px;border:1px solid var(--line);border-radius:6px;background:var(--card);font-size:12px;width:100%;min-width:130px" placeholder="Tulis catatan task..." value="${esc(s.note||'')}" onchange="quickStage('${p.id}','${s.id}','note',this.value)">`:esc(s.note||'-');
+      const docBtn=canMod?`<button class="btn sm" onclick="PROJECT_READ_ONLY=false;openStageDocs('${s.id}')">${docCount?'📎 Bukti ('+docCount+')':'+ Bukti'}</button>`:(docCount?`<button class="btn sm" onclick="viewStageDocs('${p.id}','${s.id}')">📎 Lihat (${docCount})</button>`:'<span class="muted small">-</span>');
+      return `<tr>
+        <td class="muted">${i+1}</td>
+        <td style="white-space:normal;min-width:160px"><b>${esc(s.name||'-')}</b><div class="small muted">PIC: ${esc(s.pic||p.pic||'-')}</div></td>
+        <td><div class="small">${fmtDate(s.ps)} → ${fmtDate(s.pf)}</div><div class="small muted">${stageDays(s)} hari</div></td>
+        <td>${progCell}</td>
+        <td>${statusCell}</td>
+        <td>${actualCell}</td>
+        <td>${noteCell}</td>
+        <td class="r">${docBtn}</td>
+      </tr>`;
+    }).join('');
+    tabContent=`<div class="out-section">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px;flex-wrap:wrap">
         <div>
-          <span class="mode-pill output">TAMPILAN OUTPUT · PEMANTAUAN PROSES &amp; STAGE</span>
-          <h2 style="margin-top:8px">${esc(p.code)} · ${esc(p.name)}</h2>
-          <p>${chip(p.category)} · PIC: <b>${esc(p.pic||'-')}</b> · Area/Line: <b>${esc(p.area||'-')}</b> · Diperbarui ${p.updatedAt?fmtDT(p.updatedAt):'-'} oleh ${esc(p.updatedBy||'-')}</p>
+          <h4 style="margin:0">Daftar Tahapan &amp; Progres Task (${p.stages.length})</h4>
+          <div class="small muted">${canMod?'Geser slider atau klik tombol % untuk memperbarui progres setiap task secara langsung (tersimpan otomatis).':'Rincian jadwal rencana dan progres setiap task.'}</div>
         </div>
-        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-          ${badge(st)}
-          <button class="btn" onclick="go('${PREV_VIEW||'list'}')">← Kembali</button>
-          ${canMod?`<button class="btn" onclick="editP('${p.id}',2)">Update Stage</button><button class="btn pri" onclick="editP('${p.id}',1)">Buka Jendela Input / Edit →</button>`:''}
-        </div>
+        ${canMod?`<button class="btn sm pri" onclick="editP('${p.id}',2)">Atur Jadwal / Tambah Task</button>`:''}
       </div>
-
-      <div class="out-grid">
-        <div class="out-kv"><small>Progres Keseluruhan</small><b>${p.progress}%</b><div style="margin-top:4px"><span class="pbar" style="width:100%;margin:0"><div style="width:${p.progress}%"></div></span></div></div>
-        <div class="out-kv"><small>Tahap / Stage Saat Ini</small><b>${cs?esc(cs.txt):'Belum ada stage'}</b><span class="small muted">${cs?`Selesai ${cs.done} dari ${cs.total} stage`:'-'}</span></div>
-        <div class="out-kv"><small>Jadwal Plan Project</small><b>${fmtDate(p.start)} → ${fmtDate(p.end)}</b><span class="small muted">Prioritas: ${esc(p.priority||'Medium')}</span></div>
-        <div class="out-kv"><small>Vendor &amp; PO</small><b>${esc(p.vendor||'Belum dipilih')}</b><span class="small muted">${p.pos.length?p.pos.map(o=>o.no).join(', '):(p.po||'Belum ada PO')}</span></div>
-        ${ub?`<div class="out-kv"><small>Budget vs Komitmen</small><b style="color:${bs.color}">${bs.c.amt?moneyC(bs.c.amt):'-'}</b><span class="small muted">Budget: ${p.budget?moneyC(p.budget):'-'} (${bs.label})</span></div>`:''}
-      </div>
-
+      ${p.stages.length?`<div class="tw" style="border:1px solid var(--line);border-radius:10px"><table><thead><tr><th>#</th><th>Task / Tahapan</th><th>Rencana (Plan)</th><th>Progres Task</th><th>Status &amp; Deviasi</th><th>Realisasi (Actual)</th><th>Catatan</th><th class="r">Dokumentasi</th></tr></thead><tbody>${stgRows}</tbody></table></div>`:`<div class="empty">Belum ada tahapan task.${canMod?` Klik <b>Atur Jadwal / Tambah Task</b> untuk memuat template atau menambah task baru.`:''}</div>`}
+    </div>`;
+  }else if(DETAIL_TAB==='budget'){
+    const qRows=quotes(p).map(q=>{
+      const hasPO=(p.pos||[]).some(o=>o.qid===q.id);
+      return `<tr>
+        <td><b>${esc(q.vendor||'-')}</b></td>
+        <td>${esc(q.no||'-')}</td>
+        <td class="r"><b>${poMoney(q.amount,q.currency)}</b></td>
+        <td>${fmtDate(q.date)}</td>
+        <td>${fmtDate(q.valid)}</td>
+        <td><span class="badge" style="background:${QCOL[q.status]}">${esc(q.status)}</span>${hasPO?' <span class="tag" style="background:#3b82f6">PO</span>':''}</td>
+        <td>${esc(q.note||'-')}</td>
+        <td class="r">${(q.file||q.link)?`<button class="btn sm" onclick="openQ('${p.id}','${q.id}')">Buka File</button>`:'-'}</td>
+      </tr>`;
+    }).join('');
+    const poRows=(p.pos||[]).map(o=>`<tr>
+      <td><b>${esc(o.no)}</b></td>
+      <td>${fmtDate(o.date)}</td>
+      <td>${esc(o.vendor||'-')}</td>
+      <td>${esc(o.qno||'-')}</td>
+      <td class="r"><b>${poMoney(poTotals(o).total,o.currency)}</b></td>
+      <td class="r"><button class="btn sm" onclick="openDoc(poHTML(getPO('${o.id}'),draft,true))">Cetak / PDF</button></td>
+    </tr>`).join('');
+    tabContent=`<div class="grid c2">
       <div class="out-section">
-        <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px;flex-wrap:wrap">
-          <h4 style="margin:0">Pipeline Stage &amp; Tahapan Proses (${p.stages.length} Stage)</h4>
-          ${canMod?`<button class="btn sm pri" onclick="editP('${p.id}',2)">Update Actual / Bukti Stage</button>`:''}
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+          <h4 style="margin:0">Quotation Vendor (${quotes(p).length})</h4>
+          ${canMod?`<button class="btn sm pri" onclick="editP('${p.id}',3)">+ Kelola Quotation</button>`:''}
         </div>
-        ${stgStepper}
-        ${p.stages.length?`<div class="tw" style="margin-top:12px;border:1px solid var(--line);border-radius:10px"><table><thead><tr><th>#</th><th>Nama Stage</th><th>PIC</th><th>Plan (Mulai → Selesai)</th><th>Actual (Mulai → Selesai)</th><th>Status Output</th><th>Deviasi</th><th>Catatan</th><th class="r">Bukti / Dokumen</th></tr></thead><tbody>${stgRows}</tbody></table></div>`:''}
+        <div class="tw"><table><thead><tr><th>Vendor</th><th>No.</th><th class="r">Harga</th><th>Diterima</th><th>Berlaku</th><th>Status</th><th>Catatan</th><th class="r">File</th></tr></thead><tbody>${qRows||'<tr><td colspan="8" class="empty">Belum ada quotation.</td></tr>'}</tbody></table></div>
       </div>
-
-      ${p.desc?`<div class="out-section"><h4>Deskripsi &amp; Konteks Project</h4><div style="font-size:13px;white-space:pre-wrap;line-height:1.6">${esc(p.desc)}</div></div>`:''}
-
-      <div class="grid c2">
-        <div class="out-section">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
-            <h4 style="margin:0">Output Quotation (${quotes(p).length})</h4>
-            ${canMod?`<button class="btn sm" onclick="editP('${p.id}',3)">Kelola Quotation</button>`:''}
-          </div>
-          <div class="tw"><table><thead><tr><th>Vendor</th><th>No.</th><th class="r">Harga</th><th>Diterima</th><th>Valid</th><th>Status</th><th>Catatan</th><th class="r">File</th></tr></thead><tbody>${qRows||'<tr><td colspan="8" class="empty">Belum ada data quotation.</td></tr>'}</tbody></table></div>
+      <div class="out-section">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+          <h4 style="margin:0">Purchase Order (${p.pos.length})</h4>
+          ${canMod?`<button class="btn sm" onclick="editP('${p.id}',3)">Kelola PO</button>`:''}
         </div>
-        <div class="out-section">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
-            <h4 style="margin:0">Output Purchase Order (${p.pos.length})</h4>
-            ${canMod?`<button class="btn sm" onclick="editP('${p.id}',3)">Kelola PO</button>`:''}
-          </div>
-          <div class="tw"><table><thead><tr><th>No. PO</th><th>Tanggal</th><th>Vendor</th><th>Ref. Quote</th><th class="r">Total</th><th class="r">Dokumen PO</th></tr></thead><tbody>${poRows||'<tr><td colspan="6" class="empty">Belum ada PO terbit.</td></tr>'}</tbody></table></div>
-        </div>
-      </div>
-
-      <div class="grid c2">
-        <div class="out-section">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
-            <h4 style="margin:0">Output Milestone (${p.milestones.length})</h4>
-            ${canMod?`<button class="btn sm" onclick="editP('${p.id}',4)">Update Milestone</button>`:''}
-          </div>
-          <div class="tw"><table><thead><tr><th></th><th>Milestone</th><th>Target Tanggal</th><th>Status</th></tr></thead><tbody>${msRows||'<tr><td colspan="4" class="empty">Belum ada milestone.</td></tr>'}</tbody></table></div>
-        </div>
-        <div class="out-section">
-          <h4 style="margin-bottom:10px">Riwayat Perubahan (Audit Trail)</h4>
-          <div style="max-height:260px;overflow:auto">${tLog()}</div>
-        </div>
+        <div class="tw"><table><thead><tr><th>No. PO</th><th>Tanggal</th><th>Vendor</th><th>Ref. Quote</th><th class="r">Total</th><th class="r">Dokumen</th></tr></thead><tbody>${poRows||'<tr><td colspan="6" class="empty">Belum ada PO terbit.</td></tr>'}</tbody></table></div>
       </div>
     </div>`;
-}
-function rProjectForm(){
-  if(!draft){go(PREV_VIEW||'list');return;}
-  const d=draft,canDel=!isNew&&canDeleteProj(d);
-  const steps=[
-    {n:1,label:'Informasi Header'},
-    {n:2,label:'Rencana & Update Stage'},
-    {n:3,label:'Quotation & PO'},
-    {n:4,label:'Milestone'},
-    {n:5,label:'Tinjau & Simpan'}
-  ];
-  const stepper=`<div class="wiz-step-count">Langkah ${WIZ_STEP} dari ${steps.length}</div><div class="wiz-stepper">${steps.map(s=>{
-    const cls=s.n<WIZ_STEP?'done':s.n===WIZ_STEP?'active':'';
-    return `<div class="wiz-node ${cls}" onclick="setWizStep(${s.n})"><div class="wiz-circle">${s.n<WIZ_STEP?'✓':s.n}</div><div class="wiz-label">${s.label}</div></div>`;
-  }).join('')}</div>`;
-
-  let body='';
-  if(WIZ_STEP===1){
-    body=`<div class="wiz-card"><h4>Langkah 1 · Informasi Header Project</h4>${tInfo()}</div>`;
-  }else if(WIZ_STEP===2){
-    body=`<div class="wiz-card"><h4>Langkah 2 · Input Plan, Actual &amp; Dokumentasi Stage</h4>${tStage()}</div>`;
-  }else if(WIZ_STEP===3){
-    body=`<div class="wiz-card"><h4>Langkah 3 · Input Penawaran Vendor (Quotation) &amp; Pembuatan PO</h4>${tBudget()}</div>`;
-  }else if(WIZ_STEP===4){
-    body=`<div class="wiz-card"><h4>Langkah 4 · Target Milestone Project</h4>${tMs()}</div>`;
-  }else{
-    applyAuto(d);
-    const cs=curStage(d),lq=lowQ(d),sq=selQ(d);
-    body=`<div class="wiz-card">
-      <h4>Langkah 5 · Tinjau Ringkasan Input Sebelum Disimpan</h4>
-      <p class="muted small" style="margin-top:-6px;margin-bottom:14px">Pastikan seluruh data input di bawah ini sudah sesuai sebelum disimpan ke database tim.</p>
-      <div class="out-grid">
-        <div class="out-kv"><small>Kode &amp; Nama Project</small><b>${esc(d.code)} · ${esc(d.name||'(Nama belum diisi)')}</b><span class="small muted">${esc(d.category)} · Prioritas ${esc(d.priority)}</span></div>
-        <div class="out-kv"><small>PIC &amp; Area</small><b>${esc(d.pic||'-')}</b><span class="small muted">Area/Line: ${esc(d.area||'-')}</span></div>
-        <div class="out-kv"><small>Status &amp; Progres</small><b>${esc(effStatus(d))} (${d.progress}%)</b><span class="small muted">${cs?`Stage aktif: ${esc(cs.txt)}`:'Tanpa stage'}</span></div>
-        <div class="out-kv"><small>Periode Project</small><b>${fmtDate(d.start)} → ${fmtDate(d.end)}</b><span class="small muted">${d.stages.length} stage · ${d.milestones.length} milestone</span></div>
-        <div class="out-kv"><small>Quotation &amp; Vendor</small><b>${quotes(d).length} Quotation</b><span class="small muted">${sq?`Terpilih: ${esc(sq.vendor)} (${poMoney(sq.amount,sq.currency)})`:lq?`Terendah: ${esc(lq.vendor)}`:'Belum ada quotation'}</span></div>
-        <div class="out-kv"><small>Purchase Order</small><b>${d.pos.length} PO</b><span class="small muted">${d.pos.length?d.pos.map(o=>o.no).join(', '):(d.po||'-')}</span></div>
+  }else if(DETAIL_TAB==='ms'){
+    const msRows=(p.milestones||[]).map(m=>`<tr>
+      <td style="width:44px">${canMod?`<input type="checkbox" style="width:16px;height:16px;cursor:pointer" ${m.done?'checked':''} onchange="quickMilestone('${p.id}','${m.id}',this.checked)">`:(m.done?'<span class="tag" style="background:#10b981">✓</span>':'<span class="tag" style="background:#64748b">•</span>')}</td>
+      <td><b>${esc(m.name||'-')}</b></td>
+      <td>${fmtDate(m.date)}</td>
+      <td>${m.done?'<span style="color:var(--ok);font-weight:700">Tercapai</span>':'<span class="muted">Menunggu</span>'}</td>
+    </tr>`).join('');
+    tabContent=`<div class="out-section">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+        <h4 style="margin:0">Target Milestone (${p.milestones.length})</h4>
+        ${canMod?`<button class="btn sm pri" onclick="editP('${p.id}',4)">+ Tambah / Edit Milestone</button>`:''}
       </div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">
-        <button class="btn sm" onclick="setWizStep(1)">Edit Header</button>
-        <button class="btn sm" onclick="setWizStep(2)">Edit Stage (${d.stages.length})</button>
-        <button class="btn sm" onclick="setWizStep(3)">Edit Quotation &amp; PO (${quotes(d).length}/${d.pos.length})</button>
-        <button class="btn sm" onclick="setWizStep(4)">Edit Milestone (${d.milestones.length})</button>
+      <div class="tw"><table><thead><tr><th>Selesai</th><th>Nama Milestone</th><th>Target Tanggal</th><th>Status</th></tr></thead><tbody>${msRows||'<tr><td colspan="4" class="empty">Belum ada milestone.</td></tr>'}</tbody></table></div>
+    </div>`;
+  }else{
+    tabContent=`<div class="grid c2">
+      <div class="out-section">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+          <h4 style="margin:0">Deskripsi &amp; Catatan Project</h4>
+          ${canMod?`<button class="btn sm" onclick="editP('${p.id}',1)">Edit Info</button>`:''}
+        </div>
+        <div style="font-size:13px;white-space:pre-wrap;line-height:1.6">${esc(p.desc||'Belum ada deskripsi atau catatan tambahan.')}</div>
+      </div>
+      <div class="out-section">
+        <h4 style="margin-bottom:10px">Riwayat Perubahan</h4>
+        <div style="max-height:300px;overflow:auto">${tLog()}</div>
       </div>
     </div>`;
   }
@@ -1931,20 +1948,108 @@ function rProjectForm(){
     <div class="wiz-wrap">
       <div class="wiz-head">
         <div>
-          <span class="mode-pill input">PROSES INPUT · WIZARD KONFIGURASI &amp; UPDATE</span>
-          <h2 style="margin-top:8px">${isNew?'Buat Project Baru':esc(d.code)+' · '+esc(d.name||'Project')}</h2>
-          <p>${isNew?'Lengkapi tahapan input project baru di bawah ini.':'Perbarui proses project melalui langkah terstruktur di bawah ini.'}</p>
+          <span class="mode-pill output">RINGKASAN &amp; PROGRES PROJECT</span>
+          <h2 style="margin-top:6px">${esc(p.code)} · ${esc(p.name)}</h2>
+          <p>${chip(p.category)} · PIC: <b>${esc(p.pic||'-')}</b> · Area/Line: <b>${esc(p.area||'-')}</b> · Diperbarui ${p.updatedAt?fmtDT(p.updatedAt):'-'} oleh ${esc(p.updatedBy||'-')}</p>
         </div>
-        <span class="badge" style="background:${SCOL[effStatus(d)]||'#64748b'}">${isNew?'Draft Baru':esc(effStatus(d))}</span>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          ${badge(st)}
+          <button class="btn" onclick="go('${PREV_VIEW||'list'}')">← Kembali</button>
+          ${canMod?`<button class="btn pri" onclick="editP('${p.id}',1)">Edit Pengaturan Project</button>`:''}
+        </div>
+      </div>
+
+      <div class="out-grid">
+        <div class="out-kv"><small>Total Progres</small><b>${p.progress}%</b><div style="margin-top:5px"><span class="pbar" style="width:100%;margin:0"><div style="width:${p.progress}%"></div></span></div></div>
+        <div class="out-kv"><small>Tahap Saat Ini</small><b>${cs?esc(cs.txt):'Belum ada task'}</b><span class="small muted">${cs?`Selesai ${cs.done} dari ${cs.total} task`:'-'}</span></div>
+        <div class="out-kv"><small>Jadwal Project</small><b>${fmtDate(p.start)} → ${fmtDate(p.end)}</b><span class="small muted">Prioritas: ${esc(p.priority||'Medium')}</span></div>
+        <div class="out-kv"><small>Vendor &amp; PO</small><b>${esc(p.vendor||'Belum dipilih')}</b><span class="small muted">${p.pos.length?p.pos.map(o=>o.no).join(', '):(p.po||'Belum ada PO')}</span></div>
+        ${ub?`<div class="out-kv"><small>Budget vs Komitmen</small><b style="color:${bs.color}">${bs.c.amt?moneyC(bs.c.amt):'-'}</b><span class="small muted">Budget: ${p.budget?moneyC(p.budget):'-'} (${bs.label})</span></div>`:''}
+      </div>
+
+      <div class="out-section" style="padding:14px 18px 8px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+          <small class="muted" style="font-weight:700;text-transform:uppercase;letter-spacing:.04em">Alur Tahapan Task</small>
+          <span class="small muted">${cs?`${cs.done}/${cs.total} selesai`:''}</span>
+        </div>
+        ${stgStepper}
+      </div>
+
+      <div class="sub-tabs">
+        <button class="${DETAIL_TAB==='stages'?'on':''}" onclick="setDetailTab('stages')">Tahapan &amp; Progres Task (${p.stages.length})</button>
+        <button class="${DETAIL_TAB==='budget'?'on':''}" onclick="setDetailTab('budget')">Quotation &amp; PO (${quotes(p).length}/${p.pos.length})</button>
+        <button class="${DETAIL_TAB==='ms'?'on':''}" onclick="setDetailTab('ms')">Milestone (${p.milestones.length})</button>
+        <button class="${DETAIL_TAB==='info'?'on':''}" onclick="setDetailTab('info')">Catatan &amp; Riwayat</button>
+      </div>
+
+      ${tabContent}
+    </div>`;
+}
+function rProjectForm(){
+  if(!draft){go(PREV_VIEW||'list');return;}
+  const d=draft,canDel=!isNew&&canDeleteProj(d);
+  const steps=[
+    {n:1,label:'Info Utama'},
+    {n:2,label:'Tahapan & Task'},
+    {n:3,label:'Quotation & PO'},
+    {n:4,label:'Milestone'},
+    {n:5,label:'Ringkasan'}
+  ];
+  const stepper=`<div class="wiz-step-count">Langkah ${WIZ_STEP} dari ${steps.length}</div><div class="wiz-stepper">${steps.map(s=>{
+    const cls=s.n<WIZ_STEP?'done':s.n===WIZ_STEP?'active':'';
+    return `<div class="wiz-node ${cls}" onclick="setWizStep(${s.n})"><div class="wiz-circle">${s.n<WIZ_STEP?'✓':s.n}</div><div class="wiz-label">${s.label}</div></div>`;
+  }).join('')}</div>`;
+
+  let body='';
+  if(WIZ_STEP===1){
+    body=`<div class="wiz-card"><h4>Langkah 1 · Informasi Utama Project</h4>${tInfo()}</div>`;
+  }else if(WIZ_STEP===2){
+    body=`<div class="wiz-card"><h4>Langkah 2 · Susun Jadwal &amp; Progres Task (Stage)</h4>${tStage()}</div>`;
+  }else if(WIZ_STEP===3){
+    body=`<div class="wiz-card"><h4>Langkah 3 · Penawaran Vendor (Quotation) &amp; PO</h4>${tBudget()}</div>`;
+  }else if(WIZ_STEP===4){
+    body=`<div class="wiz-card"><h4>Langkah 4 · Target Milestone Project</h4>${tMs()}</div>`;
+  }else{
+    applyAuto(d);
+    const cs=curStage(d),lq=lowQ(d),sq=selQ(d);
+    body=`<div class="wiz-card">
+      <h4>Langkah 5 · Periksa Ringkasan Sebelum Disimpan</h4>
+      <p class="muted small" style="margin-top:-6px;margin-bottom:14px">Pastikan seluruh data di bawah ini sudah sesuai sebelum disimpan.</p>
+      <div class="out-grid">
+        <div class="out-kv"><small>Kode &amp; Nama Project</small><b>${esc(d.code)} · ${esc(d.name||'(Nama belum diisi)')}</b><span class="small muted">${esc(d.category)} · Prioritas ${esc(d.priority)}</span></div>
+        <div class="out-kv"><small>PIC &amp; Area</small><b>${esc(d.pic||'-')}</b><span class="small muted">Area/Line: ${esc(d.area||'-')}</span></div>
+        <div class="out-kv"><small>Status &amp; Progres</small><b>${esc(effStatus(d))} (${d.progress}%)</b><span class="small muted">${cs?`Tahap aktif: ${esc(cs.txt)}`:'Tanpa tahapan'}</span></div>
+        <div class="out-kv"><small>Periode Project</small><b>${fmtDate(d.start)} → ${fmtDate(d.end)}</b><span class="small muted">${d.stages.length} task · ${d.milestones.length} milestone</span></div>
+        <div class="out-kv"><small>Quotation &amp; Vendor</small><b>${quotes(d).length} Quotation</b><span class="small muted">${sq?`Terpilih: ${esc(sq.vendor)} (${poMoney(sq.amount,sq.currency)})`:lq?`Terendah: ${esc(lq.vendor)}`:'Belum ada quotation'}</span></div>
+        <div class="out-kv"><small>Purchase Order</small><b>${d.pos.length} PO</b><span class="small muted">${d.pos.length?d.pos.map(o=>o.no).join(', '):(d.po||'-')}</span></div>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">
+        <button class="btn sm" onclick="setWizStep(1)">Ubah Info Utama</button>
+        <button class="btn sm" onclick="setWizStep(2)">Ubah Task (${d.stages.length})</button>
+        <button class="btn sm" onclick="setWizStep(3)">Ubah Quotation &amp; PO (${quotes(d).length}/${d.pos.length})</button>
+        <button class="btn sm" onclick="setWizStep(4)">Ubah Milestone (${d.milestones.length})</button>
+      </div>
+    </div>`;
+  }
+
+  $('#main').innerHTML=`
+    <div class="wiz-wrap">
+      <div class="wiz-head">
+        <div>
+          <span class="mode-pill input">PENGATURAN &amp; UPDATE PROJECT</span>
+          <h2 style="margin-top:6px">${isNew?'Buat Project Baru':esc(d.code)+' · '+esc(d.name||'Project')}</h2>
+          <p>${isNew?'Isi informasi utama dan tahapan project baru di bawah ini.':'Klik lingkaran langkah di bawah untuk berpindah bagian, lalu klik Simpan.'}</p>
+        </div>
+        <span class="badge" style="background:${ST_COLOR[effStatus(d)]||'#64748b'}">${isNew?'Project Baru':esc(effStatus(d))}</span>
       </div>
       ${stepper}
       <div id="mbody">${body}</div>
       <div class="wiz-foot">
         ${canDel?`<button class="btn bad l" onclick="delP()">Hapus Project</button>`:''}
-        <button class="btn" onclick="${WIZ_STEP>1?`setWizStep(${WIZ_STEP-1})`:(isNew?`go('${PREV_VIEW||'list'}')`:`viewP('${d.id}')`)}">${WIZ_STEP>1?'← Kembali':'Batal'}</button>
-        ${!isNew?`<button class="btn" onclick="viewP('${d.id}')">Lihat Detail Output</button>`:''}
-        ${WIZ_STEP<5?`<button class="btn" onclick="setWizStep(${WIZ_STEP+1})">Langkah Berikutnya →</button>`:''}
-        <button class="btn pri" onclick="saveProject()">${isNew?'Simpan Project Baru':'Simpan Perubahan'}</button>
+        <button class="btn" onclick="${WIZ_STEP>1?`setWizStep(${WIZ_STEP-1})`:(isNew?`go('${PREV_VIEW||'list'}')`:`viewP('${d.id}')`)}">${WIZ_STEP>1?'← Sebelumnya':'Batal'}</button>
+        ${!isNew?`<button class="btn" onclick="viewP('${d.id}')">Kembali ke Detail</button>`:''}
+        ${WIZ_STEP<5?`<button class="btn" onclick="setWizStep(${WIZ_STEP+1})">Berikutnya →</button>`:''}
+        <button class="btn pri" onclick="saveProject()">${isNew?'Simpan Project':'Simpan Perubahan'}</button>
       </div>
     </div>`;
   if(WIZ_STEP===3)updB();
@@ -1955,12 +2060,12 @@ function tInfo(){
   const d=draft,sts=d.status==='Delayed'?STATUS_INPUT.concat(['Delayed']):STATUS_INPUT;
   const hasS=d.stages.length>0,lockD=hasS&&gset('autoDates'),lockP=hasS&&gset('autoProgress');
   const sel=(l,k,opts,id)=>`<label>${l}<select ${id?'id="'+id+'"':''} onchange="setD('${k}',this.value);${k==='status'?'onStat()':''}">${opts.map(o=>`<option ${o===d[k]?'selected':''}>${esc(o)}</option>`).join('')}</select></label>`;
-  return `${hasS&&(lockD||lockP)?`<div class="banner info" style="margin-bottom:12px"><span>Project ini punya ${d.stages.length} stage. ${lockD?'Tanggal mulai dan target diambil otomatis dari plan stage. ':''}${lockP?'Progres dihitung otomatis dari stage yang selesai.':''} Ubah di tab Stage.</span></div>`:''}<div class="fg">${inp('Kode','code')}${inp('Nama Project *','name')}
+  return `${hasS&&(lockD||lockP)?`<div class="banner info" style="margin-bottom:12px"><span>Project ini memiliki <b>${d.stages.length} task/tahapan</b>. ${lockD?'Tanggal mulai & target mengikuti jadwal task. ':''}${lockP?'Total progres dihitung otomatis dari progres tiap task.':''}</span><button type="button" class="btn sm pri" onclick="setWizStep(2)">Isi Progres per Task →</button></div>`:''}<div class="fg">${inp('Kode Project','code')}${inp('Nama Project *','name')}
     ${sel('Klasifikasi','category',DB.settings.categories.map(c=>c.name))}${sel('Prioritas','priority',['High','Medium','Low'])}
-    ${sel('Status','status',sts,'f_status')}${inp('PIC','pic','text','list="plist"')}${inp('Area / Line','area')}<span></span>
+    ${sel('Status','status',sts,'f_status')}${inp('PIC Utama','pic','text','list="plist"')}${inp('Area / Line','area')}<span></span>
     ${inp('Tanggal Mulai *','start','date',lockD?'disabled':'')}${inp('Target Selesai *','end','date',lockD?'disabled':'')}
-    <label class="full">Progres (%)<div class="prow"><input type="range" id="pr" min="0" max="100" value="${d.progress}" ${lockP?'disabled':''} oninput="setProg(this.value)"><input type="number" id="pn" min="0" max="100" value="${d.progress}" ${lockP?'disabled':''} oninput="setProg(this.value)" style="margin-top:0"></div></label>
-    <label class="full">Deskripsi / catatan<textarea rows="3" oninput="setD('desc',this.value)">${esc(d.desc)}</textarea></label></div>
+    <label class="full">Progres Keseluruhan (%) ${lockP?`<span class="muted small" style="font-weight:400">(otomatis dari ${d.stages.length} task — klik langkah 2 untuk mengubah progres per task)</span>`:''}<div class="prow"><input type="range" id="pr" min="0" max="100" value="${d.progress}" ${lockP?'disabled':''} oninput="setProg(this.value)"><input type="number" id="pn" min="0" max="100" value="${d.progress}" ${lockP?'disabled':''} oninput="setProg(this.value)" style="margin-top:0">${hasS?`<button type="button" class="btn sm" onclick="setWizStep(2)">Atur Progres Task</button>`:''}</div></label>
+    <label class="full">Deskripsi / Catatan Project<textarea rows="3" oninput="setD('desc',this.value)">${esc(d.desc)}</textarea></label></div>
     <datalist id="plist">${[...new Set(DB.projects.map(p=>p.pic).filter(Boolean))].map(x=>`<option value="${esc(x)}">`).join('')}</datalist>`;
 }
 function onStat(){
@@ -2079,11 +2184,12 @@ function diffLog(o,n){
   const om={};(o.stages||[]).forEach(s=>{om[s.id]=s;});let added=0;
   (n.stages||[]).forEach(s=>{const a=om[s.id];
     if(!a){added++;return;}
-    if(!a.af&&s.af)L.push('Stage selesai: '+s.name+' ('+fmtDate(s.af)+')');
-    else if(!a.as&&s.as)L.push('Stage mulai: '+s.name+' ('+fmtDate(s.as)+')');
-    else if(a.ps!==s.ps||a.pf!==s.pf)L.push('Plan stage diubah: '+s.name);
-    else if(a.status!==s.status)L.push('Status stage '+s.name+': '+a.status+' → '+s.status);
-    else if(a.as!==s.as||a.af!==s.af)L.push('Actual stage diubah: '+s.name);
+    if(!a.af&&s.af)L.push('Task selesai (100%): '+s.name+' ('+fmtDate(s.af)+')');
+    else if(!a.as&&s.as)L.push('Task mulai: '+s.name+' ('+fmtDate(s.as)+')'+((stProg(s)>0&&stProg(s)<100)?' · '+stProg(s)+'%':''));
+    else if(stProg(a)!==stProg(s))L.push('Progres task '+s.name+': '+stProg(a)+'% → '+stProg(s)+'%');
+    else if(a.ps!==s.ps||a.pf!==s.pf)L.push('Jadwal plan diubah: '+s.name);
+    else if(a.status!==s.status)L.push('Status task '+s.name+': '+a.status+' → '+s.status);
+    else if(a.as!==s.as||a.af!==s.af)L.push('Tanggal actual diubah: '+s.name);
   });
   if(added)L.push(added+' stage ditambah');
   (o.stages||[]).forEach(s=>{if(!(n.stages||[]).some(x=>x.id===s.id))L.push('Stage dihapus: '+s.name);});
@@ -2135,28 +2241,35 @@ function tStage(){
   const cs=curStage(d);
   const bar=`<div class="stbar"><span class="muted small">Template</span><select id="tsel">${tp.map(t=>`<option value="${esc(t.id)}" ${t.id===defT?'selected':''}>${esc(t.name)} (${t.stages.length} tahap)</option>`).join('')||'<option value="">(belum ada template)</option>'}</select>
     <span class="muted small">Mulai plan</span><input type="date" id="sbase" value="${esc(SBASE)}" onchange="SBASE=this.value">
-    <button class="btn sm pri" onclick="loadTpl()">Muat template</button><button class="btn sm" onclick="reflowStages()">Susun ulang plan berurutan</button><button class="btn sm" onclick="saveAsTpl()">Simpan sebagai template</button></div>`;
+    <button class="btn sm pri" onclick="loadTpl()">Muat template</button><button class="btn sm" onclick="reflowStages()">Susun ulang jadwal</button><button class="btn sm" onclick="saveAsTpl()">Simpan template</button></div>`;
   const rows=d.stages.map((s,i)=>{
-    const e=stEff(s),dv=stDev(s);
-    const dtxt=e==='Delayed'?`<span style="color:var(--bad);font-weight:700">Terlambat +${dv} hr</span>`:dv===null?'<span class="muted">-</span>':dv>0?`<span style="color:var(--bad);font-weight:700">+${dv} hr</span>`:dv<0?`<span style="color:var(--ok);font-weight:700">${dv} hr</span>`:'<span style="color:var(--ok)">tepat waktu</span>';
-    const docCount=(s.attachments||[]).length+(s.docLinks||[]).length,docAction=PROJECT_READ_ONLY?`viewStageDocs('${d.id}','${s.id}')`:`openStageDocs('${s.id}')`,docButton=PROJECT_READ_ONLY?(docCount?`<button class="btn sm" onclick="${docAction}">Dokumentasi (${docCount})</button> `:''):`<button class="btn sm" onclick="${docAction}">${docCount?'Dokumentasi ('+docCount+')':'Tambah dokumentasi'}</button> `;
+    const e=stEff(s),dv=stDev(s),sp=stProg(s);
+    const dtxt=e==='Delayed'?`<span style="color:var(--bad);font-weight:700">Terlambat +${dv}h</span>`:dv===null?'<span class="muted">-</span>':dv>0?`<span style="color:var(--bad);font-weight:700">+${dv}h</span>`:dv<0?`<span style="color:var(--ok);font-weight:700">${dv}h</span>`:'<span style="color:var(--ok)">Tepat</span>';
+    const docCount=(s.attachments||[]).length+(s.docLinks||[]).length,docAction=PROJECT_READ_ONLY?`viewStageDocs('${d.id}','${s.id}')`:`openStageDocs('${s.id}')`,docButton=PROJECT_READ_ONLY?(docCount?`<button class="btn sm" onclick="${docAction}">Bukti (${docCount})</button> `:''):`<button class="btn sm" onclick="${docAction}">${docCount?'Bukti ('+docCount+')':'+ Bukti'}</button> `;
     return `<tr><td class="muted">${i+1}</td>
-    <td style="min-width:160px"><input value="${esc(s.name)}" oninput="setS('${s.id}','name',this.value,1)"></td>
-    <td style="width:95px"><input value="${esc(s.pic)}" list="plist2" oninput="setS('${s.id}','pic',this.value,1)"></td>
+    <td style="min-width:155px"><input value="${esc(s.name)}" placeholder="Nama task / tahap" oninput="setS('${s.id}','name',this.value,1)"></td>
+    <td style="width:90px"><input value="${esc(s.pic)}" placeholder="PIC" list="plist2" oninput="setS('${s.id}','pic',this.value,1)"></td>
     <td><input type="date" value="${esc(s.ps)}" onchange="setS('${s.id}','ps',this.value)"></td>
     <td><input type="date" value="${esc(s.pf)}" onchange="setS('${s.id}','pf',this.value)"></td>
-    <td style="width:58px"><input type="number" min="1" value="${s.ps&&s.pf?stageDays(s):''}" onchange="setS('${s.id}','days',this.value)"></td>
+    <td style="width:52px"><input type="number" min="1" value="${s.ps&&s.pf?stageDays(s):''}" onchange="setS('${s.id}','days',this.value)"></td>
+    <td style="min-width:155px">
+      <div class="task-prog-box">
+        <input type="range" min="0" max="100" step="5" value="${sp}" onchange="setS('${s.id}','prog',this.value)">
+        <input type="number" min="0" max="100" value="${sp}" style="width:52px;padding:3px 5px;text-align:right;font-weight:700" onchange="setS('${s.id}','prog',this.value)"><span class="small muted">%</span>
+        ${sp<100?`<button type="button" class="btn sm ok" style="padding:2px 6px" title="Tandai 100% Selesai" onclick="setS('${s.id}','prog',100)">✓</button>`:''}
+      </div>
+    </td>
+    <td style="width:110px"><select onchange="setS('${s.id}','status',this.value)">${STG_ST.map(o=>`<option ${o===s.status?'selected':''}>${o}</option>`).join('')}</select></td>
     <td><input type="date" value="${esc(s.as)}" onchange="setS('${s.id}','as',this.value)"></td>
     <td><input type="date" value="${esc(s.af)}" onchange="setS('${s.id}','af',this.value)"></td>
-    <td style="width:110px"><select onchange="setS('${s.id}','status',this.value)">${STG_ST.map(o=>`<option ${o===s.status?'selected':''}>${o}</option>`).join('')}</select></td>
     <td>${dtxt}</td>
-    <td style="min-width:120px"><input value="${esc(s.note)}" placeholder="catatan" oninput="setS('${s.id}','note',this.value,1)"></td>
+    <td style="min-width:115px"><input value="${esc(s.note)}" placeholder="catatan" oninput="setS('${s.id}','note',this.value,1)"></td>
     <td style="white-space:nowrap">${docButton}${PROJECT_READ_ONLY?'':`<button class="btn sm" onclick="moveS('${s.id}',-1)">▲</button> <button class="btn sm" onclick="moveS('${s.id}',1)">▼</button> <button class="btn sm bad" onclick="delS('${s.id}')">✕</button>`}</td></tr>`;
   }).join('');
   return bar+`<datalist id="plist2">${[...new Set(DB.projects.map(p=>p.pic).filter(Boolean))].map(x=>`<option value="${esc(x)}">`).join('')}</datalist>
-  <div class="qh"><h4>Stage / tahapan (${d.stages.length})${cs?' <span class="muted small" style="font-weight:400">· selesai '+cs.done+', saat ini: '+esc(cs.txt)+'</span>':''}</h4><button class="btn sm pri" onclick="addStage()">+ Tambah stage</button></div>
-  ${d.stages.length?`<div class="tw" style="border:1px solid var(--line);border-radius:8px"><table class="stt"><thead><tr><th>#</th><th>Stage</th><th>PIC</th><th>Plan mulai</th><th>Plan selesai</th><th>Hari</th><th>Actual mulai</th><th>Actual selesai</th><th>Status</th><th>Deviasi</th><th>Catatan</th><th>Dokumentasi / aksi</th></tr></thead><tbody>${rows}</tbody></table></div>
-  <div class="small muted" style="margin-top:8px">Isi Actual selesai untuk menandai stage selesai. Isi Actual mulai saat stage mulai berjalan. Stage yang plan selesainya terlewat dan belum selesai ditandai Terlambat otomatis. Stage boleh berjalan paralel.</div>`:'<div class="empty">Belum ada stage. Pilih template lalu klik "Muat template", atau klik "+ Tambah stage".</div>'}`;
+  <div class="qh"><h4>Tahapan & Progres Task (${d.stages.length})${cs?' <span class="muted small" style="font-weight:400">· selesai '+cs.done+', saat ini: '+esc(cs.txt)+' · Total '+d.progress+'%</span>':''}</h4><button class="btn sm pri" onclick="addStage()">+ Tambah Task</button></div>
+  ${d.stages.length?`<div class="tw" style="border:1px solid var(--line);border-radius:8px"><table class="stt"><thead><tr><th>#</th><th>Task / Tahap</th><th>PIC</th><th>Plan Mulai</th><th>Plan Selesai</th><th>Hari</th><th>Progres (%)</th><th>Status</th><th>Actual Mulai</th><th>Actual Selesai</th><th>Deviasi</th><th>Catatan</th><th>Bukti & Urutan</th></tr></thead><tbody>${rows}</tbody></table></div>
+  <div class="small muted" style="margin-top:8px">Geser slider <b>Progres (%)</b> atau klik <b>✓</b> untuk menyelesaikan task (otomatis mengisi tanggal Actual dan menghitung progres total project).</div>`:'<div class="empty">Belum ada tahapan task. Pilih template lalu klik "Muat template", atau klik "+ Tambah Task".</div>'}`;
 }
 function openStageDocs(id){if(!draft)return;STAGE_DOC_ID=id;drawStageDocs();}
 function viewStageDocs(projectId,stageId){STAGE_DOC_VIEW={projectId,stageId};drawStageDocsViewer();}
@@ -2181,21 +2294,30 @@ function drawStageDocs(){
   const files=stageDocsMarkup(stage,true);
   const upload=canEdit()?(isNew?'<div class="small muted">Simpan project terlebih dahulu sebelum mengunggah dokumentasi.</div>':'<label class="btn sm pri stage-doc-upload">Tambah file<input type="file" accept="image/*,video/mp4,video/webm,video/quicktime,.m4v,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.csv,.txt" multiple onchange="uploadStageDocs(this)"></label>'):'';
   const linkForm=canEdit()?`<div class="fg" style="margin-top:14px"><label>Nama link (opsional)<input id="stage_doc_link_title" placeholder="Contoh: Report FAT"></label><label class="full">Tempel link OneDrive / SharePoint<input id="stage_doc_link_url" type="url" placeholder="https://..." onkeydown="if(event.key==='Enter'){event.preventDefault();addStageDocLink()}"></label><div><button class="btn sm" onclick="addStageDocLink()">+ Tambah link</button></div></div>`:'';
-  $('#modal2').innerHTML=`<div class="ov"><div class="dlg wide"><div class="dh"><h3>Dokumentasi · ${esc(stage.name||'Stage')}</h3><button class="x" onclick="closeStageDocs()">✕</button></div><div class="db"><div style="display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin-bottom:12px">${upload}<span class="small muted">Foto, video, dan dokumen · Maksimal 100 MB per file</span></div><div class="stage-doc-list">${files||'<div class="empty">Belum ada dokumentasi untuk stage ini.</div>'}</div><h4 style="margin:18px 0 0">Link dokumentasi</h4>${linkForm}<div class="small muted" style="margin-top:10px">Klik Simpan pada form project agar perubahan dokumentasi tersinkron dan terlihat di Gantt.</div></div><div class="df"><button class="btn" onclick="closeStageDocs()">Tutup</button></div></div></div>`;
+  $('#modal2').innerHTML=`<div class="ov"><div class="dlg wide"><div class="dh"><h3>Dokumentasi · ${esc(stage.name||'Stage')}</h3><button class="x" onclick="closeStageDocs()">✕</button></div><div class="db"><div style="display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin-bottom:12px">${upload}<span class="small muted">Foto, video, dan dokumen · Maksimal 100 MB per file</span></div><div class="stage-doc-list">${files||'<div class="empty">Belum ada dokumentasi untuk stage ini.</div>'}</div><h4 style="margin:18px 0 0">Link dokumentasi</h4>${linkForm}</div><div class="df"><button class="btn" onclick="closeStageDocs()">Tutup</button></div></div></div>`;
 }
-function addStageDocLink(){
+async function syncStageDocsIfDetail(){
+  if(VIEW==='project_detail'&&draft&&!isNew){
+    draft.updatedAt=Date.now();draft.updatedBy=ME;
+    const i=DB.projects.findIndex(x=>x.id===draft.id);
+    if(i>=0){DB.projects[i]=clone(draft);await persist();render();}
+  }else if(VIEW==='project_form'){
+    drawTab();
+  }
+}
+async function addStageDocLink(){
   if(!canEdit()||!draft)return;
   const stage=draft.stages.find(s=>s.id===STAGE_DOC_ID);if(!stage)return;
   const rawUrl=$('#stage_doc_link_url').value.trim(),title=$('#stage_doc_link_title').value.trim();
   let parsed;try{parsed=new URL(rawUrl);}catch(e){toast('Link tidak valid.');return;}
   if(!['http:','https:'].includes(parsed.protocol)||parsed.username||parsed.password){toast('URL harus menggunakan http atau https.');return;}
   stage.docLinks=stage.docLinks||[];stage.docLinks.push({id:uid(),title:title||parsed.hostname,url:parsed.href});
-  drawTab();drawStageDocs();toast('Link ditambahkan; klik Simpan project agar tersinkron.');
+  await syncStageDocsIfDetail();drawStageDocs();toast('Link dokumentasi ditambahkan');
 }
-function removeStageDocLink(id){
+async function removeStageDocLink(id){
   if(!canEdit()||!draft)return;
   const stage=draft.stages.find(s=>s.id===STAGE_DOC_ID);if(!stage)return;
-  stage.docLinks=(stage.docLinks||[]).filter(link=>link.id!==id);drawTab();drawStageDocs();
+  stage.docLinks=(stage.docLinks||[]).filter(link=>link.id!==id);await syncStageDocsIfDetail();drawStageDocs();
 }
 function openStageDocLink(stageId,linkId){
   const stage=STAGE_DOC_ID===stageId&&draft?draft.stages.find(s=>s.id===stageId):STAGE_DOC_VIEW&&byId(STAGE_DOC_VIEW.projectId)?.stages.find(s=>s.id===stageId);
@@ -2213,37 +2335,44 @@ async function uploadStageDocs(input){
     try{
       const uploaded=await api('/api/files',{method:'POST',headers:{'Content-Type':'application/octet-stream','X-Filename':encodeURIComponent(file.name),'X-Prefix':encodeURIComponent(draft.code||'PRJ')},body:file});
       stage.attachments=stage.attachments||[];stage.attachments.push({id:uid(),name:file.name,file:uploaded.name,size:uploaded.size||file.size,type:file.type||uploaded.mime_type||'',uploadedAt:Date.now(),uploadedBy:ME});
-      toast('File diunggah; klik Simpan project agar dokumentasi tersinkron.');
+      toast('File dokumentasi berhasil diunggah');
     }catch(e){toast('Gagal mengunggah dokumentasi: '+e.message);}
   }
-  input.value='';drawTab();drawStageDocs();
+  input.value='';await syncStageDocsIfDetail();drawStageDocs();
 }
-function detachStageDoc(id){
+async function detachStageDoc(id){
   if(!canEdit()||!draft)return;
   const stage=draft.stages.find(s=>s.id===STAGE_DOC_ID);if(!stage)return;
-  stage.attachments=(stage.attachments||[]).filter(file=>file.id!==id);drawTab();drawStageDocs();
+  stage.attachments=(stage.attachments||[]).filter(file=>file.id!==id);await syncStageDocsIfDetail();drawStageDocs();
 }
 function openStageDocFile(file){window.open(apiURL('/api/files/'+encodeURIComponent(file)),'_blank','noopener');}
 function setS(id,k,v,quiet){
   const s=draft.stages.find(x=>x.id===id);if(!s)return;
   const t=fd(today());
   if(k==='days'){const n=Math.max(1,parseInt(v,10)||1);if(s.ps)s.pf=fd(addDays(pd(s.ps),n-1));}
+  else if(k==='prog'){
+    const n=Math.max(0,Math.min(100,Math.round(Number(v)||0)));
+    s.prog=n;
+    if(n===100){s.status='Completed';s.af=s.af||t;s.as=s.as||((s.ps&&s.ps<=s.af)?s.ps:s.af);}
+    else if(n>0){s.status='On Progress';s.af='';s.as=s.as||t;}
+    else{s.status='Not Started';s.as='';s.af='';}
+  }
   else if(k==='status'){
     s.status=v;
-    if(v==='Completed'){s.af=s.af||t;s.as=s.as||((s.ps&&s.ps<=s.af)?s.ps:s.af);}
-    else if(v==='Not Started'){s.as='';s.af='';}
-    else if(v==='On Progress'){s.af='';s.as=s.as||t;}
+    if(v==='Completed'){s.prog=100;s.af=s.af||t;s.as=s.as||((s.ps&&s.ps<=s.af)?s.ps:s.af);}
+    else if(v==='Not Started'){s.prog=0;s.as='';s.af='';}
+    else if(v==='On Progress'){if(!s.prog||s.prog>=100)s.prog=50;s.af='';s.as=s.as||t;}
     else if(v==='On Hold'){s.af='';}
   }
   else if(k==='af'){
     s.af=v;
-    if(v){s.status='Completed';if(!s.as)s.as=(s.ps&&s.ps<=v)?s.ps:v;}
-    else s.status=s.as?'On Progress':'Not Started';
+    if(v){s.status='Completed';s.prog=100;if(!s.as)s.as=(s.ps&&s.ps<=v)?s.ps:v;}
+    else{s.status=s.as?'On Progress':'Not Started';s.prog=s.as?50:0;}
   }
   else if(k==='as'){
     s.as=v;
-    if(v&&s.status==='Not Started')s.status='On Progress';
-    if(!v&&!s.af&&s.status==='On Progress')s.status='Not Started';
+    if(v&&s.status==='Not Started'){s.status='On Progress';if(!s.prog)s.prog=50;}
+    if(!v&&!s.af&&s.status==='On Progress'){s.status='Not Started';s.prog=0;}
   }
   else s[k]=v;
   if((k==='pf'||k==='ps')&&s.ps&&s.pf&&s.pf<s.ps){if(k==='pf')toast('Plan selesai tidak boleh sebelum plan mulai');s.pf=s.ps;}
@@ -2253,7 +2382,7 @@ function setS(id,k,v,quiet){
 function addStage(){
   const st=draft.stages,last=st[st.length-1];
   const ps=last&&last.pf?fd(addDays(pd(last.pf),1)):(SBASE||draft.start||fd(today()));
-  st.push({id:uid(),name:'',pic:'',ps:ps,pf:fd(addDays(pd(ps),6)),as:'',af:'',status:'Not Started',note:'',par:false});
+  st.push({id:uid(),name:'',pic:'',ps:ps,pf:fd(addDays(pd(ps),6)),as:'',af:'',status:'Not Started',prog:0,note:'',par:false});
   applyAuto(draft);drawTab();
 }
 function moveS(id,dir){const a=draft.stages,i=a.findIndex(x=>x.id===id),j=i+dir;if(i<0||j<0||j>=a.length)return;const t=a[i];a[i]=a[j];a[j]=t;drawTab();}

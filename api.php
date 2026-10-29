@@ -81,6 +81,48 @@ function validateAndCleanSettings(array $incoming): array
             $incoming['categories'] = $cleanCats;
         }
     }
+    if (isset($incoming['templates']) && is_array($incoming['templates'])) {
+        $cleanTpls = [];
+        foreach ($incoming['templates'] as $tpl) {
+            if (!is_array($tpl)) {
+                continue;
+            }
+            $tName = trim((string)($tpl['name'] ?? ''));
+            if ($tName === '' || mb_strlen($tName) > 120) {
+                continue;
+            }
+            $tId = trim((string)($tpl['id'] ?? ''));
+            if ($tId === '' || !isValidEntityId($tId)) {
+                $tId = 'tpl_' . bin2hex(random_bytes(4));
+            }
+            $tCat = substr(trim((string)($tpl['category'] ?? '')), 0, 80);
+            $tOwner = substr(trim((string)($tpl['owner'] ?? '')), 0, 60);
+            $stages = [];
+            foreach (is_array($tpl['stages'] ?? null) ? $tpl['stages'] : [] as $stg) {
+                if (!is_array($stg)) {
+                    continue;
+                }
+                $sName = trim((string)($stg['name'] ?? ''));
+                if ($sName === '' || mb_strlen($sName) > 120) {
+                    continue;
+                }
+                $stages[] = [
+                    'name' => $sName,
+                    'pic' => substr(trim((string)($stg['pic'] ?? '')), 0, 60),
+                    'days' => max(1, min(3650, (int)($stg['days'] ?? 1))),
+                    'par' => !empty($stg['par']),
+                ];
+            }
+            $cleanTpls[] = [
+                'id' => $tId,
+                'name' => $tName,
+                'category' => $tCat,
+                'owner' => $tOwner,
+                'stages' => $stages,
+            ];
+        }
+        $incoming['templates'] = $cleanTpls;
+    }
     if (isset($incoming['appName'])) {
         $incoming['appName'] = substr(trim((string)$incoming['appName']) ?: APP_NAME, 0, 100);
     }
@@ -712,6 +754,21 @@ if ($requestPath === '/api/sync' && $method === 'POST') {
                 $settings = $incoming;
                 recordAuditLog($pdo, 'SYSTEM', (string)$user['name'], 'Memperbarui pengaturan aplikasi');
                 $changed = true;
+            }
+        } elseif (isset($push['settings']) && is_array($push['settings']) && $user['role'] === 'user') {
+            $incoming = validateAndCleanSettings($push['settings']);
+            $incomingAt = (int)($incoming['settingsAt'] ?? 0);
+            $currentAt = (int)($settings['settingsAt'] ?? 0);
+            if (isset($incoming['templates']) && is_array($incoming['templates']) && ($storedSettings === null || $incomingAt > $currentAt)) {
+                $oldTemplates = $settings['templates'] ?? null;
+                if ($incoming['templates'] !== $oldTemplates) {
+                    $settings['templates'] = $incoming['templates'];
+                    $settings['settingsAt'] = max($serverNow, $incomingAt, $currentAt + 1);
+                    writeJsonSetting('tracker', $settings, $pdo);
+                    recordAuditLog($pdo, 'SYSTEM', (string)$user['name'], 'Memperbarui template stage project');
+                    $changed = true;
+                    $rejectedSettings = false;
+                }
             }
         }
 

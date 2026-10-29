@@ -1090,7 +1090,8 @@ function render(){
   const sbNewProj=$('#sb-new-proj');if(sbNewProj)sbNewProj.hidden=!canEdit();
   const sbImpRev=$('#sb-imp-rev');if(sbImpRev)sbImpRev.hidden=!canReviewImprovement();
   const sbNewImp=$('#sb-new-imp');if(sbNewImp)sbNewImp.hidden=!canSubmitImprovement();
-  ['sb-tpl','sb-pos','sb-usr'].forEach(id=>{const b=$('#'+id);if(b)b.hidden=!isAdmin();});
+  const sbTpl=$('#sb-tpl');if(sbTpl)sbTpl.hidden=!canEdit();
+  ['sb-pos','sb-usr'].forEach(id=>{const b=$('#'+id);if(b)b.hidden=!isAdmin();});
   document.querySelectorAll('#nav .sb-item[data-v]').forEach(b=>b.classList.toggle('on',b.dataset.v===VIEW||(VIEW==='project_detail'&&b.dataset.v==='list')||(VIEW==='imp_detail'&&b.dataset.v==='improvements')||(VIEW==='imp_review_form'&&b.dataset.v==='imp_review')));
   const createButton=$('#new-project-button');if(createButton)createButton.hidden=!canEdit()||['project_form','imp_form','imp_review_form'].includes(VIEW);
   const showFilters=['dash','gantt','list','budget'].includes(VIEW);
@@ -2235,13 +2236,29 @@ let SBASE='';
 let STAGE_DOC_ID='';
 let STAGE_DOC_VIEW=null;
 function tStage(){
-  const d=draft,tp=DB.settings.templates||[];
+  const d=draft,rawTp=DB.settings.templates||[];
   if(!SBASE)SBASE=d.start||fd(today());
-  const defT=(tp.find(t=>t.category===d.category)||tp[0]||{}).id;
+  const curPic=(d.pic||ME||'').trim().toLowerCase();
+  const tp=rawTp.slice().sort((a,b)=>{
+    const aMine=a.owner&&a.owner.trim().toLowerCase()===curPic?1:0;
+    const bMine=b.owner&&b.owner.trim().toLowerCase()===curPic?1:0;
+    if(aMine!==bMine)return bMine-aMine;
+    const aCat=a.category===d.category?1:0,bCat=b.category===d.category?1:0;
+    return bCat-aCat;
+  });
+  const defT=(tp.find(t=>t.owner&&t.owner.trim().toLowerCase()===curPic&&(!t.category||t.category===d.category))||tp.find(t=>t.category===d.category)||tp[0]||{}).id;
   const cs=curStage(d);
-  const bar=`<div class="stbar"><span class="muted small">Template</span><select id="tsel">${tp.map(t=>`<option value="${esc(t.id)}" ${t.id===defT?'selected':''}>${esc(t.name)} (${t.stages.length} tahap)</option>`).join('')||'<option value="">(belum ada template)</option>'}</select>
-    <span class="muted small">Mulai plan</span><input type="date" id="sbase" value="${esc(SBASE)}" onchange="SBASE=this.value">
-    <button class="btn sm pri" onclick="loadTpl()">Muat template</button><button class="btn sm" onclick="reflowStages()">Susun ulang jadwal</button><button class="btn sm" onclick="saveAsTpl()">Simpan template</button></div>`;
+  const bar=`<div class="stbar">
+    <span class="muted small">Template</span>
+    <select id="tsel">${tp.map(t=>`<option value="${esc(t.id)}" ${t.id===defT?'selected':''}>${esc(t.name)} (${t.stages.length} task)${t.owner?' · PIC: '+esc(t.owner):' · Umum'}</option>`).join('')||'<option value="">(belum ada template)</option>'}</select>
+    <span class="muted small">Mulai plan</span>
+    <input type="date" id="sbase" value="${esc(SBASE)}" onchange="SBASE=this.value">
+    <button class="btn sm pri" onclick="loadTpl()" title="Ganti daftar task dengan template yang dipilih">Muat Template</button>
+    <button class="btn sm" onclick="appendTpl()" title="Tambahkan tahapan dari template ke daftar task saat ini tanpa menghapus yang sudah ada">+ Sisipkan dari Template</button>
+    <button class="btn sm" onclick="reflowStages()" title="Hitung ulang tanggal Plan Mulai & Selesai berurutan/paralel dari tanggal Mulai plan">Susun Ulang Jadwal</button>
+    <button class="btn sm" onclick="saveAsTpl()" title="Simpan susunan task project ini sebagai template baru untuk Anda / PIC">Simpan Jadi Template</button>
+    <button class="btn sm" onclick="openTpl()" title="Buat atau ubah daftar template stage">Kelola Template</button>
+  </div>`;
   const rows=d.stages.map((s,i)=>{
     const e=stEff(s),dv=stDev(s),sp=stProg(s);
     const dtxt=e==='Delayed'?`<span style="color:var(--bad);font-weight:700">Terlambat +${dv}h</span>`:dv===null?'<span class="muted">-</span>':dv>0?`<span style="color:var(--bad);font-weight:700">+${dv}h</span>`:dv<0?`<span style="color:var(--ok);font-weight:700">${dv}h</span>`:'<span style="color:var(--ok)">Tepat</span>';
@@ -2251,7 +2268,10 @@ function tStage(){
     <td style="width:90px"><input value="${esc(s.pic)}" placeholder="PIC" list="plist2" oninput="setS('${s.id}','pic',this.value,1)"></td>
     <td><input type="date" value="${esc(s.ps)}" onchange="setS('${s.id}','ps',this.value)"></td>
     <td><input type="date" value="${esc(s.pf)}" onchange="setS('${s.id}','pf',this.value)"></td>
-    <td style="width:52px"><input type="number" min="1" value="${s.ps&&s.pf?stageDays(s):''}" onchange="setS('${s.id}','days',this.value)"></td>
+    <td style="width:74px">
+      <input type="number" min="1" value="${s.ps&&s.pf?stageDays(s):''}" style="width:52px" onchange="setS('${s.id}','days',this.value)">
+      ${i>0?`<label style="display:flex;gap:3px;align-items:center;font-size:10px;margin-top:2px;font-weight:400" title="Jalan bersamaan (paralel) dengan task sebelumnya saat jadwal disusun ulang"><input type="checkbox" style="width:auto;margin:0" ${s.par?'checked':''} onchange="setS('${s.id}','par',this.checked)">Paralel</label>`:''}
+    </td>
     <td style="min-width:155px">
       <div class="task-prog-box">
         <input type="range" min="0" max="100" step="5" value="${sp}" onchange="setS('${s.id}','prog',this.value)">
@@ -2266,10 +2286,10 @@ function tStage(){
     <td style="min-width:115px"><input value="${esc(s.note)}" placeholder="catatan" oninput="setS('${s.id}','note',this.value,1)"></td>
     <td style="white-space:nowrap">${docButton}${PROJECT_READ_ONLY?'':`<button class="btn sm" onclick="moveS('${s.id}',-1)">▲</button> <button class="btn sm" onclick="moveS('${s.id}',1)">▼</button> <button class="btn sm bad" onclick="delS('${s.id}')">✕</button>`}</td></tr>`;
   }).join('');
-  return bar+`<datalist id="plist2">${[...new Set(DB.projects.map(p=>p.pic).filter(Boolean))].map(x=>`<option value="${esc(x)}">`).join('')}</datalist>
-  <div class="qh"><h4>Tahapan & Progres Task (${d.stages.length})${cs?' <span class="muted small" style="font-weight:400">· selesai '+cs.done+', saat ini: '+esc(cs.txt)+' · Total '+d.progress+'%</span>':''}</h4><button class="btn sm pri" onclick="addStage()">+ Tambah Task</button></div>
+  return bar+`<datalist id="plist2">${[...new Set(DB.projects.map(p=>p.pic).concat([ME,d.pic]).filter(Boolean))].map(x=>`<option value="${esc(x)}">`).join('')}</datalist>
+  <div class="qh"><h4>Tahapan & Progres Task (${d.stages.length})${cs?' <span class="muted small" style="font-weight:400">· selesai '+cs.done+', saat ini: '+esc(cs.txt)+' · Total '+d.progress+'%</span>':''}</h4><button class="btn sm pri" onclick="addStage()">+ Tambah Task Manual</button></div>
   ${d.stages.length?`<div class="tw" style="border:1px solid var(--line);border-radius:8px"><table class="stt"><thead><tr><th>#</th><th>Task / Tahap</th><th>PIC</th><th>Plan Mulai</th><th>Plan Selesai</th><th>Hari</th><th>Progres (%)</th><th>Status</th><th>Actual Mulai</th><th>Actual Selesai</th><th>Deviasi</th><th>Catatan</th><th>Bukti & Urutan</th></tr></thead><tbody>${rows}</tbody></table></div>
-  <div class="small muted" style="margin-top:8px">Geser slider <b>Progres (%)</b> atau klik <b>✓</b> untuk menyelesaikan task (otomatis mengisi tanggal Actual dan menghitung progres total project).</div>`:'<div class="empty">Belum ada tahapan task. Pilih template lalu klik "Muat template", atau klik "+ Tambah Task".</div>'}`;
+  <div class="small muted" style="margin-top:8px"><b>Fleksibel per Project / PIC:</b> Anda bebas menambah, menghapus, mengubah urutan (▲/▼), atau memodifikasi tahapan sesuai kebutuhan project ini, lalu klik <b>Simpan Jadi Template</b> bila ingin menjadikannya template andalan Anda berikutnya.</div>`:'<div class="empty">Belum ada tahapan task. Pilih template lalu klik <b>Muat Template</b>, atau klik <b>+ Tambah Task Manual</b> untuk menyusun tahapan sesuai kebutuhan Anda.</div>'}`;
 }
 function openStageDocs(id){if(!draft)return;STAGE_DOC_ID=id;drawStageDocs();}
 function viewStageDocs(projectId,stageId){STAGE_DOC_VIEW={projectId,stageId};drawStageDocsViewer();}
@@ -2388,28 +2408,38 @@ function addStage(){
 function moveS(id,dir){const a=draft.stages,i=a.findIndex(x=>x.id===id),j=i+dir;if(i<0||j<0||j>=a.length)return;const t=a[i];a[i]=a[j];a[j]=t;drawTab();}
 function delS(id){const s=draft.stages.find(x=>x.id===id);if(!s)return;if(!confirm('Hapus stage "'+(s.name||'tanpa nama')+'"?'))return;draft.stages=draft.stages.filter(x=>x.id!==id);applyAuto(draft);drawTab();}
 function loadTpl(){
-  const t=(DB.settings.templates||[]).find(x=>x.id===$('#tsel').value);if(!t){toast('Belum ada template. Buat di Pengaturan > Template stage.');return;}
-  if(draft.stages.length&&!confirm('Ganti '+draft.stages.length+' stage yang ada dengan template "'+t.name+'"? Data actual yang sudah diisi akan hilang.'))return;
+  const t=(DB.settings.templates||[]).find(x=>x.id===$('#tsel').value);if(!t){toast('Belum ada template. Klik "Kelola Template" untuk membuat template baru.');return;}
+  if(draft.stages.length&&!confirm('Ganti '+draft.stages.length+' task yang ada dengan template "'+t.name+'"? (Tips: Gunakan tombol "+ Sisipkan dari Template" bila ingin menambahkan tanpa menghapus task yang sudah ada).'))return;
   SBASE=$('#sbase').value||draft.start||fd(today());
   draft.stages=buildStages(t.stages,SBASE);
-  draft.stages.forEach(s=>{if(!s.pic)s.pic=draft.pic||'';});
+  draft.stages.forEach(s=>{if(!s.pic)s.pic=draft.pic||ME||'';});
   if(draft.status==='Completed')draft.status='On Progress';
-  applyAuto(draft);drawTab();toast('Template "'+t.name+'" dimuat: '+draft.stages.length+' stage');
+  applyAuto(draft);drawTab();toast('Template "'+t.name+'" dimuat ('+draft.stages.length+' task)');
+}
+function appendTpl(){
+  const t=(DB.settings.templates||[]).find(x=>x.id===$('#tsel').value);if(!t){toast('Pilih template terlebih dahulu.');return;}
+  const last=draft.stages[draft.stages.length-1];
+  const baseDate=last&&last.pf?fd(addDays(pd(last.pf),1)):($('#sbase').value||SBASE||draft.start||fd(today()));
+  const added=buildStages(t.stages,baseDate);
+  added.forEach(s=>{if(!s.pic)s.pic=draft.pic||ME||'';draft.stages.push(s);});
+  if(draft.status==='Completed'&&added.length)draft.status='On Progress';
+  applyAuto(draft);drawTab();toast(added.length+' task dari template "'+t.name+'" ditambahkan');
 }
 function reflowStages(){
   if(!draft.stages.length)return;
-  if(!confirm('Susun ulang plan semua stage secara berurutan dari tanggal mulai plan? Durasi tiap stage tetap, actual tidak berubah.'))return;
+  if(!confirm('Susun ulang jadwal Plan semua task dari tanggal Mulai plan? Durasi & pengaturan paralel tiap task tetap, tanggal Actual tidak berubah.'))return;
   const defs=draft.stages.map(s=>({name:s.name,days:stageDays(s),par:s.par}));
   const b=buildStages(defs,$('#sbase').value||SBASE||draft.start);
   draft.stages.forEach((s,i)=>{s.ps=b[i].ps;s.pf=b[i].pf;});
   applyAuto(draft);drawTab();
 }
 async function saveAsTpl(){
-  if(!isAdmin()){toast('Hanya admin yang dapat menyimpan template stage');return;}
-  if(!draft.stages.length){toast('Belum ada stage');return;}
-  const nm=prompt('Nama template baru:',(draft.category||'Template')+' - '+draft.name);if(!nm||!nm.trim())return;
-  DB.settings.templates.push({id:uid(),name:nm.trim(),category:draft.category||'',stages:draft.stages.map(s=>({name:s.name,pic:s.pic||'',days:stageDays(s),par:!!s.par}))});
-  DB.settings.settingsAt=Date.now();await persist();if(draft&&TAB==='stage')drawTab();toast('Template "'+nm.trim()+'" tersimpan');
+  if(!canEdit()){toast('Akses Viewer hanya dapat melihat data');return;}
+  if(!draft.stages.length){toast('Belum ada task untuk disimpan sebagai template');return;}
+  const defOwner=draft.pic||ME||'';
+  const nm=prompt('Nama template baru (akan disimpan agar bisa dipakai kembali oleh Anda / PIC):',(draft.category||'Template')+' - '+(draft.name||defOwner));if(!nm||!nm.trim())return;
+  DB.settings.templates.push({id:uid(),name:nm.trim(),category:draft.category||'',owner:defOwner,stages:draft.stages.map(s=>({name:s.name,pic:s.pic||'',days:stageDays(s),par:!!s.par}))});
+  DB.settings.settingsAt=Date.now();await persist();if(draft)drawTab();toast('Template "'+nm.trim()+'" berhasil disimpan');
 }
 
 /* ================= PURCHASE ORDER ================= */
@@ -2484,31 +2514,36 @@ function delPO(id){const o=getPO(id);if(!o||!confirm('Hapus PO '+o.no+'? Nomor P
 
 /* ================= TEMPLATE STAGE & PENGATURAN PO ================= */
 let TPL=[],TSEL=0,POS=null;
-function openTpl(){if(!isAdmin()){toast('Hanya admin yang dapat mengubah template stage');return;}TPL=JSON.parse(JSON.stringify(DB.settings.templates||[]));TSEL=0;if(!TPL.length)tplNew(true);drawTpl();}
-function tplNew(noDraw){TPL.push({id:uid(),name:'Template baru',category:'',stages:[{name:'Tahap 1',pic:'',days:7,par:false}]});TSEL=TPL.length-1;if(!noDraw)drawTpl();}
-function tplDup(){const t=JSON.parse(JSON.stringify(TPL[TSEL]));t.id=uid();t.name+=' (salinan)';TPL.push(t);TSEL=TPL.length-1;drawTpl();}
+function openTpl(){if(!canEdit()){toast('Akses Viewer hanya dapat melihat data');return;}TPL=JSON.parse(JSON.stringify(DB.settings.templates||[]));TSEL=0;if(!TPL.length)tplNew(true);drawTpl();}
+function tplNew(noDraw){TPL.push({id:uid(),name:'Template '+(ME||'Baru'),category:draft?draft.category||'':'',owner:ME||'',stages:[{name:'Tahap 1',pic:ME||'',days:7,par:false}]});TSEL=TPL.length-1;if(!noDraw)drawTpl();}
+function tplDup(){const t=JSON.parse(JSON.stringify(TPL[TSEL]));t.id=uid();t.name+=' ('+(ME||'Salinan')+')';t.owner=ME||t.owner||'';TPL.push(t);TSEL=TPL.length-1;drawTpl();}
 function tplRemove(){if(!confirm('Hapus template "'+TPL[TSEL].name+'"? Project yang sudah memakainya tidak berubah.'))return;TPL.splice(TSEL,1);TSEL=0;if(!TPL.length)tplNew(true);drawTpl();}
 function tplS(i,k,v){const s=TPL[TSEL].stages[i];s[k]=(k==='days')?(Math.max(1,parseInt(v,10)||1)):v;}
 function tplMove(i,dir){const a=TPL[TSEL].stages,j=i+dir;if(j<0||j>=a.length)return;const t=a[i];a[i]=a[j];a[j]=t;drawTpl();}
 function tplDel(i){TPL[TSEL].stages.splice(i,1);drawTpl();}
-function tplAdd(){TPL[TSEL].stages.push({name:'',pic:'',days:7,par:false});drawTpl();}
+function tplAdd(){const defPic=TPL[TSEL].owner||ME||'';TPL[TSEL].stages.push({name:'',pic:defPic,days:7,par:false});drawTpl();}
 function drawTpl(){
   const t=TPL[TSEL],cats=DB.settings.categories.map(c=>c.name);
+  const pics=[...new Set(DB.projects.map(p=>p.pic).concat([ME]).filter(Boolean))];
   const b=buildStages(t.stages,fd(today()));let tot=0;
   if(b.length){let mn=b[0].ps,mx=b[0].pf;b.forEach(s=>{if(s.ps<mn)mn=s.ps;if(s.pf>mx)mx=s.pf;});tot=diffDays(pd(mn),pd(mx))+1;}
-  $('#modal2').innerHTML=`<div class="ov"><div class="dlg wide"><div class="dh"><h3>Template Stage</h3><button class="x" onclick="closeM2()">✕</button></div><div class="db"><div class="tplwrap">
-   <div class="tpll">${TPL.map((x,i)=>`<button class="btn ${i===TSEL?'on':''}" onclick="TSEL=${i};drawTpl()">${esc(x.name||'(tanpa nama)')} <span class="muted">(${x.stages.length})</span></button>`).join('')}<button class="btn sm pri" onclick="tplNew()">+ Template baru</button></div>
-   <div><div class="fg"><label>Nama template<input value="${esc(t.name)}" oninput="TPL[TSEL].name=this.value"></label>
-    <label>Klasifikasi tujuan (dipilih otomatis di project)<select onchange="TPL[TSEL].category=this.value"><option value="">Semua klasifikasi</option>${cats.map(c=>`<option ${c===t.category?'selected':''}>${esc(c)}</option>`).join('')}</select></label></div>
-    <div class="qh"><h4>Stage (${t.stages.length}) <span class="muted small" style="font-weight:400">· total durasi sekitar ${tot} hari</span></h4><button class="btn sm pri" onclick="tplAdd()">+ Stage</button></div>
-    <div class="strow muted small"><span>#</span><span>Nama stage</span><span>PIC default</span><span>Hari</span><span>Paralel</span><span></span></div>
-    ${t.stages.map((s,i)=>`<div class="strow"><span class="muted">${i+1}</span><input type="text" value="${esc(s.name)}" oninput="tplS(${i},'name',this.value)"><input type="text" value="${esc(s.pic||'')}" oninput="tplS(${i},'pic',this.value)"><input type="number" min="1" value="${s.days}" oninput="tplS(${i},'days',this.value)"><label style="display:flex;gap:4px;align-items:center;font-size:11px;font-weight:400"><input type="checkbox" style="width:auto;margin:0" ${s.par?'checked':''} onchange="tplS(${i},'par',this.checked);drawTpl()"> dgn sebelumnya</label><span style="white-space:nowrap"><button class="btn sm" onclick="tplMove(${i},-1)">▲</button> <button class="btn sm" onclick="tplMove(${i},1)">▼</button> <button class="btn sm bad" onclick="tplDel(${i})">✕</button></span></div>`).join('')}
-    <div class="small muted">Hari = durasi standar. Saat template dimuat ke project, plan mulai dan selesai tiap stage dihitung berurutan dari tanggal mulai. Stage bertanda Paralel mulai bersamaan dengan stage sebelumnya. Mengubah template tidak mengubah project yang sudah berjalan.</div>
-    <div style="margin-top:10px;display:flex;gap:8px"><button class="btn sm" onclick="tplDup()">Duplikat template</button><button class="btn sm bad" onclick="tplRemove()">Hapus template ini</button></div></div></div></div>
-   <div class="df"><button class="btn" onclick="closeM2()">Batal</button><button class="btn pri" onclick="tplSave()">Simpan template</button></div></div></div>`;
+  $('#modal2').innerHTML=`<div class="ov"><div class="dlg wide"><div class="dh"><h3>Kelola Template Stage (Fleksibel per PIC / Kategori)</h3><button class="x" onclick="closeM2()">✕</button></div><div class="db">
+   <datalist id="tpl_pics">${pics.map(x=>`<option value="${esc(x)}">`).join('')}</datalist>
+   <div class="tplwrap">
+   <div class="tpll">${TPL.map((x,i)=>`<button class="btn ${i===TSEL?'on':''}" onclick="TSEL=${i};drawTpl()" style="text-align:left"><div><b>${esc(x.name||'(tanpa nama)')}</b> <span class="muted">(${x.stages.length})</span></div><div class="small muted">${x.owner?'PIC: '+esc(x.owner):'Umum (Semua PIC)'}${x.category?' · '+esc(x.category):''}</div></button>`).join('')}<button class="btn sm pri" onclick="tplNew()">+ Buat Template Saya</button></div>
+   <div><div class="fg" style="grid-template-columns:repeat(3,1fr)">
+    <label>Nama Template<input value="${esc(t.name)}" placeholder="Contoh: Standar Mesin Filling" oninput="TPL[TSEL].name=this.value"></label>
+    <label>PIC / Pemilik Template<input value="${esc(t.owner||'')}" list="tpl_pics" placeholder="Kosongkan = Umum (Semua PIC)" oninput="TPL[TSEL].owner=this.value"><small class="hint" style="text-align:left">Isi nama Anda/PIC agar otomatis diprioritaskan pada project milik PIC tersebut</small></label>
+    <label>Klasifikasi Tujuan<select onchange="TPL[TSEL].category=this.value"><option value="">Semua klasifikasi</option>${cats.map(c=>`<option ${c===t.category?'selected':''}>${esc(c)}</option>`).join('')}</select></label></div>
+    <div class="qh"><h4>Daftar Task / Stage (${t.stages.length}) <span class="muted small" style="font-weight:400">· estimasi durasi sekitar ${tot} hari</span></h4><button class="btn sm pri" onclick="tplAdd()">+ Tambah Task</button></div>
+    <div class="strow muted small"><span>#</span><span>Nama Task / Stage</span><span>PIC Default</span><span>Hari</span><span>Paralel</span><span></span></div>
+    ${t.stages.map((s,i)=>`<div class="strow"><span class="muted">${i+1}</span><input type="text" value="${esc(s.name)}" placeholder="Nama tahap..." oninput="tplS(${i},'name',this.value)"><input type="text" list="tpl_pics" value="${esc(s.pic||'')}" placeholder="Mengikuti PIC project" oninput="tplS(${i},'pic',this.value)"><input type="number" min="1" value="${s.days}" oninput="tplS(${i},'days',this.value);drawTpl()"><label style="display:flex;gap:4px;align-items:center;font-size:11px;font-weight:400"><input type="checkbox" style="width:auto;margin:0" ${s.par?'checked':''} onchange="tplS(${i},'par',this.checked);drawTpl()"> dgn sebelumnya</label><span style="white-space:nowrap"><button class="btn sm" onclick="tplMove(${i},-1)">▲</button> <button class="btn sm" onclick="tplMove(${i},1)">▼</button> <button class="btn sm bad" onclick="tplDel(${i})">✕</button></span></div>`).join('')}
+    <div class="small muted" style="margin-top:8px">Setiap PIC bebas membuat atau menduplikasi template sesuai alur kerja masing-masing. Jika kolom <b>PIC Default</b> dikosongkan, maka saat template dimuat ke project, task akan otomatis menggunakan nama PIC project tersebut.</div>
+    <div style="margin-top:10px;display:flex;gap:8px"><button class="btn sm" onclick="tplDup()">Duplikat &amp; Sesuaikan untuk Saya</button><button class="btn sm bad" onclick="tplRemove()">Hapus Template Ini</button></div></div></div></div>
+   <div class="df"><button class="btn" onclick="closeM2()">Batal</button><button class="btn pri" onclick="tplSave()">Simpan Semua Template</button></div></div></div>`;
 }
 async function tplSave(){
-  const out=TPL.map(t=>({id:t.id,name:(t.name||'').trim(),category:t.category||'',stages:t.stages.filter(s=>(s.name||'').trim()).map(s=>({name:s.name.trim(),pic:s.pic||'',days:Math.max(1,Number(s.days)||1),par:!!s.par}))})).filter(t=>t.name);
+  const out=TPL.map(t=>({id:t.id,name:(t.name||'').trim(),category:t.category||'',owner:(t.owner||'').trim(),stages:t.stages.filter(s=>(s.name||'').trim()).map(s=>({name:s.name.trim(),pic:(s.pic||'').trim(),days:Math.max(1,Number(s.days)||1),par:!!s.par}))})).filter(t=>t.name);
   DB.settings.templates=out;DB.settings.settingsAt=Date.now();closeM2();await persist();render();toast('Template stage tersimpan ('+out.length+' template)');
 }
 function openPOS(){if(!isAdmin()){toast('Hanya admin yang dapat mengubah template PO');return;}POS=JSON.parse(JSON.stringify(DB.settings.po));POS.sign=normSigners(POS.sign);drawPOS();}
@@ -2582,15 +2617,15 @@ function openSettings(){
     <h4 style="margin-top:0">Akun</h4>
     <div class="small" style="margin-bottom:8px">Masuk sebagai <b>${esc(ME)}</b> (${ad?'admin':viewer?'viewer':isContributor()?'kontributor':'pengguna'}). Nama ini dicatat di riwayat perubahan.</div>
     <div style="display:flex;gap:8px;flex-wrap:wrap">${viewer?'':'<button class="btn sm" onclick="openPin()">Ganti PIN saya</button>'}${ad?'<button class="btn sm" onclick="openUsers()">Kelola pengguna</button> <button class="btn sm" onclick="backupNow()">Backup sekarang</button>':''}</div>
+    ${canEdit()?`<h4>Template Stage${ad?' &amp; PO':''}</h4>
+    <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" onclick="openTpl()">Kelola Template Stage (${(S.templates||[]).length})</button>${ad?'<button class="btn" onclick="openPOS()">Template &amp; nomor PO</button>':''}</div>`:''}
     ${ad?`<h4>Aplikasi</h4><label>Nama aplikasi (tampil di header dan tab browser)<input id="s_app" value="${esc(S.appName||'PI Project Management')}"></label>
-    <h4>Stage &amp; PO</h4>
-    <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" onclick="openTpl()">Template stage (${(S.templates||[]).length})</button><button class="btn" onclick="openPOS()">Template &amp; nomor PO</button></div>
     <h4>Fitur</h4>
     ${chk('s_ub',S.useBudget,'Pakai kolom budget (opsional, tidak tampil di Dashboard)')}
     ${chk('s_ap',S.autoProgress!==false,'Progres project dihitung otomatis dari stage yang selesai')}
     ${chk('s_ad',S.autoDates!==false,'Tanggal mulai dan target project mengikuti plan stage',true)}
     <h4>Mata uang</h4><label><select id="s_cur">${Object.keys(SYMS).map(c=>`<option ${c===S.currency?'selected':''}>${c}</option>`).join('')}</select></label>
-    <h4>Klasifikasi / kategori project</h4><div id="catl"></div><button class="btn sm" onclick="addCat()">+ Kategori</button>`:`<div class="small muted" style="margin-top:12px">Template stage, template PO, kategori, dan fitur dikelola oleh admin.</div>`}
+    <h4>Klasifikasi / kategori project</h4><div id="catl"></div><button class="btn sm" onclick="addCat()">+ Kategori</button>`:`<div class="small muted" style="margin-top:12px">Template PO, kategori, dan pengaturan sistem dikelola oleh admin.</div>`}
     <h4>Tampilan</h4><label><select id="s_theme"><option value="light">Terang</option><option value="dark" ${document.documentElement.dataset.theme==='dark'?'selected':''}>Gelap</option></select></label>
     <h4>Ekspor${ad?' / Impor':''}</h4>
     <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn sm" onclick="exportCSV()">Project (CSV)</button><button class="btn sm" onclick="exportStages()">Stage Plan vs Actual (CSV)</button><button class="btn sm" onclick="exportQ()">Quotation (CSV)</button><button class="btn sm" onclick="exportPOcsv()">PO (CSV)</button><button class="btn sm" onclick="exportJSON()">Backup (JSON)</button>${ad?'<label class="btn sm" style="margin:0;cursor:pointer;color:var(--text)">Impor JSON<input type="file" accept=".json" style="display:none" onchange="importJSON(this)"></label>':''}</div>
@@ -2738,7 +2773,7 @@ async function syncNow(){
       const push={projects:DB.projects.filter(p=>KNOWN[p.id]!==p.updatedAt),deleted:{}};
       push.improvements=DB.improvements.filter(x=>KNOWNI[x.id]!==x.updatedAt);
       for(const k in DB.deleted)if((KDEL[k]||0)<DB.deleted[k])push.deleted[k]=DB.deleted[k];
-      if(isAdmin()&&(DB.settings.settingsAt||0)>KSET)push.settings=DB.settings;
+      if(canEdit()&&(DB.settings.settingsAt||0)>KSET)push.settings=DB.settings;
       const res=await api('/api/sync',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({rev:REV,sa:DB.settings.settingsAt||0,push:push})});
       if(applyRemote(res))changed=true;
     }while(AGAIN);

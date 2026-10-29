@@ -44,6 +44,7 @@ function normDB(d){
   const st=Object.assign({categories:[{name:'Improvement',color:'#2563eb'},{name:'New Machine',color:'#f97316'}],currency:'IDR',settingsAt:0,useBudget:false,appName:'PI Project Management',autoProgress:true,autoDates:true},ds);
   st.po=Object.assign({},DEFPO,ds.po||{});st.po.sign=normSigners(st.po.sign);
   if(!Array.isArray(st.templates))st.templates=JSON.parse(JSON.stringify(DEFTPL));
+  st.templates=st.templates.filter(t=>t&&typeof t==='object').map(t=>({id:t.id||uid(),name:t.name||'Template',category:t.category||'',owner:t.owner||'',stages:Array.isArray(t.stages)?t.stages.map(s=>({name:(s&&s.name)||'',pic:(s&&s.pic)||'',days:Math.max(1,Number(s&&s.days)||1),par:!!(s&&s.par)})):[]}));
   const o={version:4,settings:st,projects:(d.projects||[]).map(normP),improvements:(d.improvements||[]).map(normImprovement),deleted:d.deleted||{}};
   const names=o.settings.categories.map(c=>c.name);
   o.projects.forEach(p=>{if(p.category&&!names.includes(p.category)){names.push(p.category);o.settings.categories.push({name:p.category,color:PALETTE[names.length%PALETTE.length]});}});

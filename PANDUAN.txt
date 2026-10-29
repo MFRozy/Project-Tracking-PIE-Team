@@ -1,0 +1,34 @@
+PI PROJECT MANAGEMENT - PANDUAN INSTALASI & KEAMANAN (PHP 8 + MYSQL)
+====================================================================
+
+Aplikasi ini berjalan menggunakan PHP 8, Apache, dan MySQL (Laragon / XAMPP).
+
+1. KONFIGURASI KEAMANAN AWAL (.env & Database)
+----------------------------------------------
+1. Salin file .env.example menjadi .env.
+2. Buat database project_tracker dan impor schema.sql.
+3. Buat user MySQL khusus (bukan root) dengan hak akses minimum:
+   CREATE USER 'pt_app'@'127.0.0.1' IDENTIFIED BY 'PASSWORD_KUAT';
+   GRANT SELECT, INSERT, UPDATE, DELETE, CREATE, ALTER ON project_tracker.* TO 'pt_app'@'127.0.0.1';
+   FLUSH PRIVILEGES;
+4. Isi DB_USER, DB_PASS, dan PT_SESSION_SECRET (64 karakter hex acak) pada file .env.
+5. Untuk lingkungan production, arahkan PT_STORAGE_DIR dan PT_BACKUP_DIR ke folder di luar webroot Apache.
+
+2. MENJALANKAN DENGAN HTTPS DI JARINGAN KANTOR
+----------------------------------------------
+1. Aktifkan modul SSL (HTTPS port 443) pada Apache (Laragon/XAMPP) menggunakan sertifikat internal perusahaan.
+2. Setel COOKIE_SECURE=true pada file .env agar cookie sesi selalu dikirim melalui jalur terenkripsi.
+3. Masa berlaku sesi default adalah 12 jam (PT_SESSION_HOURS=12) dan panjang minimal PIN adalah 6 karakter.
+
+3. HAK AKSES PENGGUNA (RBAC)
+----------------------------
+- Admin       : Mengelola pengguna, pengaturan aplikasi, template, backup/restore, dan seluruh project.
+- Pengguna    : Membuat project serta mengubah/menghapus project yang menjadi tanggung jawabnya (PIC).
+- Kontributor : Mengirimkan dan memperbarui issue Improvement miliknya sendiri.
+- Viewer      : Hanya melihat dashboard dan data project (read-only).
+
+4. BACKUP, RESTORE, DAN PENGUJIAN
+---------------------------------
+- Admin dapat membuat backup lengkap dari menu Pengaturan > Backup sekarang (tersimpan di BACKUP_DIR tanpa password hash).
+- Untuk menjalankan automated security & functional test:
+  php tests/test-security-php.php

@@ -1,0 +1,28 @@
+# Environment & local secrets
+.env
+.env.*
+!.env.example
+config.local.php
+
+# Runtime storage, uploads, backups, and session secret
+/storage/files/*
+!/storage/files/.htaccess
+!/storage/files/index.html
+/storage/backup/*
+!/storage/backup/.htaccess
+!/storage/backup/index.html
+/storage/legacy/
+/storage/.session_secret
+
+# Legacy Node.js data & internal source documents (jangan pernah di-commit ke repo)
+/data/
+/legacy/
+*.xlsx
+*.xls
+legacy-projects-import.json
+*.log
+*.lock
+
+# Pastikan folder frontend public/ selalu ter-commit ke repository
+!/public/
+!/public/**

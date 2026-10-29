@@ -1,0 +1,2025 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PI Project Management</title>
+<style>
+:root{--bg:#f7f4f4;--card:#fff;--text:#0f172a;--muted:#64748b;--line:#e8dfe0;--pri:#ed1c24;--soft:#fff7f7;--ok:#10b981;--warn:#f59e0b;--bad:#ef4444;--r:10px}
+[data-theme=dark]{--bg:#0b1220;--card:#121a2b;--text:#e6eaf3;--muted:#8d9ab3;--line:#30252a;--soft:#191316;--pri:#ff5961}
+*{box-sizing:border-box}
+body{margin:0;font:14px/1.45 -apple-system,"Segoe UI",Roboto,Arial,sans-serif;background-color:var(--bg);background-image:url('public/cosmax-mark.svg');background-repeat:no-repeat;background-position:right 38px bottom 28px;background-size:min(34vw,420px) auto;background-attachment:fixed;color:var(--text)}
+button,input,select,textarea{font:inherit;color:inherit}
+header{display:flex;align-items:center;gap:16px;padding:10px 20px;background:var(--card);border-bottom:1px solid var(--line);box-shadow:0 2px 12px rgba(15,23,42,.04);position:sticky;top:0;z-index:20;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:10px}
+.logo{width:34px;height:34px;border-radius:8px;background:var(--pri);color:#fff;display:grid;place-items:center;font-weight:700;font-size:13px}
+.brand b{display:block;line-height:1.1}.brand small{color:var(--muted);cursor:pointer}
+nav{display:flex;gap:4px;flex:1}
+nav button{border:0;background:none;padding:8px 14px;border-radius:8px;cursor:pointer;color:var(--muted);font-weight:600}
+nav button:hover{background:var(--soft)}nav button.on{background:var(--pri);color:#fff}
+.reminder-period{display:flex;gap:4px;margin:0}.reminder-period button{border:1px solid var(--line);background:var(--card);padding:5px 10px;border-radius:6px;cursor:pointer;font-weight:600;color:var(--muted)}.reminder-period button.on{background:var(--pri);border-color:var(--pri);color:#fff}.priority-controls{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.imp-row{padding:12px 0;border-bottom:1px solid var(--line);display:grid;grid-template-columns:minmax(180px,1.3fr) minmax(140px,.8fr) 150px 130px auto;gap:12px;align-items:center}.imp-row:last-child{border-bottom:0}.imp-row:hover{background:var(--soft)}.imp-desc{white-space:normal;color:var(--muted);font-size:12px}
+.imp-attachments{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px}.imp-attachment{display:grid;grid-template-columns:64px 1fr auto;gap:8px;align-items:center;padding:7px;border:1px solid var(--line);border-radius:6px;background:var(--soft);min-width:0}.imp-attachment img{width:64px;height:48px;object-fit:cover;border-radius:4px;background:var(--card)}.imp-attachment-name{min-width:0;overflow-wrap:anywhere}.imp-link{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:6px 0;border-bottom:1px solid var(--line)}
+.stage-doc-list{display:grid;gap:8px}.stage-doc{display:grid;grid-template-columns:120px minmax(0,1fr) auto;gap:12px;align-items:center;padding:8px;border:1px solid var(--line);border-radius:6px;background:var(--soft)}.stage-doc-preview{width:120px;height:76px;display:grid;place-items:center;background:var(--card);border-radius:4px;overflow:hidden}.stage-doc-preview img,.stage-doc-preview video{width:100%;height:100%;object-fit:contain}.stage-doc-info{min-width:0;overflow-wrap:anywhere}.stage-doc-actions{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}.stage-doc-upload{display:inline-flex!important;align-items:center;gap:8px}.stage-doc-upload input{display:none}.stage-doc-link{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px;border:1px solid var(--line);border-radius:6px;background:var(--soft)}.stage-doc-link-info{min-width:0;overflow-wrap:anywhere}
+.hr{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.btn{border:1px solid var(--line);background:var(--card);padding:7px 12px;border-radius:8px;cursor:pointer;font-weight:600}
+.btn:hover{background:var(--soft)}.btn.pri{background:var(--pri);border-color:var(--pri);color:#fff}.btn.pri:hover{opacity:.9}
+.btn.bad{color:var(--bad);border-color:var(--bad)}.btn.sm{padding:4px 9px;font-size:12px}.btn:disabled{opacity:.4;cursor:not-allowed}
+.sync{border:1px solid var(--line);background:var(--card);padding:6px 12px;border-radius:8px;cursor:pointer;font-size:12px;display:flex;align-items:center;gap:7px;max-width:340px}
+.sync i{width:9px;height:9px;border-radius:50%;background:var(--muted);flex:none}
+.sync.ok i{background:var(--ok)}.sync.warn i{background:var(--warn)}.sync.err i{background:var(--bad)}
+.filters{display:flex;gap:8px;padding:12px 20px 0;flex-wrap:wrap;align-items:center}
+.filters input,.filters select{padding:7px 10px;border:1px solid var(--line);border-radius:8px;background:var(--card)}
+.filters #q{width:280px}
+#cnt{color:var(--muted);font-size:12px;margin-left:auto}
+main{padding:14px 20px 40px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:16px}
+.grid{display:grid;gap:12px}
+.kpis{grid-template-columns:repeat(auto-fit,minmax(135px,1fr));margin-bottom:12px}
+.kpi{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:12px 14px;cursor:pointer;position:relative;overflow:hidden}
+.kpi i{position:absolute;left:0;top:0;bottom:0;width:4px}
+.kpi b{display:block;font-size:26px;line-height:1.1}.kpi span{color:var(--muted);font-size:12px}.kpi small{display:block;color:var(--muted);font-size:11px;margin-top:2px}
+.kpi.on{outline:2px solid var(--pri)}.kpi.static{cursor:default}
+.kpi .mini{height:5px;background:var(--line);border-radius:3px;margin-top:6px;overflow:hidden}.kpi .mini div{height:100%;background:var(--pri)}
+.g3{grid-template-columns:repeat(auto-fit,minmax(290px,1fr));margin-bottom:12px}
+h3{margin:0 0 10px;font-size:14px}h4{margin:14px 0 8px;font-size:13px}
+.donut{display:flex;align-items:center;gap:14px}.donut svg{width:140px;height:140px;flex:none}
+.leg{display:grid;gap:5px;font-size:13px;flex:1}.leg div{display:flex;align-items:center;gap:7px;cursor:pointer}.leg i{width:10px;height:10px;border-radius:3px}.leg b{margin-left:auto}
+.att{max-height:240px;overflow:auto;display:grid;gap:6px}
+.ai{display:flex;gap:8px;align-items:flex-start;padding:7px 9px;border:1px solid var(--line);border-radius:8px;cursor:pointer;font-size:13px}
+.ai:hover{background:var(--soft)}.tag{font-size:10.5px;font-weight:700;color:#fff;padding:2px 7px;border-radius:5px;white-space:nowrap}
+.muted{color:var(--muted)}.small{font-size:12px}
+.pb{display:grid;grid-template-columns:minmax(230px,1.5fr) 2fr 130px;gap:14px;align-items:center;padding:9px 0;border-bottom:1px solid var(--line);cursor:pointer}
+.pb:last-child{border:0}.pb:hover{background:var(--soft)}
+.bar{height:12px;background:var(--line);border-radius:6px;position:relative}
+.bar .fill{height:100%;border-radius:6px}.bar .plan{position:absolute;top:-3px;bottom:-3px;width:2px;background:var(--text)}
+.chip{display:inline-block;font-size:11px;padding:1px 8px;border-radius:10px;font-weight:600;color:#fff}
+.badge{display:inline-block;font-size:11px;padding:2px 8px;border-radius:6px;font-weight:700;color:#fff;white-space:nowrap}
+.dot{width:9px;height:9px;border-radius:50%;flex:none;display:inline-block}
+.banner{padding:10px 14px;border-radius:var(--r);margin-bottom:12px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;font-size:13px;border:1px solid var(--line)}
+.banner.info{background:#fff1f2;border-color:#fecdd3;color:#9f1239}.banner.warn{background:#fffbeb;border-color:#fde68a;color:#78350f}
+[data-theme=dark] .banner.info{background:#35171b;color:#ffc2c7;border-color:#71313a}[data-theme=dark] .banner.warn{background:#2c2410;color:#f7dd9a;border-color:#6b5316}
+.banner .btn{margin-left:auto}
+.tw{overflow:auto}table{border-collapse:collapse;width:100%}
+th{position:sticky;top:0;background:var(--soft);text-align:left;font-size:12px;color:var(--muted);padding:9px 10px;border-bottom:1px solid var(--line);white-space:nowrap;cursor:pointer;user-select:none}
+td{padding:9px 10px;border-bottom:1px solid var(--line);white-space:nowrap}
+tbody tr{cursor:pointer}tbody tr:hover{background:var(--soft)}
+.r{text-align:right}.empty{padding:30px;text-align:center;color:var(--muted)}
+.pbar{display:inline-block;width:70px;height:7px;background:var(--line);border-radius:4px;vertical-align:middle;margin-right:6px;overflow:hidden}.pbar div{height:100%;background:var(--pri)}
+/* gantt */
+.gtool{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:10px;padding:10px 14px}
+.seg{display:flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}.seg button{border:0;background:var(--card);padding:6px 12px;cursor:pointer;font-weight:600}.seg button.on{background:var(--pri);color:#fff}
+.lg{display:flex;gap:12px;font-size:12px;color:var(--muted);margin-left:auto;flex-wrap:wrap;align-items:center}.lg span{display:flex;align-items:center;gap:5px}.lg i{width:12px;height:12px;border-radius:3px;display:inline-block}
+.gscroll{overflow:auto;max-height:calc(100vh - 250px);padding:0}
+.gwrap{position:relative}
+.ghead{display:flex;position:sticky;top:0;z-index:6;background:var(--card);border-bottom:1px solid var(--line);height:49px}
+.gcols{position:relative;height:48px}
+.gseg{position:absolute;font-size:11px;color:var(--muted);padding:4px 6px;border-left:1px solid var(--line);overflow:hidden;white-space:nowrap;height:24px}
+.gseg.t{top:0;font-weight:700;color:var(--text)}.gseg.b{top:24px;border-top:1px solid var(--line)}
+.gl{position:sticky;left:0;width:270px;flex:none;background:var(--card);z-index:4;border-right:1px solid var(--line);padding:0 12px;display:flex;align-items:center;gap:8px;cursor:pointer;overflow:hidden}
+.gcorner{font-size:12px;font-weight:700;color:var(--muted);cursor:default;z-index:7}
+.grow{display:flex;height:42px;border-bottom:1px solid var(--line)}.grow:hover .gt{background:var(--soft)}
+.ghd{background:var(--soft);height:30px}.ghd .gl{background:var(--soft);cursor:default}.ghd i{width:10px;height:10px;border-radius:3px}
+.gn{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:220px}.gs{font-size:11px;color:var(--muted);white-space:nowrap}
+.gt{position:relative;flex:none}
+.gbar{position:absolute;top:10px;height:22px;border-radius:5px;border:1px solid;overflow:hidden;cursor:pointer}
+.gbar div{height:100%}.gbar.late{outline:2px solid var(--bad);outline-offset:1px}.gbar.hold{border-style:dashed;opacity:.7}
+.gpct{position:absolute;top:13px;font-size:11px;font-weight:700;color:var(--muted)}
+.gms{position:absolute;top:15px;width:12px;height:12px;transform:rotate(45deg);background:var(--card);border:2px solid var(--text);z-index:2}.gms.done{background:var(--ok);border-color:var(--ok)}
+.glines{position:absolute;top:0;bottom:0;pointer-events:none;z-index:1}
+.glines div{position:absolute;top:49px;bottom:0;width:1px;background:var(--line);opacity:.7}
+.glines .today{background:var(--bad);width:2px;opacity:1;z-index:3}
+.gtodayh{position:absolute;top:27px;transform:translateX(-50%);background:var(--bad);color:#fff;font-size:10px;font-weight:700;padding:1px 6px;border-radius:4px;z-index:3;white-space:nowrap}
+/* budget view */
+.brow{display:grid;grid-template-columns:minmax(200px,1fr) 3fr 190px;gap:12px;align-items:center;padding:8px 0;border-bottom:1px solid var(--line);cursor:pointer}
+.brow:hover{background:var(--soft)}.btrack{position:relative;height:16px}
+.bbud{position:absolute;left:0;top:0;bottom:0;border:1px solid var(--muted);background:var(--soft);border-radius:4px}
+.bfill{position:absolute;left:0;top:3px;bottom:3px;border-radius:3px}.blow{position:absolute;top:-2px;bottom:-2px;width:3px;background:var(--text)}
+/* modal */
+.ov{position:fixed;inset:0;background:rgba(15,23,42,.55);display:flex;align-items:flex-start;justify-content:center;padding:28px 12px;overflow:auto;z-index:50}
+.dlg{background:var(--card);border-radius:12px;width:min(900px,100%);border:1px solid var(--line)}.dlg.sm{width:min(560px,100%)}
+.dh{display:flex;align-items:center;gap:10px;padding:14px 18px;border-bottom:1px solid var(--line)}.dh h3{margin:0;font-size:16px;flex:1}
+.x{border:0;background:none;font-size:18px;cursor:pointer;color:var(--muted)}
+.tabs{display:flex;gap:2px;padding:0 14px;border-bottom:1px solid var(--line);overflow:auto}
+.tabs button{border:0;background:none;padding:10px 14px;cursor:pointer;font-weight:600;color:var(--muted);border-bottom:2px solid transparent;white-space:nowrap}.tabs button.on{color:var(--pri);border-color:var(--pri)}
+.db{padding:16px 18px;max-height:calc(100vh - 230px);overflow:auto}
+.df{display:flex;gap:8px;padding:12px 18px;border-top:1px solid var(--line);justify-content:flex-end}.df .l{margin-right:auto}
+.fg{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px}
+label{display:block;font-size:12px;font-weight:600;color:var(--muted)}label.full{grid-column:1/-1}
+label input,label select,label textarea{display:block;width:100%;margin-top:4px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--text);font-weight:400;font-size:14px}
+label input[type=range]{padding:0;border:0}
+.num{text-align:right}.hint{display:block;color:var(--muted);font-weight:400;min-height:15px;text-align:right}
+.prow{display:flex;gap:10px;align-items:center}.prow input[type=number]{width:80px}
+.bsum{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin-bottom:14px}
+.bsum div{border:1px solid var(--line);border-radius:8px;padding:8px 10px;background:var(--soft)}.bsum small{display:block;color:var(--muted);font-size:11px}.bsum b{font-size:15px}
+.qh{display:flex;align-items:center;margin:16px 0 8px}.qh h4{margin:0;flex:1}
+.qcard{border:1px solid var(--line);border-radius:10px;padding:12px;margin-bottom:10px;background:var(--soft)}.qcard.sel{border-color:var(--ok);box-shadow:inset 3px 0 0 var(--ok)}
+.project-group td{background:var(--soft);border-top:2px solid var(--line);font-weight:700;white-space:normal}.project-group .muted{font-weight:400}
+.qnote{min-width:180px;max-width:320px;white-space:normal;overflow-wrap:anywhere;color:var(--muted);font-size:12px}.qnote details{margin-top:3px}.qnote summary{cursor:pointer;color:var(--pri);font-weight:600}.q-note-full{margin-top:4px;white-space:pre-wrap;color:var(--text)}
+.qgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px}
+.qfoot{display:flex;gap:8px;align-items:center;margin-top:8px;flex-wrap:wrap;font-size:12px}.qfoot .sp{flex:1}
+.fchip{background:var(--card);border:1px solid var(--line);padding:3px 8px;border-radius:6px;max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.msrow{display:grid;grid-template-columns:24px 1fr 160px 70px;gap:8px;align-items:center;margin-bottom:8px}
+.msrow input[type=text],.msrow input[type=date]{padding:7px 9px;border:1px solid var(--line);border-radius:8px;background:var(--card);width:100%}
+.logi{padding:8px 0;border-bottom:1px solid var(--line);font-size:13px}.logi small{color:var(--muted)}
+#toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#0f172a;color:#fff;padding:10px 16px;border-radius:8px;z-index:99;display:none;max-width:90vw;font-size:13px}
+.catrow{display:flex;gap:8px;align-items:center;margin-bottom:6px}.catrow input[type=text]{flex:1;padding:7px 9px;border:1px solid var(--line);border-radius:8px;background:var(--card)}.catrow input[type=color]{width:38px;height:32px;padding:0;border:1px solid var(--line);border-radius:6px;background:none}
+
+/* v3: stage, PO, template */
+.strip{display:flex;gap:2px;margin-top:6px}.strip i{flex:1;height:7px;border-radius:2px;background:var(--line);min-width:3px}
+.gx{display:inline-block;width:18px;text-align:center;cursor:pointer;color:var(--muted);font-size:13px;flex:none;user-select:none}
+.gl>div{min-width:0}.gs{overflow:hidden;text-overflow:ellipsis;max-width:215px}
+.grow.gsr{height:36px;background:var(--soft)}.gsr .gl{background:var(--soft);padding-left:34px}.gsr .gn{font-size:12px;font-weight:500;max-width:200px}
+.gsr .gstage-heading{display:flex;align-items:center;gap:5px;max-width:230px;min-width:0}.gsr .gstage-heading>span:first-child{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.gdoc{flex:none;border:1px solid var(--line);background:var(--card);color:var(--pri);border-radius:10px;padding:0 5px;height:18px;font-size:10px;line-height:16px;cursor:pointer}.gdoc:hover{background:var(--soft)}
+.gsp{position:absolute;border:1px solid var(--muted);background:rgba(148,163,184,.25);border-radius:3px}.gsp.late{border-color:var(--bad);background:rgba(239,68,68,.15)}
+.gsa{position:absolute;border-radius:3px;cursor:pointer}.gsa.run{border-right:3px dashed rgba(255,255,255,.75)}
+.gdev{position:absolute;font-size:10.5px;font-weight:700;white-space:nowrap}
+.stt{min-width:1040px}.stt th{cursor:default;position:static}.stt td{padding:4px 5px;white-space:nowrap}.stt input,.stt select{width:100%;padding:5px 6px;border:1px solid var(--line);border-radius:6px;background:var(--card);font-size:12.5px}
+.stbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px}.stbar select,.stbar input{padding:6px 8px;border:1px solid var(--line);border-radius:6px;background:var(--card)}
+.porow{display:grid;grid-template-columns:170px 100px 1fr 150px auto;gap:10px;align-items:center;padding:8px 10px;border:1px solid var(--line);border-radius:8px;margin-bottom:6px;background:var(--soft);font-size:13px}
+.dlg.wide{width:min(1000px,100%)}#modal2 .ov{z-index:60}
+.tplwrap{display:grid;grid-template-columns:230px 1fr;gap:14px}
+.tpll .btn{display:block;width:100%;text-align:left;margin-bottom:4px}.tpll .btn.on{border-color:var(--pri);color:var(--pri)}
+.strow{display:grid;grid-template-columns:26px 1fr 140px 70px 80px 120px;gap:6px;align-items:center;margin-bottom:6px}
+.strow input[type=text],.strow input[type=number]{padding:6px 8px;border:1px solid var(--line);border-radius:6px;background:var(--card);width:100%}
+.itrow{display:grid;grid-template-columns:1fr 60px 70px 130px 120px 36px;gap:6px;margin-bottom:6px}
+.sec{grid-column:1/-1;margin:8px 0 0;font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid var(--line);padding-bottom:4px}
+.sgrow{grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;padding:8px;border:1px solid var(--line);border-radius:8px}
+.dlg select{padding:7px 8px;border:1px solid var(--line);border-radius:6px;background:var(--card);color:var(--fg);width:100%}
+.itrow input{padding:6px 8px;border:1px solid var(--line);border-radius:6px;background:var(--card);width:100%}
+.deadline-reminders{margin-bottom:12px}.deadline-reminders .ai{align-items:center}.deadline-reminders.has-overdue{border-color:#fecaca}
+body.auth-mode{min-height:100vh;background:#fff}
+body.auth-mode>header,body.auth-mode>.filters,body.auth-mode>#main,body.auth-mode>#modal2,body.auth-mode>#toast{display:none!important}
+body.auth-mode>#modal{min-height:100vh}
+.auth-page{min-height:100vh;display:grid;grid-template-columns:minmax(280px,1fr) minmax(360px,500px);background:#fff}
+.auth-visual{min-height:100vh;padding:clamp(28px,6vw,76px);display:flex;flex-direction:column;justify-content:space-between;background-color:#fbfbfb;background-image:linear-gradient(112deg,rgba(255,255,255,.99) 0%,rgba(255,255,255,.92) 48%,rgba(255,255,255,.52) 100%),url('public/cosmax-mark.svg');background-repeat:no-repeat;background-size:cover,min(52vw,640px) auto;background-position:center,right -80px bottom -130px;color:#202124;position:relative;overflow:hidden;border-right:1px solid #e5e7eb}
+.auth-visual-copy{max-width:620px;position:relative;z-index:1}.auth-visual-copy h1{font-size:clamp(34px,4vw,58px);line-height:1.04;margin:0 0 16px;letter-spacing:0;font-weight:700;color:#ed1c24}.auth-visual-copy p{font-size:16px;color:#62676b;margin:0;max-width:410px}
+.auth-visual-foot{position:relative;z-index:1;color:#73777a;font-size:12px}
+.auth-pane{display:flex;align-items:center;justify-content:center;padding:30px clamp(20px,5vw,64px);background:#fff}
+.auth-card{width:100%;max-width:400px}.auth-tools{display:flex;justify-content:flex-end;margin-bottom:40px}.auth-tools select{border:1px solid #d8dadd;border-radius:7px;background:#fff;padding:8px 10px;color:#292c2f}
+.auth-card h2{font-size:28px;line-height:1.15;margin:0 0 8px;letter-spacing:0}.auth-subtitle{margin:0 0 24px;color:#657781;font-size:14px}
+.auth-access-options{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));padding:4px;background:#f2f2f2;border-radius:8px;margin-bottom:22px}.auth-access-options button{min-height:40px;border:0;background:transparent;border-radius:6px;color:#62676b;font-weight:600;cursor:pointer}.auth-access-options button.active{background:#fff;color:#d71920;box-shadow:0 1px 4px rgba(15,23,42,.12)}
+.auth-card label{margin-bottom:14px;color:#53575b}.auth-card label input,.auth-card label select{width:100%;min-height:44px;padding:10px 12px;margin-top:6px;border:1px solid #d8dadd;border-radius:7px;background:#fff;color:#202124}
+.auth-card .auth-submit{width:100%;min-height:46px;margin-top:8px;background:#ed1c24;color:#fff;border:0;border-radius:7px;font-weight:700;cursor:pointer}.auth-card .auth-submit:hover{background:#ce171e}
+.auth-card .auth-error{min-height:20px;color:#b42318;font-size:13px;margin:6px 0 0}.auth-note{padding:10px 12px;background:#fff8e6;border:1px solid #f4d58d;border-radius:7px;color:#70541b;font-size:13px;margin-bottom:14px}
+.viewer-badge{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);border-radius:6px;padding:4px 8px;font-size:11px;font-weight:700;color:var(--muted)}
+@media(max-width:800px){.auth-page{grid-template-columns:1fr}.auth-visual{min-height:210px;padding:24px 24px 30px;background-size:cover,230px auto;background-position:center,right -28px bottom -48px}.auth-visual-copy{margin-top:42px}.auth-visual-copy h1{font-size:34px}.auth-visual-copy p,.auth-visual-foot{display:none}.auth-pane{min-height:calc(100vh - 210px);align-items:flex-start;padding:28px 22px}.auth-tools{margin-bottom:28px}}
+@media(max-width:800px){.tplwrap{grid-template-columns:1fr}.porow{grid-template-columns:1fr}.imp-row{grid-template-columns:1fr;gap:4px}.imp-row .btn{justify-self:start}nav{order:3;flex-basis:100%;overflow-x:auto}.hr{margin-left:auto}}
+
+@media(max-width:800px){.pb,.brow{grid-template-columns:1fr}.filters #q{width:100%}}
+@media(max-width:800px){body{background-position:right 12px bottom 18px;background-size:180px auto}}
+</style>
+</head>
+<body>
+<header>
+  <div class="brand"><div class="logo">PI</div><div><b id="appname">PI Project Management</b><small id="who" onclick="openSettings()"></small></div></div>
+  <nav id="nav">
+    <button data-v="dash" onclick="go('dash')">Dashboard</button>
+    <button data-v="gantt" onclick="go('gantt')">Gantt Chart</button>
+    <button data-v="list" onclick="go('list')">Daftar Project</button>
+    <button data-v="budget" onclick="go('budget')">Quotation &amp; PO</button>
+    <button data-v="improvements" onclick="go('improvements')">Improvement</button>
+  </nav>
+  <div class="hr">
+    <select id="app-language" class="btn" aria-label="Bahasa aplikasi" data-no-translate onchange="setLanguage(this.value)">
+      <option value="id">Indonesia</option>
+      <option value="en">English</option>
+      <option value="ko">한국어</option>
+    </select>
+    <button id="sync" class="sync" onclick="syncClick()"></button>
+    <button class="btn" onclick="openSettings()">Pengaturan</button>
+    <button class="btn" onclick="logout()">Keluar</button>
+    <button id="new-project-button" class="btn pri" onclick="newP()">+ Project</button>
+  </div>
+</header>
+<div class="filters">
+  <input id="q" placeholder="Cari project, vendor, PIC, No. PO, stage..." oninput="F.q=this.value;render()">
+  <span id="fsel"></span>
+  <button class="btn sm" onclick="resetF()">Reset filter</button>
+  <span id="cnt"></span>
+</div>
+<main id="main"></main>
+<datalist id="vlist"></datalist>
+<div id="modal"></div>
+<div id="modal2"></div>
+<div id="toast"></div>
+
+<script src="/shared.js"></script>
+<script>
+'use strict';
+/* ================= util ================= */
+const $=s=>document.querySelector(s);
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const DAY=864e5;
+let APP_LANG=['id','en','ko'].includes(localStorage.getItem('pt_language'))?localStorage.getItem('pt_language'):'id';
+function today(){const d=new Date();d.setHours(0,0,0,0);return d;}
+function pd(s){if(!s)return null;const a=String(s).split('-').map(Number);return new Date(a[0],a[1]-1,a[2]);}
+function fd(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+function addDays(d,n){const x=new Date(d);x.setDate(x.getDate()+n);return x;}
+function diffDays(a,b){return Math.round((b-a)/DAY);}
+function fmtDate(s){const d=pd(s),locale={id:'id-ID',en:'en-US',ko:'ko-KR'}[APP_LANG];return d?d.toLocaleDateString(locale,{day:'2-digit',month:'short',year:'numeric'}):'-';}
+function fmtDT(ts){const locale={id:'id-ID',en:'en-US',ko:'ko-KR'}[APP_LANG];return new Date(ts).toLocaleString(locale,{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});}
+const SYMS={IDR:'Rp',USD:'US$',EUR:'€',JPY:'¥',SGD:'S$',KRW:'₩',CNY:'CN¥',THB:'฿',GBP:'£',AUD:'A$',MYR:'RM',INR:'₹'};
+const sym=()=>SYMS[DB.settings.currency]||DB.settings.currency;
+const loc=()=>APP_LANG==='ko'?'ko-KR':(DB.settings.currency==='IDR'&&APP_LANG==='id'?'id-ID':'en-US');
+const fmtNum=n=>Number(n||0).toLocaleString(loc());
+const money=n=>sym()+' '+fmtNum(n);
+function poMoney(n,currency){const code=currency||DB.settings.currency||'IDR';let value;try{value=Number(n||0).toLocaleString(code==='IDR'?'id-ID':'en-US');}catch(e){value=fmtNum(n);}return (SYMS[code]||code)+' '+value;}
+function moneyC(n){n=Number(n||0);let s;try{s=new Intl.NumberFormat(loc(),{notation:'compact',maximumFractionDigits:1}).format(n);}catch(e){s=fmtNum(n);}return sym()+' '+s;}
+function quoteMoneyC(n,currency){n=Number(n||0);const code=currency||DB.settings.currency||'IDR';let s;try{s=new Intl.NumberFormat(code==='IDR'&&APP_LANG==='id'?'id-ID':({en:'en-US',ko:'ko-KR'}[APP_LANG]||'en-US'),{notation:'compact',maximumFractionDigits:1}).format(n);}catch(e){s=fmtNum(n);}return (SYMS[code]||code)+' '+s;}
+const parseNum=s=>Number(String(s).replace(/[^\d]/g,''))||0;
+const csvCell=v=>'"'+String(v==null?'':v).replace(/"/g,'""')+'"';
+
+const LANG_TEXT={
+  'Dashboard':{en:'Dashboard',ko:'대시보드'},
+  'Gantt Chart':{en:'Gantt Chart',ko:'간트 차트'},
+  'Daftar Project':{en:'Project List',ko:'프로젝트 목록'},
+  'Quotation & PO':{en:'Quotations & POs',ko:'견적 및 발주서'},
+  'Pengaturan':{en:'Settings',ko:'설정'},
+  'Keluar':{en:'Log out',ko:'로그아웃'},
+  '+ Project':{en:'+ Project',ko:'+ 프로젝트'},
+  'Cari project, vendor, PIC, No. PO, stage...':{en:'Search projects, vendors, owners, PO numbers, stages...',ko:'프로젝트, 공급업체, 담당자, 발주 번호, 단계 검색...'},
+  'Reset filter':{en:'Reset filters',ko:'필터 초기화'},
+  'Semua kategori':{en:'All categories',ko:'모든 분류'},
+  'Semua status':{en:'All statuses',ko:'모든 상태'},
+  'Semua PIC':{en:'All owners',ko:'모든 담당자'},
+  'Total Project':{en:'Total Projects',ko:'전체 프로젝트'},
+  'Rata-rata progres':{en:'Average progress',ko:'평균 진행률'},
+  'Stage terlambat':{en:'Overdue stages',ko:'지연 단계'},
+  'Stage selesai':{en:'Stages completed',ko:'완료 단계'},
+  'Tahap:':{en:'Current stage:',ko:'현재 단계:'},
+  'selesai':{en:'completed',ko:'완료'},
+  'stage terlambat':{en:'overdue stage',ko:'지연 단계'},
+  'Quotation masuk':{en:'Quotations received',ko:'접수된 견적'},
+  'PO terbit':{en:'POs issued',ko:'발행된 발주서'},
+  'project belum ada quotation':{en:'projects have no quotations',ko:'개 프로젝트에 견적이 없습니다'},
+  'quotation terpilih belum di-PO':{en:'selected quotations have no PO yet',ko:'선정된 견적에 발주서가 없습니다'},
+  'Status Project':{en:'Project Status',ko:'프로젝트 상태'},
+  'Klasifikasi Project':{en:'Project Categories',ko:'프로젝트 분류'},
+  'Perlu Perhatian':{en:'Needs Attention',ko:'확인 필요'},
+  'Improvement masuk':{en:'Incoming Improvements',ko:'접수된 개선 제안'},
+  'baru':{en:'new',ko:'신규'},
+  'Harian':{en:'Daily',ko:'일간'},
+  'Mingguan':{en:'Weekly',ko:'주간'},
+  'Bulanan':{en:'Monthly',ko:'월간'},
+  'Prioritas Harian':{en:'Daily Priorities',ko:'오늘의 우선순위'},
+  'Prioritas Mingguan':{en:'Weekly Priorities',ko:'이번 주 우선순위'},
+  'Prioritas Bulanan':{en:'Monthly Priorities',ko:'이번 달 우선순위'},
+  'Hari ini':{en:'Today',ko:'오늘'},
+  'Minggu ini':{en:'This week',ko:'이번 주'},
+  'Bulan ini':{en:'This month',ko:'이번 달'},
+  'Sembunyikan daftar':{en:'Hide list',ko:'목록 숨기기'},
+  'Tampilkan daftar':{en:'Show list',ko:'목록 표시'},
+  'Improvement lintas departemen':{en:'Cross-department improvements',ko:'부서 간 개선 제안'},
+  'Catat masalah, konteks, tujuan, lalu tindak lanjut dan feedback PI.':{en:'Record the issue, context, goals, and PI follow-up.',ko:'문제, 배경, 목표 및 PI 후속 조치를 기록합니다.'},
+  '+ Catat issue':{en:'+ Submit issue',ko:'+ 이슈 등록'},
+  'Cari issue, departemen, pelapor...':{en:'Search issues, departments, submitters...',ko:'이슈, 부서, 제출자 검색...'},
+  'Issue':{en:'Issue',ko:'이슈'},
+  'Baru':{en:'New',ko:'신규'},
+  'Review PI':{en:'PI Review',ko:'PI 검토'},
+  'Menunggu Data':{en:'Waiting for Information',ko:'정보 대기'},
+  'Disetujui':{en:'Approved',ko:'승인'},
+  'Tidak Perlu Improvement':{en:'No Improvement Needed',ko:'개선 불필요'},
+  'Saving MP':{en:'Manpower Savings',ko:'인력 절감'},
+  'Efisiensi proses':{en:'Process Efficiency',ko:'공정 효율화'},
+  'Lainnya':{en:'Other',ko:'기타'},
+  'Laporan dari Kontributor':{en:'Contributor Submission',ko:'기여자 제출 내용'},
+  'Judul issue':{en:'Issue Title',ko:'이슈 제목'},
+  'Departemen / pelapor':{en:'Department / Submitter',ko:'부서 / 제출자'},
+  'Jenis improvement':{en:'Improvement Type',ko:'개선 유형'},
+  'Issue yang terjadi':{en:'Issue Description',ko:'발생한 이슈'},
+  'Background / kondisi saat ini':{en:'Background / Current State',ko:'배경 / 현재 상태'},
+  'Purpose':{en:'Purpose',ko:'목적'},
+  'Goals':{en:'Goals',ko:'목표'},
+  'Metrik kualitas':{en:'Quality Metric',ko:'품질 지표'},
+  'Keputusan dan feedback PI':{en:'PI Decision and Feedback',ko:'PI 결정 및 피드백'},
+  'Belum diputuskan':{en:'Undecided',ko:'미결정'},
+  'Proses improvement':{en:'Proceed with Improvement',ko:'개선 진행'},
+  'Tidak diproses':{en:'Do Not Proceed',ko:'진행하지 않음'},
+  'Status review':{en:'Review Status',ko:'검토 상태'},
+  'PIC review PI (opsional)':{en:'PI Reviewer (optional)',ko:'PI 검토 담당자 (선택)'},
+  'Feedback PI':{en:'PI Feedback',ko:'PI 피드백'},
+  'Suggestion / alternatif solusi':{en:'Suggestion / Alternative Solution',ko:'제안 / 대안'},
+  'Action yang disarankan':{en:'Recommended Action',ko:'권장 조치'},
+  'Alasan tidak dilanjutkan sebagai improvement':{en:'Reason for Not Proceeding',ko:'미진행 사유'},
+  'Simpan keputusan PI':{en:'Save PI Decision',ko:'PI 결정 저장'},
+  'Simpan laporan':{en:'Save Submission',ko:'제출 내용 저장'},
+  'Lampiran dan referensi':{en:'Attachments and References',ko:'첨부 파일 및 참고 자료'},
+  'Belum ada lampiran.':{en:'No attachments.',ko:'첨부 파일이 없습니다.'},
+  'Link dokumentasi':{en:'Documentation links',ko:'문서 링크'},
+  'Nama link (opsional)':{en:'Link name (optional)',ko:'링크 이름 (선택 사항)'},
+  'Tempel link OneDrive / SharePoint':{en:'Paste OneDrive / SharePoint link',ko:'OneDrive / SharePoint 링크 붙여넣기'},
+  '+ Tambah link':{en:'+ Add link',ko:'+ 링크 추가'},
+  'URL harus menggunakan http atau https.':{en:'URL must use http or https.',ko:'URL은 http 또는 https를 사용해야 합니다.'},
+  'Belum ada link.':{en:'No links.',ko:'링크가 없습니다.'},
+  'Buka / salin':{en:'Open / copy',ko:'열기 / 복사'},
+  'Tambah file':{en:'Add file',ko:'파일 추가'},
+  'Gambar, PDF, dokumen Office, CSV, atau TXT. Maksimal 100 MB per file.':{en:'Images, PDF, Office documents, CSV, or TXT. Maximum 100 MB per file.',ko:'이미지, PDF, Office 문서, CSV 또는 TXT. 파일당 최대 100MB.'},
+  'Judul link':{en:'Link title',ko:'링크 제목'},
+  'Link web / path jaringan':{en:'Web link / network path',ko:'웹 링크 / 네트워크 경로'},
+  '+ Tambah link':{en:'+ Add link',ko:'+ 링크 추가'},
+  'Contoh: Video kondisi line':{en:'Example: Line condition video',ko:'예: 라인 상태 동영상'},
+  'https://... atau \\\\server\\folder':{en:'https://... or \\\\server\\folder',ko:'https://... 또는 \\\\server\\folder'},
+  'Estimasi saving manpower (contoh: 2 orang atau 30 menit/hari)':{en:'Estimated manpower savings (e.g. 2 people or 30 minutes/day)',ko:'예상 인력 절감 (예: 2명 또는 하루 30분)'},
+  'Dampak / metrik kualitas (opsional)':{en:'Quality impact / metric (optional)',ko:'품질 영향 / 지표 (선택)'},
+  'Lanjut ke Project':{en:'Continue to Project',ko:'프로젝트로 진행'},
+  'Sudah dilanjutkan ke project':{en:'Already converted to project',ko:'이미 프로젝트로 전환됨'},
+  'Pengingat Tenggat':{en:'Deadline Reminders',ko:'마감 알림'},
+  'Tidak ada tenggat dalam 7 hari ke depan.':{en:'No deadlines in the next 7 days.',ko:'앞으로 7일 내 마감이 없습니다.'},
+  'Papan Progres':{en:'Progress Board',ko:'진행 현황판'},
+  'kotak kecil = tahap project (abu belum mulai, biru berjalan, hijau selesai, merah terlambat, kuning tertahan)':{en:'small blocks show project stages (gray not started, blue in progress, green completed, red overdue, yellow on hold)',ko:'작은 블록은 프로젝트 단계를 표시합니다 (회색 시작 전, 파랑 진행 중, 초록 완료, 빨강 지연, 노랑 보류)'},
+  'Tidak ada project.':{en:'No projects.',ko:'프로젝트가 없습니다.'},
+  'Tidak ada yang perlu perhatian.':{en:'Nothing needs attention.',ko:'확인이 필요한 항목이 없습니다.'},
+  'Tidak ada':{en:'None',ko:'없음'},
+  'On Progress':{en:'In Progress',ko:'진행 중'},
+  'Completed':{en:'Completed',ko:'완료'},
+  'Delayed':{en:'Delayed',ko:'지연'},
+  'On Hold':{en:'On Hold',ko:'보류'},
+  'Not Started':{en:'Not Started',ko:'시작 전'},
+  'Minggu':{en:'Week',ko:'주'},
+  'Bulan':{en:'Month',ko:'월'},
+  'Kuartal':{en:'Quarter',ko:'분기'},
+  'Kelompokkan per klasifikasi':{en:'Group by category',ko:'분류별 그룹화'},
+  'Plan vs Actual':{en:'Plan vs Actual',ko:'계획 대비 실적'},
+  'Plan':{en:'Plan',ko:'계획'},
+  'Actual':{en:'Actual',ko:'실적'},
+  'Buka semua stage':{en:'Expand all stages',ko:'모든 단계 펼치기'},
+  'Tutup semua':{en:'Collapse all',ko:'모두 접기'},
+  'Ke hari ini':{en:'Go to today',ko:'오늘로 이동'},
+  'Project / Stage':{en:'Project / Stage',ko:'프로젝트 / 단계'},
+  'Daftar Project':{en:'Project List',ko:'프로젝트 목록'},
+  'Kode':{en:'Code',ko:'코드'},
+  'Project':{en:'Project',ko:'프로젝트'},
+  'project':{en:'project',ko:'프로젝트'},
+  'Klasifikasi':{en:'Category',ko:'분류'},
+  'Prioritas':{en:'Priority',ko:'우선순위'},
+  'Status':{en:'Status',ko:'상태'},
+  'Progres':{en:'Progress',ko:'진행률'},
+  'Tahap saat ini':{en:'Current stage',ko:'현재 단계'},
+  'Mulai':{en:'Start',ko:'시작'},
+  'Target':{en:'Target',ko:'목표일'},
+  'Vendor':{en:'Vendor',ko:'공급업체'},
+  'Budget':{en:'Budget',ko:'예산'},
+  'Komitmen':{en:'Committed',ko:'약정 금액'},
+  'Quotation':{en:'Quotation',ko:'견적'},
+  'quotation':{en:'quotation',ko:'견적'},
+  'PO':{en:'PO',ko:'발주서'},
+  'Total':{en:'Total',ko:'합계'},
+  'Nilai Terpilih':{en:'Selected Value',ko:'선정 금액'},
+  'Nilai PO':{en:'PO Value',ko:'발주 금액'},
+  'Terpilih':{en:'Selected',ko:'선정됨'},
+  'Buat PO':{en:'Create PO',ko:'발주서 만들기'},
+  'Tidak ada project. Klik "+ Project" untuk menambah.':{en:'No projects. Select "+ Project" to add one.',ko:'프로젝트가 없습니다. "+ 프로젝트"를 눌러 추가하세요.'},
+  'Semua Quotation':{en:'All Quotations',ko:'전체 견적'},
+  'Purchase Order':{en:'Purchase Orders',ko:'구매 발주서'},
+  'Ringkasan Vendor':{en:'Vendor Summary',ko:'공급업체 요약'},
+  'Tanggal':{en:'Date',ko:'날짜'},
+  'No. Quotation':{en:'Quotation No.',ko:'견적 번호'},
+  'Harga':{en:'Price',ko:'가격'},
+  'Diterima':{en:'Received',ko:'접수일'},
+  'Berlaku s/d':{en:'Valid until',ko:'유효 기간'},
+  'File':{en:'File',ko:'파일'},
+  'No. PO':{en:'PO No.',ko:'발주 번호'},
+  'Dibuat oleh':{en:'Created by',ko:'작성자'},
+  'Info Project':{en:'Project Info',ko:'프로젝트 정보'},
+  'Stage':{en:'Stages',ko:'단계'},
+  'Milestone':{en:'Milestones',ko:'마일스톤'},
+  'Riwayat':{en:'History',ko:'이력'},
+  'Nama Project *':{en:'Project Name *',ko:'프로젝트 이름 *'},
+  'Area / Line':{en:'Area / Line',ko:'구역 / 라인'},
+  'Tanggal Mulai *':{en:'Start Date *',ko:'시작일 *'},
+  'Target Selesai *':{en:'Target Completion *',ko:'완료 목표일 *'},
+  'Progres (%)':{en:'Progress (%)',ko:'진행률 (%)'},
+  'Deskripsi / catatan':{en:'Description / notes',ko:'설명 / 메모'},
+  'Hapus':{en:'Delete',ko:'삭제'},
+  'Batal':{en:'Cancel',ko:'취소'},
+  'Simpan':{en:'Save',ko:'저장'},
+  'Simpan Project':{en:'Save Project',ko:'프로젝트 저장'},
+  'Template':{en:'Template',ko:'템플릿'},
+  'Mulai plan':{en:'Plan start',ko:'계획 시작일'},
+  'Muat template':{en:'Load template',ko:'템플릿 불러오기'},
+  'Susun ulang plan berurutan':{en:'Reorder plan sequentially',ko:'계획 순서 재정렬'},
+  'Simpan sebagai template':{en:'Save as template',ko:'템플릿으로 저장'},
+  'Quotation yang diterima':{en:'Received Quotations',ko:'접수된 견적'},
+  '+ Tambah Quotation':{en:'+ Add Quotation',ko:'+ 견적 추가'},
+  'Tanggal diterima':{en:'Received date',ko:'접수일'},
+  'Berlaku sampai':{en:'Valid until',ko:'유효 기간'},
+  'Catatan (lead time, termin pembayaran, garansi, dll.)':{en:'Notes (lead time, payment terms, warranty, etc.)',ko:'메모 (납기, 결제 조건, 보증 등)'},
+  'Tambah pengguna':{en:'Add user',ko:'사용자 추가'},
+  'Kelola pengguna':{en:'Manage users',ko:'사용자 관리'},
+  'Ganti PIN':{en:'Change PIN',ko:'PIN 변경'},
+  'PIN lama':{en:'Current PIN',ko:'현재 PIN'},
+  'PIN baru (minimal 4 karakter)':{en:'New PIN (at least 4 characters)',ko:'새 PIN (4자 이상)'},
+  'Ulangi PIN baru':{en:'Confirm new PIN',ko:'새 PIN 확인'},
+  'Masuk':{en:'Log in',ko:'로그인'},
+  'Masuk untuk melanjutkan.':{en:'Sign in to continue.',ko:'계속하려면 로그인하세요.'},
+  'Akses edit':{en:'Edit access',ko:'편집 권한'},
+  'Viewer':{en:'Viewer',ko:'뷰어'},
+  'Viewer (lihat saja)':{en:'Viewer (read only)',ko:'뷰어 (보기 전용)'},
+  'Akses Viewer hanya dapat melihat data':{en:'Viewer access is read-only.',ko:'뷰어 권한은 읽기 전용입니다.'},
+  'Masuk sebagai Viewer':{en:'Sign in as Viewer',ko:'뷰어로 로그인'},
+  'Belum ada akun Viewer. Minta admin membuat akun Viewer melalui Pengaturan > Kelola pengguna.':{en:'No Viewer accounts yet. Ask an admin to create one in Settings > Manage users.',ko:'뷰어 계정이 없습니다. 관리자에게 설정 > 사용자 관리에서 계정 생성을 요청하세요.'},
+  'Project operations':{en:'Project operations',ko:'프로젝트 운영'},
+  'Buat admin':{en:'Create admin',ko:'관리자 만들기'},
+  'Nama admin':{en:'Admin name',ko:'관리자 이름'},
+  'Nama':{en:'Name',ko:'이름'},
+  'Ulangi PIN':{en:'Confirm PIN',ko:'PIN 확인'},
+  'Tidak ada quotation.':{en:'No quotations.',ko:'견적이 없습니다.'},
+  'Belum ada quotation. Klik "+ Tambah Quotation".':{en:'No quotations yet. Select "+ Add Quotation".',ko:'견적이 없습니다. "+ 견적 추가"를 누르세요.'},
+  'Belum ada PO.':{en:'No POs yet.',ko:'발주서가 없습니다.'},
+  'PO dibuat dari quotation berstatus Terpilih: buka project, tab Quotation & PO, klik Buat PO.':{en:'Create a PO from a selected quotation: open a project, go to Quotations & POs, and select Create PO.',ko:'선정된 견적에서 발주서를 만들 수 있습니다. 프로젝트를 열고 견적 및 발주서 탭에서 발주서 만들기를 선택하세요.'},
+  'Belum ada milestone':{en:'No milestones yet',ko:'마일스톤이 없습니다'},
+  'Belum ada riwayat perubahan.':{en:'No change history.',ko:'변경 이력이 없습니다.'},
+  'Nama pengguna':{en:'User name',ko:'사용자 이름'},
+  'Pengguna':{en:'User',ko:'사용자'},
+  'Admin':{en:'Admin',ko:'관리자'},
+  'Semua project':{en:'All projects',ko:'모든 프로젝트'},
+  'Tidak ada data budget.':{en:'No budget data.',ko:'예산 데이터가 없습니다.'},
+  'Belum ada data quotation.':{en:'No quotation data.',ko:'견적 데이터가 없습니다.'},
+  'Reset PIN':{en:'Reset PIN',ko:'PIN 재설정'},
+  'Tambah':{en:'Add',ko:'추가'},
+  'Tutup':{en:'Close',ko:'닫기'},
+  'Beranda':{en:'Home',ko:'홈'},
+  'Akun':{en:'Account',ko:'계정'},
+  'Masuk sebagai':{en:'Logged in as',ko:'로그인 사용자'},
+  'Nama ini dicatat di riwayat perubahan.':{en:'This name is recorded in the change history.',ko:'이 이름은 변경 이력에 기록됩니다.'},
+  'Ganti PIN saya':{en:'Change my PIN',ko:'내 PIN 변경'},
+  'Backup sekarang':{en:'Back up now',ko:'지금 백업'},
+  'Aplikasi':{en:'Application',ko:'애플리케이션'},
+  'Nama aplikasi (tampil di header dan tab browser)':{en:'Application name (shown in the header and browser tab)',ko:'애플리케이션 이름 (헤더와 브라우저 탭에 표시)'},
+  'Stage & PO':{en:'Stages & POs',ko:'단계 및 발주서'},
+  'Template & nomor PO':{en:'PO template & numbering',ko:'발주서 템플릿 및 번호'},
+  'Fitur':{en:'Features',ko:'기능'},
+  'Pakai kolom budget (opsional, tidak tampil di Dashboard)':{en:'Enable budget fields (optional; hidden from Dashboard)',ko:'예산 필드 사용 (선택 사항, 대시보드에 숨김)'},
+  'Progres project dihitung otomatis dari stage yang selesai':{en:'Calculate project progress from completed stages',ko:'완료된 단계로 프로젝트 진행률 자동 계산'},
+  'Tanggal mulai dan target project mengikuti plan stage':{en:'Use stage plans for project start and target dates',ko:'단계 계획에 따라 프로젝트 시작일과 목표일 설정'},
+  'Mata uang':{en:'Currency',ko:'통화'},
+  'Klasifikasi / kategori project':{en:'Project categories',ko:'프로젝트 분류'},
+  'Tampilan':{en:'Appearance',ko:'화면 설정'},
+  'Terang':{en:'Light',ko:'라이트'},
+  'Gelap':{en:'Dark',ko:'다크'},
+  'Ekspor':{en:'Export',ko:'내보내기'},
+  'Impor':{en:'Import',ko:'가져오기'},
+  'Project (CSV)':{en:'Projects (CSV)',ko:'프로젝트 (CSV)'},
+  'Stage Plan vs Actual (CSV)':{en:'Stage Plan vs Actual (CSV)',ko:'단계 계획 및 실적 (CSV)'},
+  'Quotation (CSV)':{en:'Quotations (CSV)',ko:'견적 (CSV)'},
+  'PO (CSV)':{en:'POs (CSV)',ko:'발주서 (CSV)'},
+  'Backup (JSON)':{en:'Backup (JSON)',ko:'백업 (JSON)'},
+  'Impor JSON':{en:'Import JSON',ko:'JSON 가져오기'},
+  'Template stage':{en:'Stage template',ko:'단계 템플릿'},
+  'Tambah stage':{en:'Add stage',ko:'단계 추가'},
+  'Hapus stage':{en:'Delete stage',ko:'단계 삭제'},
+  'Nama stage':{en:'Stage name',ko:'단계 이름'},
+  'Plan Mulai':{en:'Plan Start',ko:'계획 시작'},
+  'Plan Selesai':{en:'Plan End',ko:'계획 종료'},
+  'Actual Mulai':{en:'Actual Start',ko:'실제 시작'},
+  'Actual Selesai':{en:'Actual End',ko:'실제 종료'},
+  'Catatan':{en:'Notes',ko:'메모'},
+  'PIC':{en:'Owner',ko:'담당자'},
+  'Prioritas':{en:'Priority',ko:'우선순위'},
+  'Kepada (TO) - vendor, isi manual':{en:'To (vendor; enter manually)',ko:'수신 (공급업체, 직접 입력)'},
+  'Kirim ke (SHIP TO)':{en:'Ship to',ko:'배송지'},
+  'Dokumen':{en:'Document',ko:'문서'},
+  'Perihal / project':{en:'Subject / project',ko:'제목 / 프로젝트'},
+  'Nama vendor':{en:'Vendor name',ko:'공급업체 이름'},
+  'Attn / kontak vendor':{en:'Attention / vendor contact',ko:'담당자 / 공급업체 연락처'},
+  'Telp vendor':{en:'Vendor phone',ko:'공급업체 전화번호'},
+  'E-mail vendor':{en:'Vendor email',ko:'공급업체 이메일'},
+  'Alamat vendor':{en:'Vendor address',ko:'공급업체 주소'},
+  'Nama':{en:'Name',ko:'이름'},
+  'Telp':{en:'Phone',ko:'전화'},
+  'Attn':{en:'Attention',ko:'담당자'},
+  'Alamat pengiriman':{en:'Shipping address',ko:'배송 주소'},
+  'Item':{en:'Items',ko:'품목'},
+  '+ Baris':{en:'+ Row',ko:'+ 행 추가'},
+  'PPN (%)':{en:'Tax (%)',ko:'세금 (%)'},
+  'Ketentuan':{en:'Terms',ko:'조건'},
+  'Payment (termin pembayaran)':{en:'Payment terms',ko:'결제 조건'},
+  'Lead Time':{en:'Lead time',ko:'납기'},
+  'Delivery Place (lokasi pengiriman)':{en:'Delivery location',ko:'배송 장소'},
+  'Catatan tambahan (opsional)':{en:'Additional notes (optional)',ko:'추가 메모 (선택 사항)'},
+  'Deskripsi':{en:'Description',ko:'설명'},
+  'Qty':{en:'Qty',ko:'수량'},
+  'Satuan':{en:'Unit',ko:'단위'},
+  'Due Date':{en:'Due Date',ko:'납기일'},
+  'Harga satuan':{en:'Unit price',ko:'단가'},
+  'Subtotal':{en:'Subtotal',ko:'소계'},
+  'Total PO':{en:'PO Total',ko:'발주서 합계'},
+  'Buat Purchase Order':{en:'Create Purchase Order',ko:'구매 발주서 만들기'},
+  'Cetak / PDF':{en:'Print / PDF',ko:'인쇄 / PDF'},
+  'Unduh Word':{en:'Download Word',ko:'Word 다운로드'},
+  'Pratinjau':{en:'Preview',ko:'미리보기'},
+  'Buka':{en:'Open',ko:'열기'},
+  'Lepas file':{en:'Remove file',ko:'파일 제거'},
+  'Tambah pengguna':{en:'Add user',ko:'사용자 추가'},
+  'PIN (minimal 4 karakter)':{en:'PIN (at least 4 characters)',ko:'PIN (4자 이상)'},
+  'PIN baru':{en:'New PIN',ko:'새 PIN'},
+  'Ulangi PIN':{en:'Confirm PIN',ko:'PIN 확인'},
+  'Hanya admin':{en:'Admins only',ko:'관리자 전용'},
+  'Terendah':{en:'Lowest',ko:'최저가'},
+  'TERENDAH':{en:'LOWEST',ko:'최저가'},
+  'Terlambat':{en:'Overdue',ko:'지연'},
+  'Berisiko':{en:'At risk',ko:'위험'},
+  'Deadline':{en:'Deadline',ko:'마감일'},
+  'Terlambat':{en:'Overdue',ko:'지연'},
+  'Target hari ini':{en:'Due today',ko:'오늘 마감'},
+  'hari lagi':{en:'days left',ko:'일 남음'},
+  'hari lewat target':{en:'days overdue',ko:'일 지남'},
+  'Belum masuk':{en:'Not logged in',ko:'로그인되지 않음'},
+  'Terhubung':{en:'Connected',ko:'연결됨'},
+  'online':{en:'online',ko:'온라인'},
+  'sinkron':{en:'synced',ko:'동기화'},
+  'Belum tersimpan':{en:'Not saved',ko:'저장되지 않음'},
+  'klik untuk coba lagi':{en:'click to retry',ko:'눌러서 다시 시도'},
+  'Klik untuk memuat ulang data sekarang':{en:'Click to reload data now',ko:'눌러서 데이터를 새로고침'},
+  'Data dimuat ulang':{en:'Data reloaded',ko:'데이터를 새로고침했습니다'},
+  'Gagal sinkron':{en:'Sync failed',ko:'동기화 실패'},
+  'Tidak ada yang perlu perhatian.':{en:'Nothing needs attention.',ko:'확인이 필요한 항목이 없습니다.'},
+  'Tidak ada project untuk ditampilkan.':{en:'No projects to display.',ko:'표시할 프로젝트가 없습니다.'},
+  'Belum ada project. Klik "+ Project" untuk memulai.':{en:'No projects yet. Select "+ Project" to get started.',ko:'프로젝트가 없습니다. "+ 프로젝트"를 눌러 시작하세요.'},
+  'Belum ada data budget.':{en:'No budget data yet.',ko:'예산 데이터가 없습니다.'},
+  'Belum ada quotation.':{en:'No quotations yet.',ko:'견적이 없습니다.'},
+  'Belum ada PO.':{en:'No POs yet.',ko:'발주서가 없습니다.'}
+};
+const LANG_SOURCE={};
+Object.entries(LANG_TEXT).forEach(([source,values])=>{LANG_SOURCE[source]=source;Object.values(values).forEach(value=>{LANG_SOURCE[value]=source;});});
+const LANG_VARIANTS=Object.keys(LANG_SOURCE).sort((a,b)=>b.length-a.length);
+function translatedText(value){
+  const trimmed=value.trim(),source=LANG_SOURCE[trimmed];
+  if(source){
+    const replacement=APP_LANG==='id'?source:(LANG_TEXT[source][APP_LANG]||source);
+    return value.replace(trimmed,replacement);
+  }
+  let match=trimmed.match(/^(?:Perlu Perhatian|Needs Attention|확인 필요) \((\d+)\)$/);
+  if(match)return value.replace(trimmed,APP_LANG==='id'?`Perlu Perhatian (${match[1]})`:APP_LANG==='en'?`Needs Attention (${match[1]})`:`확인 필요 (${match[1]})`);
+  match=trimmed.match(/^(?:(\d+) dari (\d+) project|(\d+) of (\d+) projects|(\d+) \/ (\d+)개 프로젝트|(\d+) dari (\d+) issue|(\d+) of (\d+) issues|(\d+) \/ (\d+)개 이슈)$/);
+  if(match){const first=match[1]||match[3]||match[5]||match[7]||match[9]||match[11],second=match[2]||match[4]||match[6]||match[8]||match[10]||match[12],isIssue=!!(match[7]||match[9]||match[11]);return value.replace(trimmed,APP_LANG==='id'?`${first} dari ${second} ${isIssue?'issue':'project'}`:APP_LANG==='en'?`${first} of ${second} ${isIssue?'issues':'projects'}`:`${first} / ${second}개 ${isIssue?'이슈':'프로젝트'}`);}
+  match=trimmed.match(/^(?:(\d+) project belum ada quotation|(\d+) projects have no quotations|견적이 없는 프로젝트 (\d+)개)$/);
+  if(match){const count=match[1]||match[2]||match[3];return value.replace(trimmed,APP_LANG==='id'?`${count} project belum ada quotation`:APP_LANG==='en'?`${count} projects have no quotations`:`견적이 없는 프로젝트 ${count}개`);}
+  match=trimmed.match(/^(?:(\d+) quotation terpilih belum di-PO|(\d+) selected quotations have no PO yet|발주서가 없는 선정 견적 (\d+)개)$/);
+  if(match){const count=match[1]||match[2]||match[3];return value.replace(trimmed,APP_LANG==='id'?`${count} quotation terpilih belum di-PO`:APP_LANG==='en'?`${count} selected quotations have no PO yet`:`발주서가 없는 선정 견적 ${count}개`);}
+  match=trimmed.match(/^(?:Template stage|Stage templates|단계 템플릿) \((\d+)\)$/);
+  if(match)return value.replace(trimmed,APP_LANG==='id'?`Template stage (${match[1]})`:APP_LANG==='en'?`Stage templates (${match[1]})`:`단계 템플릿 (${match[1]})`);
+  match=trimmed.match(/^(\d+) hari lagi$/);
+  if(match)return value.replace(trimmed,APP_LANG==='id'?`${match[1]} hari lagi`:APP_LANG==='en'?`${match[1]} days left`:`${match[1]}일 남음`);
+  match=trimmed.match(/^Terlambat (\d+) hari$/);
+  if(match)return value.replace(trimmed,APP_LANG==='id'?`Terlambat ${match[1]} hari`:APP_LANG==='en'?`${match[1]} days overdue`:`${match[1]}일 지연`);
+
+  let translated=value;
+  LANG_VARIANTS.forEach(variant=>{
+    if(!translated.includes(variant))return;
+    const key=LANG_SOURCE[variant],replacement=APP_LANG==='id'?key:(LANG_TEXT[key][APP_LANG]||key);
+    if(variant===replacement)return;
+    const escaped=variant.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+    const matcher=new RegExp('(^|[^A-Za-z0-9])('+escaped+')(?=$|[^A-Za-z0-9])','g');
+    translated=translated.replace(matcher,(_match,before)=>before+replacement);
+  });
+  return translated;
+}
+function applyLanguage(){
+  document.documentElement.lang=APP_LANG;
+  const selector=$('#app-language'),authSelector=$('#auth-language');if(selector)selector.value=APP_LANG;if(authSelector)authSelector.value=APP_LANG;
+  const walker=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT);
+  let node;
+  while((node=walker.nextNode())){
+    if(node.parentElement&&node.parentElement.closest('script,style,textarea,[data-no-translate]'))continue;
+    node.nodeValue=translatedText(node.nodeValue);
+  }
+  document.querySelectorAll('[placeholder],[title],[aria-label]').forEach(el=>{
+    ['placeholder','title','aria-label'].forEach(attr=>{if(el.hasAttribute(attr))el.setAttribute(attr,translatedText(el.getAttribute(attr)));});
+  });
+}
+function setLanguage(language){
+  if(!['id','en','ko'].includes(language))return;
+  APP_LANG=language;localStorage.setItem('pt_language',language);
+  const authSelector=$('#auth-language');if(authSelector)authSelector.value=language;
+  render();applyLanguage();
+}
+let LANGUAGE_UPDATE_QUEUED=false;
+new MutationObserver(()=>{
+  if(LANGUAGE_UPDATE_QUEUED)return;
+  LANGUAGE_UPDATE_QUEUED=true;
+  requestAnimationFrame(()=>{LANGUAGE_UPDATE_QUEUED=false;applyLanguage();});
+}).observe(document.body,{childList:true,subtree:true,characterData:true});
+
+/* ================= konstanta ================= */
+const STATUS_INPUT=['Not Started','On Progress','On Hold','Completed'];
+const ST_ORDER=['On Progress','Delayed','On Hold','Not Started','Completed'];
+const ST_COLOR={'Not Started':'#94a3b8','On Progress':'#3b82f6','Completed':'#10b981','On Hold':'#f59e0b','Delayed':'#ef4444'};
+const QSTAT=['Diterima','Review','Terpilih','Ditolak'];
+const QCOL={'Diterima':'#64748b','Review':'#f59e0b','Terpilih':'#10b981','Ditolak':'#ef4444'};
+const FILE_MAX=100*1024*1024;
+
+const STG_ST=['Not Started','On Progress','On Hold','Completed'];
+const ROMAN=['I','II','III','IV','V','VI','VII','VIII','IX','X','XI','XII'];
+const MN={en:{s:['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],f:['January','February','March','April','May','June','July','August','September','October','November','December']},id:{s:['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'],f:['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember']}};
+const POL={en:{to:'TO',ship:'SHIP TO',po:'PO. Number',date:'PO. Date',ref:'Ref. Quotation',proj:'Project',tel:'Telp',attn:'Attn',email:'E-mail',no:'No.',desc:'DESCRIPTION',qty:'QTY',unit:'Unit',due:'Due Date',price:'Unit Price',total:'Total',sub:'SUB TOTAL',tax:'Tax',grand:'GRAND TOTAL',pay:'Payment',lead:'Lead Time',deliv:'Delivery Place'},
+ id:{to:'KEPADA',ship:'KIRIM KE',po:'No. PO',date:'Tanggal PO',ref:'Ref. Quotation',proj:'Project',tel:'Telp',attn:'Up.',email:'E-mail',no:'No.',desc:'DESKRIPSI',qty:'QTY',unit:'Satuan',due:'Tgl. Kirim',price:'Harga Satuan',total:'Jumlah',sub:'SUB TOTAL',tax:'PPN',grand:'GRAND TOTAL',pay:'Pembayaran',lead:'Lead Time',deliv:'Lokasi Pengiriman'}};
+function poDate(iso,fmt,lang){const d=pd(iso);if(!d)return '';const dd=String(d.getDate()).padStart(2,'0'),mi=d.getMonth(),Y=d.getFullYear(),M=MN[lang==='id'?'id':'en'];
+  if(fmt==='dd/mm/yyyy')return dd+'/'+String(mi+1).padStart(2,'0')+'/'+Y;
+  if(fmt==='dd Mmmm yyyy')return dd+' '+M.f[mi]+' '+Y;
+  if(fmt==='dd Mmm yyyy')return dd+' '+M.s[mi]+' '+Y;
+  return dd+'-'+M.s[mi]+'-'+String(Y).slice(2);}
+
+
+/* ================= state ================= */
+let DB=normDB({}),ME='',USER=null;
+let VIEW='dash',F={cat:'',status:'',pic:'',q:''},SORT={k:'end',d:1},RPERIOD='day',PRIORITY_COLLAPSED=false;
+let GS='month',GGROUP=true,GJUMP=true;
+let REV=-1,KNOWN={},KNOWNI={},KDEL={},KSET=-1,SSE=null,ONLINE=[],SYNCERR=null,lastSync=null,PUSHING=false,AGAIN=false,RETRY=null,SKEW=0;
+let draft=null,baseAt=0,isNew=false,TAB='info',CD=[],IDRAFT=null,IBASE=null,IISNEW=false,IMPFILTER='all',IMPQ='',PROJECT_READ_ONLY=false;
+
+/* ================= data ================= */
+function buildStages(defs,base){
+  let cur=pd(base)||today(),prevS=cur;const out=[];
+  defs.forEach(def=>{
+    const days=Math.max(1,Number(def.days)||1);
+    const ps=(def.par&&out.length)?prevS:cur;
+    const pf=addDays(ps,days-1);
+    out.push({id:uid(),name:def.name,pic:def.pic||'',ps:fd(ps),pf:fd(pf),as:'',af:'',status:'Not Started',note:'',par:!!def.par});
+    prevS=ps;const nx=addDays(pf,1);if(nx>cur)cur=nx;
+  });
+  return out;
+}
+
+const byId=id=>DB.projects.find(p=>p.id===id);
+const getProj=id=>id==='draft'?draft:byId(id);
+const catColor=n=>{const c=DB.settings.categories.find(x=>x.name===n);return (c&&/^#[0-9a-fA-F]{3,8}$/.test(c.color||''))?c.color:'#64748b';};
+function nextCode(){let m=0;DB.projects.forEach(p=>{const x=/(\d+)$/.exec(p.code||'');if(x)m=Math.max(m,+x[1]);});return 'PRJ-'+String(m+1).padStart(3,'0');}
+
+/* ================= logika bisnis ================= */
+function effStatus(p){
+  if(p.status==='Completed'||p.progress>=100)return 'Completed';
+  if(p.status==='On Hold')return 'On Hold';
+  const e=pd(p.end);if(e&&e<today())return 'Delayed';
+  return p.status;
+}
+function planned(p){const s=pd(p.start),e=pd(p.end);if(!s||!e)return 0;const t=today();if(t<=s)return 0;if(t>=e)return 100;return Math.round(diffDays(s,t)/Math.max(1,diffDays(s,e))*100);}
+const atRisk=p=>effStatus(p)==='On Progress'&&planned(p)-p.progress>=15;
+const quotes=p=>p.quotations||[];
+const selQ=p=>quotes(p).find(q=>q.status==='Terpilih');
+function lowQ(p){const a=quotes(p).filter(q=>q.status!=='Ditolak'&&q.amount>0);if(new Set(a.map(q=>q.currency||DB.settings.currency||'IDR')).size>1)return null;return a.length?a.reduce((m,q)=>q.amount<m.amount?q:m):null;}
+function committed(p){if(p.actual>0)return p.actual;const s=selQ(p);return s&&s.amount>0&&(s.currency||DB.settings.currency||'IDR')===(DB.settings.currency||'IDR')?s.amount:0;}
+function costBasis(p){
+  if(p.actual>0)return {amt:p.actual,src:'Aktual / PO'};
+  const s=selQ(p);if(s&&s.amount>0)return {amt:s.amount,src:'Quotation terpilih',currency:s.currency||DB.settings.currency||'IDR'};
+  const l=lowQ(p);if(l)return {amt:l.amount,src:'Estimasi (quotation terendah)',currency:l.currency||DB.settings.currency||'IDR'};
+  return {amt:0,src:''};
+}
+function budgetState(p){
+  const b=p.budget||0,c=costBasis(p);
+  if(!b)return {key:'nobudget',label:'Tanpa budget',color:'#94a3b8',c:c};
+  if(c.currency&&(c.currency!==(DB.settings.currency||'IDR')))return {key:'currency',label:'Mata uang berbeda',color:'#94a3b8',c:{amt:0,src:c.src}};
+  if(!c.amt)return {key:'noval',label:'Belum ada nilai',color:'#94a3b8',c:c};
+  const r=c.amt/b;
+  if(r>1)return {key:'over',label:'Over Budget',color:'#ef4444',c:c};
+  if(r>=0.9)return {key:'near',label:'Mendekati budget',color:'#f59e0b',c:c};
+  return {key:'safe',label:'Aman',color:'#10b981',c:c};
+}
+
+/* ---- stage ---- */
+const useBud=()=>!!(DB&&DB.settings&&DB.settings.useBudget);
+function gset(k){return (DB&&DB.settings&&DB.settings[k]!==undefined)?DB.settings[k]:true;}
+function stEff(s){
+  if(s.af||s.status==='Completed')return 'Completed';
+  if(s.status==='On Hold')return 'On Hold';
+  const pf=pd(s.pf);if(pf&&pf<today())return 'Delayed';
+  if(s.as||s.status==='On Progress')return 'On Progress';
+  return 'Not Started';
+}
+function stLateStart(s){const e=stEff(s),ps=pd(s.ps);return e==='Not Started'&&ps&&ps<today();}
+function stDev(s){const pf=pd(s.pf);if(!pf)return null;if(s.af)return diffDays(pf,pd(s.af));if(pf<today()&&stEff(s)!=='On Hold')return diffDays(pf,today());return null;}
+function stageDays(s){return (s.ps&&s.pf)?Math.max(1,diffDays(pd(s.ps),pd(s.pf))+1):1;}
+function stageCalc(p){
+  const st=p.stages||[];if(!st.length)return null;
+  let tot=0,done=0;st.forEach(s=>{const w=stageDays(s);tot+=w;if(stEff(s)==='Completed')done+=w;});
+  return tot?Math.round(done/tot*100):0;
+}
+function applyAuto(p){
+  const st=p.stages||[];if(!st.length)return;
+  if(gset('autoDates')){
+    let mn='',mx='';st.forEach(s=>{if(s.ps&&(!mn||s.ps<mn))mn=s.ps;if(s.pf&&(!mx||s.pf>mx))mx=s.pf;});
+    if(mn)p.start=mn;if(mx)p.end=mx;
+  }
+  if(gset('autoProgress')){
+    const v=stageCalc(p);p.progress=v;
+    if(v>=100)p.status='Completed';
+    else{
+      if(p.status==='Completed')p.status='On Progress';
+      if(p.status==='Not Started'&&(v>0||st.some(s=>s.as||s.af)))p.status='On Progress';
+    }
+  }
+}
+function curStage(p){
+  const st=p.stages||[];if(!st.length)return null;
+  const done=st.filter(s=>stEff(s)==='Completed').length;
+  if(done===st.length)return {txt:'Semua tahap selesai',done:done,total:st.length,list:[]};
+  let list=st.filter(s=>{const e=stEff(s);return e==='On Progress'||e==='Delayed'||e==='On Hold';});
+  if(!list.length)list=[st.find(s=>stEff(s)==='Not Started')];
+  return {txt:list.map(s=>s.name).join(' + '),done:done,total:st.length,list:list};
+}
+function stageStrip(p){
+  const st=p.stages||[];if(!st.length)return '';
+  return '<div class="strip">'+st.map(s=>{const e=stEff(s);return `<i style="background:${e==='Not Started'?'var(--line)':ST_COLOR[e]}" title="${esc(s.name+' · '+e)}"></i>`;}).join('')+'</div>';
+}
+/* ---- PO ---- */
+function poTotals(po){const sub=(po.items||[]).reduce((a,i)=>a+(Number(i.qty)||0)*(Number(i.price)||0),0);const tax=Math.round(sub*(Number(po.tax)||0)/100);return {sub:sub,tax:tax,total:sub+tax};}
+function allPOs(){const out=[];DB.projects.forEach(p=>{if(draft&&draft.id===p.id)return;(p.pos||[]).forEach(o=>out.push(o));});if(draft)(draft.pos||[]).forEach(o=>out.push(o));return out;}
+function nextPONo(patOv){
+  let pat=(patOv||DB.settings.po.pattern||'{NNN}/PO/{RM}/{YYYY}');if(pat.indexOf('{NNN}')<0)pat+='/{NNN}';
+  const n=new Date(),Y=String(n.getFullYear()),M=String(n.getMonth()+1).padStart(2,'0');
+  const base=pat.replace(/\{YYYY\}/g,Y).replace(/\{YY\}/g,Y.slice(2)).replace(/\{MM\}/g,M).replace(/\{RM\}/g,ROMAN[n.getMonth()]);
+  const i=base.indexOf('{NNN}'),pre=base.slice(0,i),post=base.slice(i+5);
+  const rx=s=>s.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+  const re=new RegExp('^'+rx(pre)+'(\\d+)'+rx(post)+'$');
+  let mx=0;allPOs().forEach(o=>{const m=re.exec(o.no||'');if(m)mx=Math.max(mx,parseInt(m[1],10));});
+  return pre+String(mx+1).padStart(3,'0')+post;
+}
+function dupPOs(){const c={};DB.projects.forEach(p=>(p.pos||[]).forEach(o=>{c[o.no]=(c[o.no]||0)+1;}));return Object.keys(c).filter(k=>c[k]>1);}
+function poHTML(po,proj,auto,Sx){
+  const S=Sx||DB.settings.po,T=poTotals(po),lang=S.lang==='id'?'id':'en',Lb=POL[lang];
+  const nf=n=>Number(n||0).toLocaleString(lang==='en'?'en-US':'id-ID');
+  const currency=po.currency||DB.settings.currency||'IDR',cur=esc(currency);
+  const g=k=>po[k]!==undefined?po[k]:S[k];
+  const br=t=>esc(t).replace(/\n/g,'<br>');
+  const kv=(l,v)=>v?`<tr><td class="k">${l}</td><td class="s">:</td><td>${br(v)}</td></tr>`:'';
+  const isImg=x=>/^data:image\//.test(x||'');
+  const logo=isImg(S.logo)?`<img class="logo" src="${S.logo}">`:'';
+  const rows=(po.items||[]).map((i,n)=>`<tr><td class="c">${n+1}</td><td>${br(i.desc)}</td><td class="c">${esc(i.qty)}</td><td class="c">${esc(i.unit)}</td><td class="c">${i.due?esc(poDate(i.due,S.dateFmt,lang)):''}</td><td class="r">${nf(i.price)}</td><td class="r">${nf((Number(i.qty)||0)*(Number(i.price)||0))}</td></tr>`).join('');
+  const tr=(lb,v,c)=>`<tr class="${c||''}"><td colspan="5" class="nb"></td><td class="lb">${lb}</td><td class="r">${nf(v)}</td></tr>`;
+  const info=[[Lb.pay,g('terms')],[Lb.lead,g('leadTime')],[Lb.deliv,g('delivery')]].filter(x=>x[1]).map(x=>`<tr><td class="ik">${x[0]}</td><td class="s">:</td><td>${br(x[1])}</td></tr>`).join('');
+  const bl=String(S.billing||'').split('\n');
+  const billing=S.billing&&S.billing.trim()?`<div class="bill"><b><u>${esc(bl[0])}</u></b><br>${bl.slice(1).map(esc).join('<br>')}</div>`:'';
+  const notice=String(S.notice||'').split(/\n\s*\n/).filter(x=>x.trim()).map(p=>`<p>${br(p.trim())}</p>`).join('');
+  const useSig=!!g('useSig');
+  const sg=(S.sign||[]).filter(x=>x&&x.label).map(x=>`<td class="sg"><div>${esc(x.label)}</div><div class="sgi">${useSig&&isImg(x.img)?`<img src="${x.img}">`:''}</div><div class="sgl">${esc(x.name||'')}&nbsp;</div><div>${esc(x.title||'')}</div></td>`).join('');
+  return `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${esc(po.no)}</title><style>
+  body{font:12px/1.4 Cambria,Georgia,'Times New Roman',serif;color:#000;margin:0;padding:22px 30px}
+  table{border-collapse:collapse;width:100%}td,th{vertical-align:top}
+  .code{text-align:right;font-size:10px;margin-bottom:6px}
+  .logo{display:block;max-height:72px;max-width:240px;object-fit:contain;margin-bottom:4px}.cn{font-weight:700;font-size:11px}.ca{font-size:10px;line-height:1.35}
+  .ttl{font-size:17px;font-weight:700;text-decoration:underline;margin:8px 0 8px}
+  .po-meta{margin-top:24px}
+  .kv td{padding:2px 3px}.kv .k{width:90px}.s{width:10px}
+  .bx{margin-top:8px;border:1px solid #000}.bx>tbody>tr>td{width:50%;padding:5px 8px;border-right:1px solid #000;font-size:11px}.bx>tbody>tr>td:last-child{border-right:0}
+  .bx .kv td{padding:1px 3px;font-size:11px}.bx .kv .k{width:46px}
+  .frame{margin-top:8px;border:1px solid #000;min-height:430px}
+  .it{border-bottom:1px solid #000}.it th{border:1px solid #000;border-top:0;padding:4px 5px;font-size:11px;text-align:center}.it th:first-child{border-left:0}.it th:last-child{border-right:0}
+  .it td{padding:4px 5px;font-size:11px}.it tbody td{border-left:1px solid #000;border-right:1px solid #000;border-bottom:1px solid #000}.it tbody td.nb{border:0}.it tbody td:first-child{border-left:0}.it tbody td:last-child{border-right:0}
+  .c{text-align:center}.r{text-align:right}.lb{white-space:nowrap}.g td{font-weight:700}
+  .info{margin:14px 12px 10px}.info td{padding:2px 3px;font-size:11px;font-weight:700}.info .ik{width:110px}
+  .bill{margin:14px 12px 0;font-size:11px;line-height:1.5}
+  .nt{margin:12px 12px 0;font-size:11px;white-space:pre-line}
+  .notice{margin:14px 14px 0;text-align:center;font-weight:700;font-size:11px}.notice p{margin:0 0 10px}
+  .sgs{width:auto;margin:18px 30px 14px auto}.sg{width:190px;text-align:center;font-size:11px}.sgi{height:62px;text-align:center}.sgi img{max-height:60px;max-width:170px}.sgl{border-top:1px solid #000;font-weight:700;margin-top:2px}
+  @media print{body{padding:0}@page{size:A4;margin:12mm}}</style></head><body>
+  <table><tr><td style="width:46%">${logo}<div class="cn">${esc(S.company)}</div><div class="ca">${br(S.address)}${S.contact?'<br>'+br(S.contact):''}</div></td>
+  <td><div class="code">${esc(S.docCode||'')}</div><div class="ttl">${esc(S.title)}</div>
+  <table class="kv po-meta">${kv(Lb.po,po.no)}${kv(Lb.date,poDate(po.date,S.dateFmt,lang))}</table></td></tr></table>
+  <table class="bx"><tr><td><b>${Lb.to}</b><br><b>${esc(po.vendor)}</b><br>${br(po.addr)}<table class="kv">${kv(Lb.tel,po.tel)}${kv(Lb.attn,po.attn)}${kv(Lb.email,po.email)}</table></td>
+  <td><b>${Lb.ship}</b><br><b>${esc(g('shipName'))}</b><br>${br(g('shipAddr'))}<table class="kv">${kv(Lb.tel,g('shipTel'))}${kv(Lb.attn,g('shipAttn'))}</table></td></tr></table>
+  <div class="frame">
+  <table class="it"><thead><tr><th style="width:30px">${Lb.no}</th><th>${Lb.desc}</th><th style="width:40px">${Lb.qty}</th><th style="width:44px">${Lb.unit}</th><th style="width:70px">${Lb.due}</th><th style="width:92px">${Lb.price}<br>${cur}</th><th style="width:100px">${Lb.total}<br>${cur}</th></tr></thead>
+  <tbody>${rows}${tr(Lb.sub,T.sub)}${Number(po.tax)?tr(Lb.tax+' '+esc(po.tax)+'%',T.tax):''}${tr(Lb.grand,T.total,'g')}</tbody></table>
+  ${info?`<table class="info">${info}</table>`:''}${po.note?`<div class="nt">${esc(po.note)}</div>`:''}${billing}${notice?`<div class="notice">${notice}</div>`:''}
+  ${sg?`<table class="sgs"><tr>${sg}</tr></table>`:''}</div>
+  ${auto?'<scr'+'ipt>window.onload=function(){setTimeout(function(){window.print()},300)}</scr'+'ipt>':''}</body></html>`;
+}
+
+function getL(ignoreStatus){
+  const q=F.q.toLowerCase();
+  return DB.projects.filter(p=>{
+    if(F.cat&&p.category!==F.cat)return false;
+    if(!ignoreStatus&&F.status&&effStatus(p)!==F.status)return false;
+    if(F.pic&&p.pic!==F.pic)return false;
+    if(q){const hay=[p.code,p.name,p.pic,p.vendor,p.po,p.area].concat(quotes(p).map(x=>x.vendor+' '+x.no)).concat((p.pos||[]).map(o=>o.no+' '+o.vendor)).concat((p.stages||[]).map(s=>s.name)).join(' ').toLowerCase();if(hay.indexOf(q)<0)return false;}
+    return true;
+  });
+}
+
+/* ================= UI umum ================= */
+function toast(m){const t=$('#toast');t.textContent=m;t.style.display='block';clearTimeout(toast._t);toast._t=setTimeout(()=>{t.style.display='none';},3500);}
+function badge(st){return `<span class="badge" style="background:${ST_COLOR[st]}">${esc(st)}</span>`;}
+function chip(c){return `<span class="chip" style="background:${catColor(c)}">${esc(c)}</span>`;}
+function go(v){VIEW=v;if(v==='gantt')GJUMP=true;document.querySelectorAll('#nav button').forEach(b=>b.classList.toggle('on',b.dataset.v===v));render();}
+function setStatus(s){F.status=(!s||F.status===s)?'':s;render();}
+function setCat(c){F.cat=F.cat===c?'':c;render();}
+function resetF(){F={cat:'',status:'',pic:'',q:''};$('#q').value='';render();}
+function renderFilters(){
+  const pics=[...new Set(DB.projects.map(p=>p.pic).filter(Boolean))].sort();
+  const o=(arr,cur,all)=>`<option value="">${all}</option>`+arr.map(x=>`<option value="${esc(x)}" ${x===cur?'selected':''}>${esc(x)}</option>`).join('');
+  $('#fsel').innerHTML=`<select onchange="F.cat=this.value;render()">${o(DB.settings.categories.map(c=>c.name),F.cat,'Semua kategori')}</select> <select onchange="F.status=this.value;render()">${o(ST_ORDER,F.status,'Semua status')}</select> <select onchange="F.pic=this.value;render()">${o(pics,F.pic,'Semua PIC')}</select>`;
+  const vs=new Set();DB.projects.forEach(p=>{if(p.vendor)vs.add(p.vendor);quotes(p).forEach(q=>q.vendor&&vs.add(q.vendor));});
+  $('#vlist').innerHTML=[...vs].sort().map(v=>`<option value="${esc(v)}">`).join('');
+}
+function render(){
+  renderFilters();renderSync();
+  $('#who').textContent=ME?(ME+(isAdmin()?' · admin':isViewer()?' · viewer':isContributor()?' · kontributor':'')):'';$('#appname').textContent=appName();document.title=appName();
+  const createButton=$('#new-project-button');if(createButton)createButton.hidden=!canEdit()||VIEW==='improvements';
+  const filters=$('.filters');if(filters)filters.hidden=VIEW==='improvements';
+  $('#cnt').textContent=VIEW==='improvements'?DB.improvements.length+' improvement':getL(false).length+' dari '+DB.projects.length+' project';
+  ({dash:rDash,gantt:rGantt,list:rList,budget:rBudget,improvements:rImprovements})[VIEW]();
+  applyLanguage();
+}
+
+/* ================= donut ================= */
+function donut(data,onclick,centerTxt){
+  const tot=data.reduce((a,d)=>a+d.v,0),R=50,C=2*Math.PI*R;let off=0;
+  const segs=tot?data.filter(d=>d.v>0).map(d=>{const len=d.v/tot*C;const s=`<circle cx="70" cy="70" r="${R}" fill="none" stroke="${d.c}" stroke-width="20" stroke-dasharray="${len} ${C-len}" stroke-dashoffset="${-off}" transform="rotate(-90 70 70)"></circle>`;off+=len;return s;}).join(''):`<circle cx="70" cy="70" r="${R}" fill="none" stroke="var(--line)" stroke-width="20"></circle>`;
+  const leg=data.map(d=>`<div onclick="${onclick}('${esc(d.l)}')"><i style="background:${d.c}"></i>${esc(d.l)}<b>${d.v}</b></div>`).join('');
+  return `<div class="donut"><svg viewBox="0 0 140 140">${segs}<text x="70" y="68" text-anchor="middle" font-size="26" font-weight="700" fill="var(--text)">${tot}</text><text x="70" y="86" text-anchor="middle" font-size="10" fill="var(--muted)">${centerTxt}</text></svg><div class="leg">${leg}</div></div>`;
+}
+
+/* ================= DASHBOARD ================= */
+function attention(L){
+  const t=today(),out=[];
+  L.forEach(p=>{
+    const st=effStatus(p);if(st==='Completed')return;
+    const e=pd(p.end),dl=e?diffDays(t,e):null;
+    if(st==='Delayed')out.push({p:p,sev:1,tag:'Terlambat',c:'#ef4444',txt:(e?Math.max(0,-dl)+' hari lewat target':'Ditandai terlambat')+' · progres '+p.progress+'%'});
+    else if(atRisk(p))out.push({p:p,sev:2,tag:'Berisiko',c:'#f97316',txt:'Progres '+p.progress+'% vs rencana '+planned(p)+'%'});
+    else if(st==='On Hold')out.push({p:p,sev:4,tag:'On Hold',c:'#f59e0b',txt:p.desc?p.desc:'Project ditunda'});
+    else if(dl!==null&&dl>=0&&dl<=14)out.push({p:p,sev:5,tag:'Deadline',c:'#3b82f6',txt:dl+' hari lagi · progres '+p.progress+'%'});
+    const ds=p.stages.filter(s=>stEff(s)==='Delayed');
+    if(ds.length)out.push({p:p,sev:1.5,tag:'Stage',c:'#ef4444',txt:'Terlambat: '+ds.slice(0,3).map(s=>s.name+' (+'+stDev(s)+' hr)').join(', ')+(ds.length>3?' ...':'')});
+    const ls=p.stages.filter(stLateStart);
+    if(ls.length)out.push({p:p,sev:3,tag:'Belum mulai',c:'#f97316',txt:'Lewat plan mulai: '+ls.slice(0,3).map(s=>s.name).join(', ')+(ls.length>3?' ...':'')});
+    if(useBud()){const bs=budgetState(p);if(bs.key==='over')out.push({p:p,sev:2,tag:'Over Budget',c:'#ef4444',txt:'+'+moneyC(bs.c.amt-p.budget)+' dari budget ('+bs.c.src.toLowerCase()+')'});}
+    if(!selQ(p)){quotes(p).forEach(q=>{if(q.status!=='Ditolak'&&q.valid){const d=diffDays(t,pd(q.valid));if(d>=0&&d<=7)out.push({p:p,sev:3,tag:'Quotation',c:'#a855f7',txt:'Quotation '+q.vendor+' berlaku '+d+' hari lagi'});}});}
+    if(selQ(p)&&!p.pos.length)out.push({p:p,sev:4,tag:'PO',c:'#a855f7',txt:'Quotation '+selQ(p).vendor+' terpilih, PO belum dibuat'});
+  });
+  return out.sort((a,b)=>a.sev-b.sev);
+}
+function priorityReminders(projects){
+  const start=today(),end=RPERIOD==='day'?start:RPERIOD==='week'?addDays(start,6):new Date(start.getFullYear(),start.getMonth()+1,0);
+  const out=[];projects.forEach(p=>{
+    if(effStatus(p)==='On Hold')return;
+    const add=(date,label,tab,done)=>{if(!date||done)return;const d=pd(date);if(!d||d>end)return;out.push({p,date,label,tab,days:diffDays(start,d)});};
+    if(effStatus(p)!=='Completed')add(p.end,'Target project','info',false);
+    (p.stages||[]).forEach(s=>{const status=stEff(s);if(status!=='On Hold')add(s.pf,'Stage: '+s.name,'stage',status==='Completed');});
+    (p.milestones||[]).forEach(m=>add(m.date,'Milestone: '+m.name,'ms',m.done));
+  });
+  return out.sort((a,b)=>a.date.localeCompare(b.date)||(a.p.name||'').localeCompare(b.p.name||''));
+}
+function setReminderPeriod(period){RPERIOD=period;rDash();applyLanguage();}
+function togglePriorityReminders(){PRIORITY_COLLAPSED=!PRIORITY_COLLAPSED;rDash();applyLanguage();}
+function rDash(){
+  const all=getL(true),L=getL(false);
+  const reminders=priorityReminders(L);
+  const cnt=s=>all.filter(p=>effStatus(p)===s).length;
+  const avg=all.length?Math.round(all.reduce((a,p)=>a+p.progress,0)/all.length):0;
+  const kp=(s,lbl)=>`<div class="kpi ${F.status===s&&s?'on':''}" onclick="setStatus('${s}')"><i style="background:${ST_COLOR[s]||'var(--pri)'}"></i><b>${s?cnt(s):all.length}</b><span>${lbl}</span></div>`;
+  const dashboardImprovements=(DB.improvements||[]).filter(x=>canReviewImprovement()||x.submittedBy===ME);
+  const newImprovements=dashboardImprovements.filter(x=>x.status==='Baru').length;
+  const nQ=L.reduce((a,p)=>a+quotes(p).length,0),nPO=L.reduce((a,p)=>a+p.pos.length,0);
+  const waitQ=L.filter(p=>{const s=effStatus(p);return s!=='Completed'&&s!=='On Hold'&&s!=='Not Started'&&!quotes(p).length&&!p.pos.length;}).length;
+  const waitPO=L.filter(p=>selQ(p)&&!p.pos.length&&effStatus(p)!=='Completed').length;
+  let ban='';
+  if(Math.abs(SKEW)>120000)ban+=`<div class="banner warn"><span><b>Jam komputer Anda berbeda sekitar ${Math.round(Math.abs(SKEW)/60000)} menit dari server.</b> Perubahan terbaru ditentukan dari jam komputer, jadi sinkronkan jam Windows Anda agar data tidak saling menimpa.</span></div>`;
+  const stData=ST_ORDER.map(s=>({l:s,v:L.filter(p=>effStatus(p)===s).length,c:ST_COLOR[s]}));
+  const catData=DB.settings.categories.map(c=>({l:c.name,v:L.filter(p=>p.category===c.name).length,c:c.color}));
+  const att=attention(L);
+  const periodNames={day:'Harian',week:'Mingguan',month:'Bulanan'};
+  const reminderRows=reminders.map(x=>{const label=x.days<0?'Terlambat '+Math.abs(x.days)+' hari':x.days===0?'Hari ini':x.days+' hari lagi';return `<div class="ai" onclick="openP('${x.p.id}','${x.tab}')"><span class="tag" style="background:${x.days<0?'#ef4444':x.days<=2?'#f59e0b':'#3b82f6'}">${label}</span><div><b>${esc(x.label)} · ${esc(x.p.name)}</b><div class="small muted">${esc(x.p.code)} · ${fmtDate(x.date)}${x.p.pic?' · '+esc(x.p.pic):''}</div></div></div>`;}).join('')||'<div class="muted">Tidak ada prioritas terjadwal pada periode ini.</div>';
+  const reminderPanel=`<div class="card deadline-reminders ${reminders.some(x=>x.days<0)?'has-overdue':''}"><div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap"><h3 style="margin:0;flex:1">Prioritas ${periodNames[RPERIOD]} <span class="muted small" style="font-weight:400">(${reminders.length})</span></h3><div class="priority-controls"><div class="reminder-period">${[['day','Hari ini'],['week','Minggu ini'],['month','Bulan ini']].map(x=>`<button class="${RPERIOD===x[0]?'on':''}" onclick="setReminderPeriod('${x[0]}')">${x[1]}</button>`).join('')}</div><button class="btn sm" type="button" aria-controls="priority-reminder-content" aria-expanded="${!PRIORITY_COLLAPSED}" onclick="togglePriorityReminders()">${PRIORITY_COLLAPSED?'Tampilkan daftar':'Sembunyikan daftar'}</button></div></div><div id="priority-reminder-content" ${PRIORITY_COLLAPSED?'hidden':''}>${reminderRows}</div></div>`;
+  const board=L.slice().sort((a,b)=>ST_ORDER.indexOf(effStatus(a))-ST_ORDER.indexOf(effStatus(b))||(a.end>b.end?1:-1)).map(p=>{
+    const st=effStatus(p),cs=curStage(p),late=p.stages.filter(s=>stEff(s)==='Delayed').length;
+    return `<div class="pb" onclick="viewP('${p.id}')">
+      <div><b>${esc(p.name)}</b><div class="small muted">${esc(p.code)} · ${esc(p.pic||'-')} · ${chip(p.category)}</div></div>
+      <div><div class="bar"><div class="fill" style="width:${p.progress}%;background:${catColor(p.category)}"></div>${st==='Completed'||p.stages.length?'':`<div class="plan" style="left:${planned(p)}%" title="Rencana ${planned(p)}%"></div>`}</div>${stageStrip(p)}
+        <div class="small muted" style="margin-top:4px">${fmtDate(p.start)} → ${fmtDate(p.end)}${cs?' · Tahap: <b style="color:var(--text)">'+esc(cs.txt)+'</b> ('+cs.done+'/'+cs.total+' selesai)':''}${late&&st!=='Completed'?' · <span style="color:var(--bad);font-weight:600">'+late+' stage terlambat</span>':''}</div></div>
+      <div style="text-align:right"><b>${p.progress}%</b> ${badge(st)}${atRisk(p)?' <span class="tag" style="background:#f97316">BERISIKO</span>':''}</div></div>`;
+  }).join('')||'<div class="empty">Tidak ada project.</div>';
+  $('#main').innerHTML=ban+`
+  <div class="grid kpis">${kp('','Total Project')}${kp('On Progress','On Progress')}${kp('Completed','Completed')}${kp('Delayed','Delayed')}${kp('On Hold','On Hold')}${kp('Not Started','Not Started')}
+    <div class="kpi static"><i style="background:var(--pri)"></i><b>${avg}%</b><span>Rata-rata progres</span><div class="mini"><div style="width:${avg}%"></div></div></div></div>
+  <div class="grid kpis">
+    <div class="kpi" onclick="go('improvements')"><i style="background:#10b981"></i><b>${dashboardImprovements.length}</b><span>Improvement masuk</span><small>${newImprovements} baru</small></div>
+    <div class="kpi static"><i style="background:#a855f7"></i><b>${nQ}</b><span>Quotation masuk</span><small>${waitQ} project belum ada quotation</small></div>
+    <div class="kpi static"><i style="background:#3b82f6"></i><b>${nPO}</b><span>PO terbit</span><small>${waitPO} quotation terpilih belum di-PO</small></div>
+  </div>
+  ${reminderPanel}
+  <div class="grid g3">
+    <div class="card"><h3>Status Project</h3>${donut(stData,'setStatus','project')}</div>
+    <div class="card"><h3>Klasifikasi Project</h3>${donut(catData,'setCat','project')}</div>
+    <div class="card"><h3>Perlu Perhatian (${att.length})</h3><div class="att">${att.map(a=>`<div class="ai" onclick="openP('${a.p.id}'${a.tag==='Stage'||a.tag==='Belum mulai'?",'stage'":a.tag==='PO'||a.tag==='Quotation'?",'budget'":''})"><span class="tag" style="background:${a.c}">${a.tag}</span><div><b>${esc(a.p.name)}</b><div class="small muted">${esc(a.txt)}</div></div></div>`).join('')||'<div class="muted">Tidak ada yang perlu perhatian.</div>'}</div></div>
+  </div>
+  <div class="card"><h3>Papan Progres <span class="muted small" style="font-weight:400">· kotak kecil = tahap project (abu belum mulai, biru berjalan, hijau selesai, merah terlambat, kuning tertahan)</span></h3>${board}</div>`;
+}
+
+/* ================= GANTT ================= */
+function segments(rs,reEx,unit){
+  const out=[];let c=new Date(rs);
+  while(c<reEx){
+    let n;
+    if(unit==='month')n=new Date(c.getFullYear(),c.getMonth()+1,1);
+    else if(unit==='year')n=new Date(c.getFullYear()+1,0,1);
+    else if(unit==='quarter')n=new Date(c.getFullYear(),(Math.floor(c.getMonth()/3)+1)*3,1);
+    else n=addDays(c,((8-c.getDay())%7)||7);
+    if(n>reEx)n=reEx;
+    out.push({s:new Date(c),e:n});c=n;
+  }
+  return out;
+}
+function setScale(s){GS=s;GJUMP=true;render();}
+function jumpToday(){GJUMP=true;render();}
+let GEXP={},GCMP=true;
+function togX(id){GEXP[id]=!GEXP[id];render();}
+function expAll(v){GEXP={};if(v)getL(false).forEach(p=>{if(p.stages.length)GEXP[p.id]=true;});render();}
+function rGantt(){
+  const L=getL(false).filter(p=>p.start&&p.end);
+  const cats=DB.settings.categories;
+  const anyS=L.some(p=>p.stages.length);
+  const tool=`<div class="card gtool"><div class="seg">${[['week','Minggu'],['month','Bulan'],['quarter','Kuartal']].map(x=>`<button class="${GS===x[0]?'on':''}" onclick="setScale('${x[0]}')">${x[1]}</button>`).join('')}</div>
+    <label style="display:flex;gap:6px;align-items:center;font-size:13px;color:var(--text)"><input type="checkbox" style="width:auto;margin:0" ${GGROUP?'checked':''} onchange="GGROUP=this.checked;render()"> Kelompokkan per klasifikasi</label>
+    ${anyS?`<label style="display:flex;gap:6px;align-items:center;font-size:13px;color:var(--text)"><input type="checkbox" style="width:auto;margin:0" ${GCMP?'checked':''} onchange="GCMP=this.checked;render()"> Plan vs Actual</label><button class="btn sm" onclick="expAll(true)">Buka semua stage</button><button class="btn sm" onclick="expAll(false)">Tutup semua</button>`:''}
+    <button class="btn sm" onclick="jumpToday()">Ke hari ini</button>
+    <div class="lg">${cats.map(c=>`<span><i style="background:${c.color}"></i>${esc(c.name)}</span>`).join('')}<span><i style="background:rgba(148,163,184,.3);border:1px solid var(--muted)"></i>Plan</span><span><i style="background:#3b82f6"></i>Actual</span><span><i style="border:2px solid var(--bad)"></i>Terlambat</span><span><i style="border:1px dashed var(--muted)"></i>On Hold</span><span><i style="background:var(--ok);transform:rotate(45deg) scale(.7)"></i>Milestone</span></div></div>`;
+  if(!L.length){$('#main').innerHTML=tool+'<div class="card empty">Tidak ada project untuk ditampilkan.</div>';return;}
+  const old=$('#gs'),sl=old?old.scrollLeft:0,stp=old?old.scrollTop:0;
+  const dw={week:18,month:5,quarter:1.8}[GS],LW=270;
+  const t=today();
+  let mn=pd(L[0].start),mx=pd(L[0].end);
+  const ext=d=>{d=pd(d);if(!d)return;if(d<mn)mn=d;if(d>mx)mx=d;};
+  L.forEach(p=>{ext(p.start);ext(p.end);p.stages.forEach(s=>{ext(s.ps);ext(s.pf);ext(s.as);ext(s.af);});});
+  if(t<mn)mn=t;if(t>mx)mx=t;
+  const rs=new Date(mn.getFullYear(),mn.getMonth(),1),reEx=new Date(mx.getFullYear(),mx.getMonth()+2,1);
+  const W=Math.round(diffDays(rs,reEx)*dw);
+  const x=d=>Math.round(diffDays(rs,d)*dw*100)/100;
+  const topU=GS==='week'?'month':'year',botU=GS==='week'?'week':(GS==='month'?'month':'quarter');
+  const lbl=(s,u)=>u==='month'?(GS==='week'?s.toLocaleDateString('id-ID',{month:'long',year:'numeric'}):s.toLocaleDateString('id-ID',{month:'short'})):u==='year'?String(s.getFullYear()):u==='quarter'?'Q'+(Math.floor(s.getMonth()/3)+1):String(s.getDate());
+  const top=segments(rs,reEx,topU).map(g=>`<div class="gseg t" style="left:${x(g.s)}px;width:${x(g.e)-x(g.s)}px">${lbl(g.s,topU)}</div>`).join('');
+  const botSeg=segments(rs,reEx,botU);
+  const bot=botSeg.map(g=>`<div class="gseg b" style="left:${x(g.s)}px;width:${x(g.e)-x(g.s)}px">${lbl(g.s,botU)}</div>`).join('');
+  const lines=botSeg.map(g=>`<div style="left:${x(g.s)}px"></div>`).join('');
+  const tx=x(t)+dw/2;
+  const span=(a,b)=>{const l=x(a);return [l,Math.max(x(addDays(b,1))-l,5)];};
+  const row=p=>{
+    const st=effStatus(p),col=catColor(p.category),s=pd(p.start),e=pd(p.end),cs=curStage(p);
+    const left=x(s),width=Math.max(x(addDays(e,1))-left,8);
+    const cls='gbar'+(st==='Delayed'?' late':'')+(st==='On Hold'?' hold':'');
+    const ttl=`${p.name} · ${p.category} · ${st} · ${p.progress}% · ${fmtDate(p.start)} → ${fmtDate(p.end)}`;
+    const ms=(p.milestones||[]).filter(m=>m.date).map(m=>`<div class="gms ${m.done?'done':''}" style="left:${x(pd(m.date))+dw/2-6}px" title="${esc(m.name+' · '+fmtDate(m.date))}"></div>`).join('');
+    const tg=p.stages.length?`<span class="gx" onclick="event.stopPropagation();togX('${p.id}')" title="Buka / tutup stage">${GEXP[p.id]?'▾':'▸'}</span>`:'<span class="gx"></span>';
+    return `<div class="grow"><div class="gl" onclick="openP('${p.id}')">${tg}<span class="dot" style="background:${ST_COLOR[st]}"></span><div><div class="gn">${esc(p.name)}</div><div class="gs">${esc(p.code)} · ${cs?esc(cs.txt):esc(p.pic||'-')}</div></div></div>
+      <div class="gt" style="width:${W}px"><div class="${cls}" style="left:${left}px;width:${width}px;background:${col}33;border-color:${col}" title="${esc(ttl)}" onclick="openP('${p.id}')"><div style="width:${p.progress}%;background:${col}"></div></div><span class="gpct" style="left:${left+width+6}px">${p.progress}%</span>${ms}</div></div>`;
+  };
+  const srow=(p,s)=>{
+    const e=stEff(s),sc=ST_COLOR[e],ps=pd(s.ps),pf=pd(s.pf),as=pd(s.as),af=pd(s.af),dv=stDev(s);
+    let bars='',right=0;
+    const late=e==='Delayed';
+    if(GCMP){
+      if(ps&&pf){const sp=span(ps,pf);bars+=`<div class="gsp ${late?'late':''}" style="left:${sp[0]}px;width:${sp[1]}px;top:5px;height:10px" title="Plan ${esc(fmtDate(s.ps)+' - '+fmtDate(s.pf))}"></div>`;right=Math.max(right,sp[0]+sp[1]);}
+      if(as){const end=af||(t>as?t:as);const sp=span(as,end);bars+=`<div class="gsa ${af?'':'run'}" style="left:${sp[0]}px;width:${sp[1]}px;top:19px;height:10px;background:${sc}" onclick="openP('${p.id}','stage')" title="Actual ${esc(fmtDate(s.as)+' - '+(s.af?fmtDate(s.af):'berjalan'))}"></div>`;right=Math.max(right,sp[0]+sp[1]);}
+    }else{
+      if(as){const end=af||(t>as?t:as);const sp=span(as,end);bars+=`<div class="gsa ${af?'':'run'}" style="left:${sp[0]}px;width:${sp[1]}px;top:11px;height:14px;background:${sc}" onclick="openP('${p.id}','stage')" title="Actual ${esc(fmtDate(s.as)+' - '+(s.af?fmtDate(s.af):'berjalan'))}"></div>`;right=sp[0]+sp[1];}
+      else if(ps&&pf){const sp=span(ps,pf);bars+=`<div class="gsp ${late?'late':''}" style="left:${sp[0]}px;width:${sp[1]}px;top:11px;height:14px" onclick="openP('${p.id}','stage')" title="Plan ${esc(fmtDate(s.ps)+' - '+fmtDate(s.pf))}"></div>`;right=sp[0]+sp[1];}
+    }
+    const dtxt=dv===null?'':(dv>0?`<span class="gdev" style="left:${right+6}px;top:${GCMP?12:11}px;color:var(--bad)">+${dv} hr</span>`:dv<0?`<span class="gdev" style="left:${right+6}px;top:${GCMP?12:11}px;color:var(--ok)">${dv} hr</span>`:'');
+    const docCount=(s.attachments||[]).length+(s.docLinks||[]).length,docs=docCount?`<button class="gdoc" title="Lihat dokumentasi stage" aria-label="Lihat ${docCount} dokumentasi ${esc(s.name||'stage')}" onclick="event.stopPropagation();viewStageDocs('${p.id}','${s.id}')">📎 ${docCount}</button>`:'';
+    return `<div class="grow gsr"><div class="gl" onclick="openP('${p.id}','stage')"><span class="dot" style="background:${e==='Not Started'?'#94a3b8':sc}"></span><div><div class="gn gstage-heading"><span>${esc(s.name||'-')}</span>${docs}</div><div class="gs">${esc(fmtDate(s.ps))} - ${esc(fmtDate(s.pf))}${s.pic?' · '+esc(s.pic):''}</div></div></div><div class="gt" style="width:${W}px">${bars}${dtxt}</div></div>`;
+  };
+  const groups=GGROUP?cats.map(c=>({name:c.name,items:L.filter(p=>p.category===c.name)})).filter(g=>g.items.length):[{name:null,items:L}];
+  let rows='';
+  groups.forEach(g=>{
+    if(g.name)rows+=`<div class="grow ghd"><div class="gl"><i style="background:${catColor(g.name)}"></i><b>${esc(g.name)}</b><span class="muted small">(${g.items.length})</span></div><div class="gt" style="width:${W}px"></div></div>`;
+    g.items.slice().sort((a,b)=>a.start>b.start?1:-1).forEach(p=>{rows+=row(p);if(GEXP[p.id])p.stages.forEach(s=>{rows+=srow(p,s);});});
+  });
+  $('#main').innerHTML=tool+`<div class="card gscroll" id="gs"><div class="gwrap" style="width:${LW+W}px">
+    <div class="ghead"><div class="gl gcorner">Project / Stage</div><div class="gcols" style="width:${W}px">${top}${bot}<div class="gtodayh" style="left:${tx}px">Hari ini</div></div></div>
+    ${rows}<div class="glines" style="left:${LW}px;width:${W}px">${lines}<div class="today" style="left:${tx}px"></div></div></div></div>`;
+  const sc=$('#gs');
+  if(GJUMP){sc.scrollLeft=Math.max(0,tx-(sc.clientWidth-LW)*0.3);sc.scrollTop=0;GJUMP=false;}else{sc.scrollLeft=sl;sc.scrollTop=stp;}
+}
+
+/* ================= DAFTAR ================= */
+const SORTV={code:p=>p.code,name:p=>p.name.toLowerCase(),category:p=>p.category,pic:p=>(p.pic||'').toLowerCase(),status:p=>ST_ORDER.indexOf(effStatus(p)),progress:p=>p.progress,stage:p=>{const c=curStage(p);return c?c.txt.toLowerCase():'~';},start:p=>p.start,end:p=>p.end,vendor:p=>(p.vendor||'').toLowerCase(),budget:p=>p.budget,cost:p=>committed(p),quotes:p=>quotes(p).length,po:p=>p.pos.length};
+function sortBy(k){SORT=SORT.k===k?{k:k,d:-SORT.d}:{k:k,d:1};render();}
+function rList(){
+  const ub=useBud();
+  const L=getL(false).slice().sort((a,b)=>{const x=SORTV[SORT.k](a),y=SORTV[SORT.k](b);return (x<y?-1:x>y?1:0)*SORT.d;});
+  const cols=[['code','Kode'],['name','Project'],['category','Klasifikasi'],['pic','PIC'],['status','Status'],['progress','Progres'],['stage','Tahap saat ini'],['start','Mulai'],['end','Target'],['vendor','Vendor']].concat(ub?[['budget','Budget'],['cost','Komitmen']]:[]).concat([['quotes','Quotation'],['po','PO']]);
+  const th=cols.map(c=>`<th class="${c[0]==='budget'||c[0]==='cost'?'r':''}" onclick="sortBy('${c[0]}')">${c[1]}${SORT.k===c[0]?(SORT.d>0?' ▲':' ▼'):''}</th>`).join('');
+  const tb=L.map(p=>{const st=effStatus(p),bs=budgetState(p),cm=committed(p),lq=lowQ(p),cs=curStage(p);
+    const late=p.stages.filter(s=>stEff(s)==='Delayed').length;
+    return `<tr onclick="openP('${p.id}')"><td>${esc(p.code)}</td><td><b>${esc(p.name)}</b></td><td>${chip(p.category)}</td><td>${esc(p.pic||'-')}</td><td>${badge(st)}</td>
+    <td><span class="pbar"><div style="width:${p.progress}%"></div></span>${p.progress}%</td><td>${cs?esc(cs.txt)+' <span class="muted small">('+cs.done+'/'+cs.total+')</span>'+(late?' <span class="tag" style="background:#ef4444">'+late+' telat</span>':''):'-'}</td><td>${fmtDate(p.start)}</td><td>${fmtDate(p.end)}</td><td>${esc(p.vendor||'-')}</td>
+    ${ub?`<td class="r">${p.budget?money(p.budget):'-'}</td><td class="r" style                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        ="color:${bs.key==='over'?'var(--bad)':'inherit'};                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        font-weight:$                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        {b                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        s.key==='over'?700:400}">${cm?money(cm):(bs.c.amt?'<span class="muted">est. '+moneyC(bs.c.amt)+'</span>':'-')}</td>`:''}
+    <td>${quotes(p).length?quotes(p).length+(lq?' · terendah '+poMoney(lq.amount,lq.currency):''):'-'}</td><td>${p.pos.length?esc(p.pos.map(o=>o.no).join(', ')):esc(p.po||'-')}</td></tr>`;}).join('');
+  const sb=L.reduce((a,p)=>a+p.budget,0),sc=L.reduce((a,p)=>a+committed(p),0);
+  const foot=ub?`<tfoot><tr><td colspan="10" class="r"><b>Total (${L.length} project)</b></td><td class="r"><b>${money(sb)}</b></td><td class="r"><b>${money(sc)}</b></td><td colspan="2"></td></tr></tfoot>`:'';
+  $('#main').innerHTML=`<div class="card" style="padding:0"><div class="tw" style="max-height:calc(100vh - 210px)"><table><thead><tr>${th}</tr></thead><tbody>${tb||`<tr><td colspan="${cols.length}" class="empty">Tidak ada project. Klik "+ Project" untuk menambah.</td></tr>`}</tbody>${foot}</table></div></div>`;
+}
+
+/* ================= BUDGET & QU                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        OTATION ================= */
+function rBudget(){
+  const L=getL(false),ub=useBud();
+  let chart='';
+  if(ub){
+    const rows=L.filter(p=>p.budget>0||costBasis(p).amt>0).sort((a,b)=>b.budget-a.budget);
+    const mx=Math.max.apply(null,rows.map(p=>Math.max(p.budget,costBasis(p).amt)).concat([1]));
+    chart=`<div class="card" style="margin-bottom:12px"><h3>Budget vs Komitmen per Project <span class="muted small" style="font-weight:400">· hanya untuk project yang punya budget</span></h3>`+(rows.map(p=>{const bs=budgetState(p),candidate=lowQ(p),lq=candidate&&(candidate.currency||DB.settings.currency||'IDR')===(DB.settings.currency||'IDR')?candidate:null;
+      return `<div class="brow" onclick="openP('${p.id}','budget')"><div><b>${esc(p.name)}</b><div class="small muted">${esc(p.code)} · ${esc(p.vendor||'vendor belum dipilih')}</div></div>
+      <div class="btrack"><div class="bbud" style="width:${p.budget/mx*100}%"></div><div class="bfill" style="width:${bs.c.amt/mx*100}%;background:${bs.color};opacity:${p.actual>0||selQ(p)?1:.55}"></div>${lq?`<div class="blow" style="left:${lq.amount/mx*100}%"></div>`:''}</div>
+      <div style="text-align:right;font-size:12px"><b>${bs.c.amt?moneyC(bs.c.amt):'-'}</b> / ${p.budget?moneyC(p.budget):'-'}<br><span style="color:${bs.color};font-weight:700">${bs.label}</span></div></div>`;}).join('')||'<div class="empty">Belum ada data budget.</div>')+'</div>';
+  }
+  const qProjects=L.filter(p=>quotes(p).length).sort((a,b)=>a.code.localeCompare(b.code));
+  const flat=[];L.forEach(p=>quotes(p).forEach(q=>flat.push({p:p,q:q})));
+  const qrows=qProjects.map(p=>{const items=quotes(p).slice(),lq=lowQ(p),currencies=new Set(items.map(q=>q.currency||DB.settings.currency||'IDR'));
+    items.sort((a,b)=>lq?(a.id===lq.id?-1:b.id===lq.id?1:a.amount-b.amount):(String(a.currency||DB.settings.currency||'IDR').localeCompare(String(b.currency||DB.settings.currency||'IDR'))||a.amount-b.amount));
+    const heading=`<tr class="project-group q-project-group" onclick="openP('${p.id}','budget')"><td colspan="${ub?9:8}"><b>${esc(p.code)} · ${esc(p.name)}</b><span class="muted"> · ${items.length} quotation</span>${lq?`<span class="muted"> · Terendah: ${poMoney(lq.amount,lq.currency)} (${esc(lq.vendor||'-')})</span>`:items.length>1&&currencies.size>1?'<span class="muted"> · Mata uang berbeda, harga tidak dibandingkan</span>':''}</td></tr>`;
+    const rows=items.map(q=>{const isLow=lq&&lq.id===q.id,qCurrency=q.currency||DB.settings.currency||'IDR',pct=p.budget&&qCurrency===(DB.settings.currency||'IDR')?Math.round(q.amount/p.budget*100):null,note=String(q.note||''),notePreview=note.length>120?note.slice(0,120)+'...':note;
+      const exp=q.valid?diffDays(today(),pd(q.valid)):null,hasPO=p.pos.some(x=>x.qid===q.id);
+      return `<tr class="quotation-row"><td><b>${esc(q.vendor||'-')}</b></td><td>${esc(q.no||'-')}</td><td class="r"><b>${poMoney(q.amount,qCurrency)}</b> ${isLow?'<span class="tag" style="background:#10b981">TERENDAH</span>':''}</td><td class="qnote">${note?`<div>${esc(notePreview)}</div>${note.length>120?`<details><summary>Lihat selengkapnya</summary><div class="q-note-full">${esc(note)}</div></details>`:''}`:'-'}</td>
+      ${ub?`<td class="r" style="color:${pct>100?'var(--bad)':'inherit'}">${pct===null?'-':pct+'%'}</td>`:''}<td>${fmtDate(q.date)}</td><td>${q.valid?fmtDate(q.valid)+(exp!==null&&exp<0?' <span class="tag" style="background:#ef4444">EXPIRED</span>':exp!==null&&exp<=7?' <span class="tag" style="background:#f59e0b">'+exp+' hr</span>':''):'-'}</td>
+      <td><span class="badge" style="background:${QCOL[q.status]}">${q.status}</span>${hasPO?' <span class="tag" style="background:#3b82f6">PO</span>':''}</td><td>${(q.file||q.link)?`<button class="btn sm" onclick="event.stopPropagation();openQ('${p.id}','${q.id}')">Buka</button>`:'-'}</td></tr>`;}).join('');
+    return heading+rows;
+  }).join('');
+  const poProjects=L.filter(p=>p.pos.length).sort((a,b)=>a.code.localeCompare(b.code));
+  const fpo=[];L.forEach(p=>p.pos.forEach(o=>fpo.push({p:p,o:o})));
+  const dups=dupPOs();
+  const prow=poProjects.map(p=>`<tr class="project-group po-project-group" onclick="openP('${p.id}','budget')"><td colspan="6"><b>${esc(p.code)} · ${esc(p.name)}</b><span class="muted"> · ${p.pos.length} PO</span></td></tr>`+p.pos.slice().sort((a,b)=>a.date<b.date?1:-1).map(o=>`<tr onclick="openP('${p.id}','budget')"><td><b>${esc(o.no)}</b>${dups.includes(o.no)?' <span class="tag" style="background:#ef4444">GANDA</span>':''}</td><td>${fmtDate(o.date)}</td><td>${esc(o.vendor)}</td><td class="r"><b>${poMoney(poTotals(o).total,o.currency)}</b></td><td>${esc(o.by||'-')}</td><td><button class="btn sm" onclick="event.stopPropagation();printSaved('${p.id}','${o.id}')">Cetak / PDF</button></td></tr>`).join('')).join('');
+  const vm={};
+  L.forEach(p=>{quotes(p).forEach(q=>{const v=(q.vendor||'(tanpa nama)').trim(),o=vm[v]=vm[v]||{n:0,pr:{},sel:{},selN:0,po:{},poN:0};o.n++;o.pr[p.id]=1;if(q.status==='Terpilih'){const c=q.currency||DB.settings.currency||'IDR';o.sel[c]=(o.sel[c]||0)+q.amount;o.selN++;}});p.pos.forEach(x=>{const v=(x.vendor||'(tanpa nama)').trim();const o=vm[v]=vm[v]||{n:0,pr:{},sel:{},selN:0,po:{},poN:0},c=x.currency||DB.settings.currency||'IDR';o.poN++;o.po[c]=(o.po[c]||0)+poTotals(x).total;});});
+  const poValue=v=>Object.keys(vm[v].po).map(c=>poMoney(vm[v].po[c],c)).join('<br>')||'-';
+  const selectedQuoteValue=v=>Object.keys(vm[v].sel).map(c=>poMoney(vm[v].sel[c],c)).join('<br>')||'-';
+  const vrows=Object.keys(vm).sort((a,b)=>Object.keys(vm[b].po).length-Object.keys(vm[a].po).length||vm[b].selN-vm[a].selN||vm[b].n-vm[a].n).map(v=>`<tr><td><b>${esc(v)}</b></td><td class="r">${Object.keys(vm[v].pr).length}</td><td class="r">${vm[v].n}</td><td class="r">${vm[v].selN}</td><td class="r">${selectedQuoteValue(v)}</td><td class="r">${vm[v].poN}</td><td class="r">${poValue(v)}</td></tr>`).join('');
+  $('#main').innerHTML=chart+`<div class="card" style="margin-bottom:12px;padding:0"><div style="padding:14px 16px 0"><h3>Semua Quotation (${flat.length})</h3></div><div class="tw" style="max-height:420px"><table><thead><tr><th>Vendor</th><th>No. Quotation</th><th class="r">Harga</th><th>Catatan</th>${ub?'<th class="r">% Budget</th>':''}<th>Diterima</th><th>Berlaku s/d</th><th>Status</th><th>File</th></tr></thead><tbody>${qrows||`<tr><td colspan="${ub?9:8}" class="empty">Belum ada quotation.</td></tr>`}</tbody></table></div></div>
+  <div class="card" style="margin-bottom:12px;padding:0"><div style="padding:14px 16px 0"><h3>Purchase Order (${fpo.length})</h3><div class="muted small" style="margin-bottom:8px">PO dibuat dari quotation berstatus Terpilih: buka project, tab Quotation &amp; PO, klik Buat PO.</div></div><div class="tw" style="max-height:340px"><table><thead><tr><th>No. PO</th><th>Tanggal</th><th>Vendor</th><th class="r">Total</th><th>Dibuat oleh</th><th></th></tr></thead><tbody>${prow||'<tr><td colspan="6" class="empty">Belum ada PO.</td></tr>'}</tbody></table></div></div>
+  <div class="card" style="padding:0"><div style="padding:14px 16px 0"><h3>Ringkasan Vendor</h3></div><div class="tw"><table><thead><tr><th>Vendor</th><th class="r">Project</th><th class="r">Quotation</th><th class="r">Terpilih</th><th class="r">Nilai Terpilih</th><th class="r">PO</th><th class="r">Nilai PO</th></tr></thead><tbody>${vrows||'<tr><td colspan="7" class="empty">-</td></tr>'}</tbody></table></div></div>`;
+}
+function improvementTypeLabel(type){return ({saving_mp:'Saving MP',quality:'Quality',efficiency:'Efisiensi proses',other:'Lainnya'})[type]||'Efisiensi proses';}
+function improvementStatusColor(status){return status==='Disetujui'?'#10b981':status==='Tidak Perlu Improvement'?'#64748b':status==='Review PI'?'var(--pri)':status==='Menunggu Data'?'#f59e0b':'#64748b';}
+function rImprovements(){
+  const statuses=['Baru','Review PI','Menunggu Data','Disetujui','Tidak Perlu Improvement'];
+  const q=IMPQ.toLowerCase();
+  const visible=(DB.improvements||[]).filter(x=>canReviewImprovement()||x.submittedBy===ME);
+  const rows=visible.filter(x=>(IMPFILTER==='all'||x.status===IMPFILTER)&&(!q||[x.title,x.department,x.submittedBy,x.issue,x.type].join(' ').toLowerCase().includes(q))).slice().sort((a,b)=>(b.updatedAt||0)-(a.updatedAt||0));
+  const count=s=>visible.filter(x=>x.status===s).length;
+  $('#main').innerHTML=`<div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:12px"><div style="flex:1"><h2 style="font-size:19px;margin:0">Improvement lintas departemen</h2><div class="muted small">Catat masalah, konteks, tujuan, lalu tindak lanjut dan feedback PI.</div></div>${canSubmitImprovement()?'<button class="btn pri" onclick="newImprovement()">+ Catat issue</button>':''}</div>
+  <div class="grid kpis"><div class="kpi static"><i style="background:#64748b"></i><b>${count('Baru')}</b><span>Baru</span></div><div class="kpi static"><i style="background:var(--pri)"></i><b>${count('Review PI')}</b><span>Review PI</span></div><div class="kpi static"><i style="background:#10b981"></i><b>${count('Disetujui')}</b><span>Disetujui</span></div><div class="kpi static"><i style="background:#64748b"></i><b>${count('Tidak Perlu Improvement')}</b><span>Tidak Perlu Improvement</span></div></div>
+  <div class="stbar"><input style="min-width:220px" placeholder="Cari issue, departemen, pelapor..." value="${esc(IMPQ)}" oninput="IMPQ=this.value;rImprovements()"><select onchange="IMPFILTER=this.value;rImprovements()"><option value="all">Semua status</option>${statuses.map(s=>`<option value="${s}" ${IMPFILTER===s?'selected':''}>${s}</option>`).join('')}</select><span class="muted small">${rows.length} dari ${visible.length} issue</span></div>
+  <div class="card">${rows.map(x=>`<div class="imp-row" onclick="openImprovement('${x.id}')"><div><b>${esc(x.title)}</b><div class="imp-desc">${esc(x.department||'-')} · ${esc(x.submittedBy||'-')} · ${improvementTypeLabel(x.type)}</div></div><div class="imp-desc">${esc(x.issue)}</div><span class="badge" style="background:${improvementStatusColor(x.status)}">${esc(x.status)}</span><span class="small muted">${x.projectId?'Project '+esc((byId(x.projectId)||{}).code||'terkait'):x.updatedAt?fmtDT(x.updatedAt):fmtDate(fd(new Date(x.submittedAt||Date.now())))}</span><button class="btn sm" onclick="event.stopPropagation();openImprovement('${x.id}')">Buka</button></div>`).join('')||'<div class="empty">Belum ada issue improvement.</div>'}</div>`;
+}
+function newImprovement(){
+  if(!canSubmitImprovement()){toast('Akun ini tidak memiliki akses untuk mengisi improvement.');return;}
+  IDRAFT=normImprovement({id:uid(),submittedBy:ME,submittedAt:Date.now(),status:'Baru'});IBASE=null;IISNEW=true;drawImprovementModal();
+}
+function openImprovement(id){
+  const item=(DB.improvements||[]).find(x=>x.id===id);if(!item)return;
+  IDRAFT=JSON.parse(JSON.stringify(item));IBASE=JSON.parse(JSON.stringify(item));IISNEW=false;drawImprovementModal();
+}
+function improvementAttachmentMarkup(){
+  return (IDRAFT.attachments||[]).map(a=>{
+    const image=/\.(png|jpe?g|gif|webp)$/i.test(a.name||'');
+    const preview=image?`<img src="${apiURL('/api/files/'+encodeURIComponent(a.file))}" alt="${esc(a.name)}">`:'<span class="badge" style="background:#64748b">FILE</span>';
+    return `<div class="imp-attachment">${preview}<div class="imp-attachment-name"><b>${esc(a.name)}</b><div class="small muted">${a.size?fmtNum(Math.ceil(a.size/1024))+' KB':''}</div><button class="btn sm" onclick="openImprovementAttachment('${esc(a.file)}')">Buka</button></div>${canEditImprovement()?`<button class="btn sm bad" title="Lepas lampiran" onclick="removeImprovementAttachment('${esc(a.id)}')">✕</button>`:''}</div>`;
+  }).join('')||'<div class="muted small">Belum ada lampiran.</div>';
+}
+function improvementLinksMarkup(){
+  return (IDRAFT.links||[]).map(link=>`<div class="imp-link"><b>${esc(link.title)}</b><span class="small muted" style="overflow-wrap:anywhere">${esc(link.url)}</span><button class="btn sm" onclick="openImprovementLink('${esc(link.id)}')">Buka / salin</button>${canEditImprovement()?`<button class="btn sm bad" onclick="removeImprovementLink('${esc(link.id)}')">Hapus</button>`:''}</div>`).join('')||'<div class="muted small">Belum ada link.</div>';
+}
+async function attachImprovementFiles(input){
+  if(!canEditImprovement()||!IDRAFT)return;
+  const target=IDRAFT;
+  const files=Array.from(input.files||[]),allowed=/\.(png|jpe?g|gif|webp|pdf|docx?|xlsx?|pptx?|csv|txt)$/i;
+  for(const file of files){
+    if(file.size>FILE_MAX){toast('File terlalu besar (maksimal 100 MB).');continue;}
+    if(!allowed.test(file.name)){toast('Format yang didukung: gambar, PDF, Word, Excel, PowerPoint, CSV, atau TXT.');continue;}
+    toast('Mengunggah '+file.name+' ...');
+    try{
+      const prefix='IMP-'+target.id;
+      const uploaded=await api('/api/files',{method:'POST',headers:{'Content-Type':'application/octet-stream','X-Filename':encodeURIComponent(file.name),'X-Prefix':encodeURIComponent(prefix)},body:file});
+      target.attachments.push({id:uid(),name:file.name,file:uploaded.name,size:uploaded.size||file.size,type:file.type||uploaded.mime_type||''});
+      toast('Lampiran tersimpan di server');
+    }catch(e){toast('Gagal mengunggah lampiran: '+e.message);}
+  }
+  input.value='';if(IDRAFT===target)drawImprovementModal();
+}
+function removeImprovementAttachment(id){if(!canEditImprovement()||!IDRAFT)return;IDRAFT.attachments=IDRAFT.attachments.filter(a=>a.id!==id);drawImprovementModal();}
+function addImprovementLink(){
+  if(!canEditImprovement()||!IDRAFT)return;
+  const title=$('#imp_link_title').value.trim(),url=$('#imp_link_url').value.trim();
+  const web=/^https?:\/\//i.test(url),network=url.startsWith('\\\\')||url.startsWith('//');
+  if(!title||!url){toast('Isi judul dan link terlebih dahulu.');return;}
+  if(!web&&!network){toast('Gunakan link http/https atau path jaringan \\\\server\\folder.');return;}
+  if(web){try{const parsed=new URL(url);if(!['http:','https:'].includes(parsed.protocol))throw new Error();}catch(e){toast('Link web tidak valid.');return;}}
+  IDRAFT.links.push({id:uid(),title:title,url:url});drawImprovementModal();
+}
+function removeImprovementLink(id){if(!canEditImprovement()||!IDRAFT)return;IDRAFT.links=IDRAFT.links.filter(link=>link.id!==id);drawImprovementModal();}
+async function openImprovementAttachment(file){window.open(apiURL('/api/files/'+encodeURIComponent(file)),'_blank','noopener');}
+async function openImprovementLink(id){
+  const link=IDRAFT.links.find(item=>item.id===id);if(!link)return;
+  if(/^https?:\/\//i.test(link.url)){window.open(link.url,'_blank','noopener,noreferrer');return;}
+  try{await navigator.clipboard.writeText(link.url);toast('Path jaringan disalin ke clipboard.');}catch(e){prompt('Salin path ini:',link.url);}
+}
+function setImprovementDecision(value){
+  IDRAFT.decision=value;
+  if(value!=='Suggestion Only'){IDRAFT.piSuggestion='';IDRAFT.piReason='';}
+  drawImprovementModal();
+}
+function drawImprovementModal(){
+  const x=IDRAFT,canEditRequest=canEditImprovement(),canReview=canReviewImprovement(),disabled=canEditRequest?'':'disabled';
+  const text=(label,key,full,editable)=>`<label class="${full?'full':''}">${label}<input value="${esc(x[key]||'')}" oninput="IDRAFT.${key}=this.value" ${editable===undefined?disabled:editable?'':'disabled'}></label>`;
+  const area=(label,key,rows,editable)=>`<label class="full">${label}<textarea rows="${rows}" oninput="IDRAFT.${key}=this.value" ${editable===undefined?disabled:editable?'':'disabled'}>${esc(x[key]||'')}</textarea></label>`;
+  const opts=(values,value)=>values.map(v=>`<option value="${v[0]}" ${value===v[0]?'selected':''}>${v[1]}</option>`).join('');
+  const statusOptions=['Baru','Review PI','Menunggu Data','Disetujui','Tidak Perlu Improvement'];
+  const history=(x.feedbackLog||[]).slice().reverse().map(h=>`<div class="logi"><b>${esc(h.by||'-')}</b> <small>${fmtDT(h.at)}</small><div>${esc(h.status||'')}</div><div>${esc(h.feedback||h.suggestion||h.reason||h.action||'-')}</div></div>`).join('')||'<div class="muted small">Belum ada feedback PI.</div>';
+  const report=canReview&&!IISNEW?`<div class="sec">Laporan dari Kontributor</div><div class="full"><b>Judul issue</b><p>${esc(x.title||'-')}</p><b>Departemen / pelapor</b><p>${esc(x.department||'-')} · ${esc(x.submittedBy||'-')}</p><b>Jenis improvement</b><p>${esc(improvementTypeLabel(x.type))}</p><b>Issue yang terjadi</b><p>${esc(x.issue||'-')}</p><b>Background / kondisi saat ini</b><p>${esc(x.background||'-')}</p><b>Purpose</b><p>${esc(x.purpose||'-')}</p><b>Goals</b><p>${esc(x.goals||'-')}</p>${x.savingMp?`<b>Saving MP</b><p>${esc(x.savingMp)}</p>`:''}${x.qualityMetric?`<b>Metrik kualitas</b><p>${esc(x.qualityMetric)}</p>`:''}</div>`:`<div class="sec">Informasi pelapor</div>${text('Judul issue *','title')}${text('Departemen *','department')}
+    <label>Jenis improvement<select onchange="IDRAFT.type=this.value" ${disabled}>${opts([['saving_mp','Saving MP'],['quality','Quality'],['efficiency','Efisiensi proses'],['other','Lainnya']],x.type)}</select></label><label>Nama pelapor<input value="${esc(x.submittedBy||ME)}" disabled></label>
+    ${area('Issue yang terjadi *','issue',3)}${area('Background / kondisi saat ini *','background',3)}${area('Purpose / alasan perlu ditangani *','purpose',2)}${area('Goals / hasil yang diharapkan *','goals',2)}
+    ${x.type==='saving_mp'?text('Estimasi saving manpower (contoh: 2 orang atau 30 menit/hari)','savingMp',true):''}${x.type==='quality'?text('Dampak / metrik kualitas (opsional)','qualityMetric',true):''}`;
+  const review=canReview?`<div class="sec">Keputusan dan feedback PI</div><label>Keputusan<select onchange="setImprovementDecision(this.value)">${opts([['Pending','Belum diputuskan'],['To Project','Proses improvement'],['Suggestion Only','Tidak diproses']],x.decision)}</select></label><label>Status review<select onchange="IDRAFT.status=this.value">${opts(statusOptions.map(s=>[s,s]),x.status)}</select></label>
+    ${text('PIC review PI (opsional)','piOwner',false,true)}${area('Feedback PI','piFeedback',3,true)}${x.decision==='Suggestion Only'?area('Suggestion / alternatif solusi','piSuggestion',3,true)+area('Alasan tidak dilanjutkan sebagai improvement','piReason',2,true):''}${area('Action yang disarankan','piAction',2,true)}`:
+    `<div class="sec">Feedback PI</div><div class="full"><b>${esc(x.status||'Baru')}</b>${x.piFeedback?`<p>${esc(x.piFeedback)}</p>`:''}${x.piSuggestion?`<p><b>Saran:</b> ${esc(x.piSuggestion)}</p>`:''}${x.piAction?`<p><b>Action:</b> ${esc(x.piAction)}</p>`:''}${x.piReason?`<p><b>Alasan:</b> ${esc(x.piReason)}</p>`:''}</div>`;
+  const convert=canReview&&x.decision==='To Project'&&!x.projectId?'<button class="btn pri" onclick="promoteImprovement()">Lanjut ke Project</button>':'';
+  $('#modal2').innerHTML=`<div class="ov"><div class="dlg wide"><div class="dh"><h3>${IISNEW?'Catat issue improvement':esc(x.title||'Improvement')}</h3><button class="x" onclick="closeM2()">✕</button></div><div class="db"><div class="fg">
+    ${report}
+    <div class="sec">Lampiran dan referensi</div>${canEditRequest?'<label class="full">Tambah file<input type="file" accept="image/png,image/jpeg,image/gif,image/webp,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.csv,.txt" multiple onchange="attachImprovementFiles(this)"><small class="hint" style="text-align:left">Gambar, PDF, dokumen Office, CSV, atau TXT. Maksimal 100 MB per file.</small></label>':''}<div class="full imp-attachments">${improvementAttachmentMarkup()}</div>
+    ${canEditRequest?`<label>Judul link<input id="imp_link_title" placeholder="Contoh: Video kondisi line"></label><label>Link web / path jaringan<input id="imp_link_url" placeholder="https://... atau \\\\server\\folder"></label><button class="btn sm" onclick="addImprovementLink()">+ Tambah link</button>`:''}<div class="full">${improvementLinksMarkup()}</div>
+    ${review}
+    ${x.projectId?`<div class="banner info full">Sudah dilanjutkan ke project <b>${esc((byId(x.projectId)||{}).code||'')}</b> · ${(byId(x.projectId)||{}).name?esc((byId(x.projectId)||{}).name):''}</div>`:''}
+    <div class="sec">Riwayat feedback</div><div class="full">${history}</div>
+  </div></div><div class="df"><button class="btn l" onclick="closeM2()">Tutup</button>${convert}${canEditRequest||canReview?`<button class="btn pri" onclick="saveImprovement()">${canReview?'Simpan keputusan PI':'Simpan laporan'}</button>`:''}</div></div></div>`;
+  if(!canEditRequest&&!canReview)$('#modal2').querySelectorAll('input,select,textarea').forEach(el=>{el.disabled=true;});
+}
+async function saveImprovement(){
+  const x=IDRAFT;if(!x)return;
+  if(!canEditImprovement()&&!canReviewImprovement()){toast('Anda tidak memiliki akses untuk mengubah improvement ini.');return;}
+  if(!x.title.trim()||!x.department.trim()||!x.issue.trim()||!x.background.trim()||!x.purpose.trim()||!x.goals.trim()){toast('Lengkapi judul, departemen, issue, background, purpose, dan goals.');return;}
+  if(x.decision==='Suggestion Only'&&(!x.piReason.trim()||!x.piSuggestion.trim())){toast('Isi alasan dan saran alternatif untuk keputusan tanpa project.');return;}
+  if(x.status==='Tidak Perlu Improvement'&&!x.piReason.trim()){toast('Isi alasan tidak dilanjutkan sebagai improvement.');return;}
+  const now=Math.max(Date.now(),(x.updatedAt||0)+1);x.updatedAt=now;x.updatedBy=ME;
+  if(IISNEW){x.submittedBy=canReviewImprovement()?(x.submittedBy.trim()||ME):ME;x.submittedAt=now;}
+  if(canReviewImprovement()&&IBASE){
+    ['title','department','submittedBy','submittedAt','type','issue','background','purpose','goals','savingMp','qualityMetric','attachments','links'].forEach(k=>{x[k]=IBASE[k];});
+  }else if(!canReviewImprovement()){
+    const protectedFields=['status','decision','piOwner','piFeedback','piSuggestion','piAction','piReason','feedbackLog','projectId'];
+    if(IBASE)protectedFields.forEach(k=>{x[k]=IBASE[k];});
+    else{Object.assign(x,{status:'Baru',decision:'Pending',piOwner:'',piFeedback:'',piSuggestion:'',piAction:'',piReason:'',feedbackLog:[],projectId:''});}
+  }
+  const changedReview=canReviewImprovement()&&(!IBASE||['status','decision','piOwner','piFeedback','piSuggestion','piAction','piReason'].some(k=>String(IBASE[k]||'')!==String(x[k]||'')));
+  if(changedReview)x.feedbackLog=(x.feedbackLog||[]).concat([{by:ME,at:now,status:x.status,decision:x.decision,feedback:x.piFeedback,suggestion:x.piSuggestion,action:x.piAction,reason:x.piReason}]);
+  const index=DB.improvements.findIndex(v=>v.id===x.id);if(index<0)DB.improvements.push(x);else DB.improvements[index]=x;
+  closeM2();await persist();render();toast('Improvement tersimpan');
+}
+async function promoteImprovement(){
+  if(!canReviewImprovement()){toast('Akun ini tidak memiliki akses untuk meneruskan improvement ke project.');return;}
+  const x=IDRAFT;if(!x||x.decision!=='To Project'){toast('Pilih keputusan Lanjut ke Project terlebih dahulu.');return;}
+  if(x.projectId){go('list');const p=byId(x.projectId);if(p)openP(p.id);return;}
+  const category=DB.settings.categories.find(c=>c.name.toLowerCase()==='improvement')?.name||DB.settings.categories[0]?.name||'Improvement';
+  const template=(DB.settings.templates||[]).find(t=>t.category===category)|| (DB.settings.templates||[]).find(t=>/improvement/i.test(t.name));
+  const project=normP({id:uid(),code:nextCode(),name:x.title,category,status:'Not Started',priority:'Medium',pic:x.submittedBy||ME,area:x.department,start:fd(today()),end:fd(addDays(today(),60)),desc:'Issue: '+x.issue+'\n\nBackground: '+x.background+'\n\nPurpose: '+x.purpose+'\n\nGoals: '+x.goals+'\n\nPI feedback: '+(x.piFeedback||'-')+'\n\nPI action: '+(x.piAction||'-'),stages:template?buildStages(template.stages,fd(today())):[],updatedAt:Date.now(),updatedBy:ME,log:[{by:ME,t:Date.now(),items:['Project dibuat dari improvement '+x.id]}]});
+  applyAuto(project);DB.projects.push(project);x.projectId=project.id;x.status='Disetujui';x.updatedAt=Math.max(Date.now(),(x.updatedAt||0)+1);x.updatedBy=ME;x.feedbackLog=(x.feedbackLog||[]).concat([{by:ME,at:x.updatedAt,status:x.status,decision:'To Project',feedback:x.piFeedback,suggestion:x.piSuggestion,action:x.piAction,reason:x.piReason}]);
+  const improvementIndex=DB.improvements.findIndex(v=>v.id===x.id);if(improvementIndex>=0)DB.improvements[improvementIndex]=x;
+  closeM2();await persist();go('list');toast('Improvement dilanjutkan menjadi '+project.code);
+}
+function printSaved(pid,oid){const p=byId(pid),o=p&&p.pos.find(x=>x.id===oid);if(o)openDoc(poHTML(o,p,true));}
+
+/* ================= MODAL PROJECT ================= */
+function openP(id,tab){const p=byId(id);if(!p)return;PROJECT_READ_ONLY=!canModifyProj(p);draft=JSON.parse(JSON.stringify(p));baseAt=p.updatedAt;isNew=false;TAB=tab||'info';SBASE='';drawModal();}
+function viewP(id,tab){const p=byId(id);if(!p)return;PROJECT_READ_ONLY=true;draft=JSON.parse(JSON.stringify(p));baseAt=p.updatedAt;isNew=false;TAB=tab||'info';SBASE='';drawModal();}
+function newP(cat){if(!canEdit()){toast('Akses Viewer hanya dapat melihat data');return;}PROJECT_READ_ONLY=false;draft=normP({id:uid(),code:nextCode(),category:cat||DB.settings.categories[0].name,start:fd(today()),end:fd(addDays(today(),60)),pic:ME,createdBy:ME});baseAt=0;isNew=true;TAB='info';SBASE='';drawModal();}
+function closeModal(){draft=null;PROJECT_READ_ONLY=false;STAGE_DOC_ID='';STAGE_DOC_VIEW=null;$('#modal').innerHTML='';$('#modal2').innerHTML='';PD=null;}
+function closeM2(){$('#modal2').innerHTML='';STAGE_DOC_ID='';STAGE_DOC_VIEW=null;PD=null;IDRAFT=null;IBASE=null;IISNEW=false;}
+function drawModal(){
+  const canMod=canEdit()&&!PROJECT_READ_ONLY&&(isNew||canModifyProj(draft));
+  const canDel=!isNew&&canDeleteProj(draft);
+  const footer=canMod?`${canDel?'<button class="btn bad l" onclick="delP()">Hapus</button>':''}<button class="btn" onclick="closeModal()">Batal</button><button class="btn pri" onclick="saveProject()">Simpan</button>`:'<button class="btn" onclick="closeModal()">Tutup</button>';
+  $('#modal').innerHTML=`<div class="ov"><div class="dlg">
+    <div class="dh"><h3>${isNew?'Project Baru':esc(draft.code)+' · '+esc(draft.name)}</h3><button class="x" onclick="closeModal()">✕</button></div>
+    <div class="tabs" id="tabs"></div><div class="db" id="mbody"></div>
+    <div class="df">${footer}</div></div></div>`;
+  drawTab();
+}
+function setTab(t){TAB=t;drawTab();}
+function drawTab(){
+  const tabs=[['info','Info Project'],['stage','Stage ('+draft.stages.length+')'],['budget','Quotation & PO ('+quotes(draft).length+'/'+draft.pos.length+')'],['ms','Milestone ('+draft.milestones.length+')'],['log','Riwayat']];
+  $('#tabs').innerHTML=tabs.map(t=>`<button class="${TAB===t[0]?'on':''}" onclick="setTab('${t[0]}')">${t[1]}</button>`).join('');
+  $('#mbody').innerHTML=({info:tInfo,stage:tStage,budget:tBudget,ms:tMs,log:tLog})[TAB]();
+  if(!canEdit()||PROJECT_READ_ONLY){
+    $('#mbody').querySelectorAll('input,select,textarea').forEach(el=>{el.disabled=true;});
+    $('#mbody').querySelectorAll('button').forEach(el=>{if(!/openQ|openDoc|printSaved|viewStageDocs/.test(el.getAttribute('onclick')||''))el.disabled=true;});
+  }
+  if(TAB==='budget')updB();
+}
+function setD(k,v){draft[k]=v;}
+const inp=(l,k,type,extra)=>`<label>${l}<input type="${type||'text'}" value="${esc(draft[k])}" oninput="setD('${k}',this.value)" ${extra||''}></label>`;
+function tInfo(){
+  const d=draft,sts=d.status==='Delayed'?STATUS_INPUT.concat(['Delayed']):STATUS_INPUT;
+  const hasS=d.stages.length>0,lockD=hasS&&gset('autoDates'),lockP=hasS&&gset('autoProgress');
+  const sel=(l,k,opts,id)=>`<label>${l}<select ${id?'id="'+id+'"':''} onchange="setD('${k}',this.value);${k==='status'?'onStat()':''}">${opts.map(o=>`<option ${o===d[k]?'selected':''}>${esc(o)}</option>`).join('')}</select></label>`;
+  return `${hasS&&(lockD||lockP)?`<div class="banner info" style="margin-bottom:12px"><span>Project ini punya ${d.stages.length} stage. ${lockD?'Tanggal mulai dan target diambil otomatis dari plan stage. ':''}${lockP?'Progres dihitung otomatis dari stage yang selesai.':''} Ubah di tab Stage.</span></div>`:''}<div class="fg">${inp('Kode','code')}${inp('Nama Project *','name')}
+    ${sel('Klasifikasi','category',DB.settings.categories.map(c=>c.name))}${sel('Prioritas','priority',['High','Medium','Low'])}
+    ${sel('Status','status',sts,'f_status')}${inp('PIC','pic','text','list="plist"')}${inp('Area / Line','area')}<span></span>
+    ${inp('Tanggal Mulai *','start','date',lockD?'disabled':'')}${inp('Target Selesai *','end','date',lockD?'disabled':'')}
+    <label class="full">Progres (%)<div class="prow"><input type="range" id="pr" min="0" max="100" value="${d.progress}" ${lockP?'disabled':''} oninput="setProg(this.value)"><input type="number" id="pn" min="0" max="100" value="${d.progress}" ${lockP?'disabled':''} oninput="setProg(this.value)" style="margin-top:0"></div></label>
+    <label class="full">Deskripsi / catatan<textarea rows="3" oninput="setD('desc',this.value)">${esc(d.desc)}</textarea></label></div>
+    <datalist id="plist">${[...new Set(DB.projects.map(p=>p.pic).filter(Boolean))].map(x=>`<option value="${esc(x)}">`).join('')}</datalist>`;
+}
+function onStat(){
+  if(draft.status==='Completed'){
+    if(draft.stages.length&&gset('autoProgress')&&stageCalc(draft)<100){toast('Masih ada stage yang belum selesai. Selesaikan semua stage di tab Stage.');draft.status=stageCalc(draft)>0?'On Progress':'Not Started';$('#f_status').value=draft.status;return;}
+    draft.progress=100;$('#pr').value=100;$('#pn').value=100;
+  }
+}
+function setProg(v){
+  v=Math.max(0,Math.min(100,Number(v)||0));draft.progress=v;$('#pr').value=v;$('#pn').value=v;
+  let s=draft.status;if(v>=100)s='Completed';else if(s==='Completed')s='On Progress';else if(v>0&&s==='Not Started')s='On Progress';
+  if(s!==draft.status){draft.status=s;$('#f_status').value=s;}
+}
+/* --- budget tab --- */
+const moneyF=(l,k)=>`<label>${l}<input class="num" inputmode="numeric" value="${draft[k]?fmtNum(draft[k]):''}" onfocus="this.value=draft['${k}']||''" oninput="setM('${k}',this)" onblur="this.value=draft['${k}']?fmtNum(draft['${k}']):''"><small class="hint" id="h_${k}">${draft[k]?moneyC(draft[k]):''}</small></label>`;
+function setM(k,el){draft[k]=parseNum(el.value);const h=$('#h_'+k);if(h)h.textContent=draft[k]?moneyC(draft[k]):'';updB();}
+function updB(){
+  const el=$('#bsum');if(!el)return;
+  const d=draft,low=lowQ(d),sel=selQ(d);
+  const poValues={};d.pos.forEach(o=>{const c=o.currency||DB.settings.currency||'IDR';poValues[c]=(poValues[c]||0)+poTotals(o).total;});
+  const poValueText=Object.keys(poValues).map(c=>poMoney(poValues[c],c)).join('<br>');
+  let h=`<div><small>Jumlah quotation</small><b>${quotes(d).length}</b></div>
+  <div><small>Quotation terendah</small><b>${low?poMoney(low.amount,low.currency):'-'}</b><small>${low?esc(low.vendor):''}</small></div>
+  <div><small>Quotation terpilih</small><b>${sel?poMoney(sel.amount,sel.currency):'-'}</b><small>${sel?esc(sel.vendor):''}</small></div>
+  <div><small>Purchase Order</small><b>${d.pos.length?d.pos.length+' PO':'-'}</b><small>${poValueText}</small></div>`;
+  if(useBud()){
+    const bs=budgetState(d),diff=d.budget-bs.c.amt;
+    h+=`<div><small>Budget (opsional)</small><b>${d.budget?money(d.budget):'-'}</b></div>
+    <div style="border-color:${bs.color}"><small>${bs.c.amt&&d.budget?(diff>=0?'Sisa budget':'Over budget'):'Status budget'}</small><b style="color:${bs.color}">${bs.c.amt&&d.budget?money(Math.abs(diff)):bs.label}</b><small>${esc(bs.c.src)}</small></div>`;
+  }
+  el.innerHTML=h;
+}
+function poRow(o){
+  return `<div class="porow"><b>${esc(o.no)}</b><span>${fmtDate(o.date)}</span><span>${esc(o.vendor)}<span class="muted small"> · ${esc(o.qno||'')}</span></span><b style="text-align:right">${poMoney(poTotals(o).total,o.currency)}</b><span style="display:flex;gap:6px"><button class="btn sm" onclick="editPO('${o.id}')">Edit</button><button class="btn sm" onclick="openDoc(poHTML(getPO('${o.id}'),draft,true))">Cetak / PDF</button><button class="btn sm bad" onclick="delPO('${o.id}')">Hapus</button></span></div>`;
+}
+function tBudget(){
+  const d=draft,ub=useBud();
+  return `<div id="bsum" class="bsum"></div>
+  <div class="fg">${inp('Vendor Utama','vendor','text','list="vlist"')}${inp('No. PO (isi manual bila PO dibuat di luar aplikasi)','po')}${ub?moneyF('Budget (opsional)','budget')+moneyF('Nilai Aktual / PO','actual'):''}</div>
+  <div class="qh"><h4>Quotation yang diterima</h4><button class="btn sm pri" onclick="addQ()">+ Tambah Quotation</button></div>
+  <div id="qlist">${d.quotations.map(qCard).join('')||'<div class="empty">Belum ada quotation. Klik "+ Tambah Quotation".</div>'}</div>
+  <div class="qh"><h4>Purchase Order (${d.pos.length})</h4></div>
+  <div id="polist">${d.pos.map(poRow).join('')||'<div class="muted small">Belum ada PO. Ubah status quotation menjadi Terpilih, lalu klik Buat PO pada quotation tersebut.</div>'}</div>`;
+}
+function qCard(q){
+  const fileRow=q.file?`<span class="fchip" title="${esc(q.fileName||q.file)}">${esc(q.fileName||q.file)}</span><button class="btn sm" onclick="openQ('draft','${q.id}')">Buka</button>${isViewer()?'':`<button class="btn sm" onclick="rmFile('${q.id}')">Lepas file</button>`}`
+    :isViewer()?'<span class="muted">Tidak ada file</span>':`<span class="muted">File:</span><input type="file" onchange="attachFile('${q.id}',this)" style="max-width:260px">`;
+  const po=(draft.pos||[]).find(x=>x.qid===q.id);
+  const poBtn=q.status==='Terpilih'?(po?(isViewer()?`<button class="btn sm" onclick="openDoc(poHTML(getPO('${po.id}'),draft,false))">Lihat PO ${esc(po.no)}</button>`:`<button class="btn sm" onclick="editPO('${po.id}')">Lihat PO ${esc(po.no)}</button>`):isViewer()?'':`<button class="btn sm pri" onclick="makePO('${q.id}')">Buat PO</button>`):'';
+  return `<div class="qcard ${q.status==='Terpilih'?'sel':''}" id="qc_${q.id}"><div class="qgrid">
+    <label>Vendor<input value="${esc(q.vendor)}" list="vlist" oninput="setQ('${q.id}','vendor',this.value)"></label>
+    <label>Harga Quotation<input class="num" inputmode="numeric" value="${q.amount?fmtNum(q.amount):''}" onfocus="this.value=getQ('${q.id}').amount||''" oninput="setQM('${q.id}',this)" onblur="this.value=getQ('${q.id}').amount?fmtNum(getQ('${q.id}').amount):''"><small class="hint" id="hq_${q.id}">${q.amount?quoteMoneyC(q.amount,q.currency):''}</small></label>
+    <label>Mata uang<select onchange="setQCurrency('${q.id}',this.value)">${Object.keys(SYMS).map(c=>`<option value="${c}" ${(q.currency||DB.settings.currency||'IDR')===c?'selected':''}>${c} · ${SYMS[c]}</option>`).join('')}</select></label>
+    <label>No. Quotation<input value="${esc(q.no)}" oninput="setQ('${q.id}','no',this.value)"></label>
+    <label>Tanggal diterima<input type="date" value="${esc(q.date)}" oninput="setQ('${q.id}','date',this.value)"></label>
+    <label>Berlaku sampai<input type="date" value="${esc(q.valid)}" oninput="setQ('${q.id}','valid',this.value)"></label>
+    <label>Status<select onchange="setQStatus('${q.id}',this.value)">${QSTAT.map(s=>`<option ${s===q.status?'selected':''}>${s}</option>`).join('')}</select></label>
+    <label style="grid-column:1/-1">Link (SharePoint / URL / path jaringan)<input value="${esc(q.link)}" oninput="setQ('${q.id}','link',this.value)" placeholder="https://... atau \\\\server\\folder\\file.pdf"></label>
+    <label style="grid-column:1/-1">Catatan (lead time, termin pembayaran, garansi, dll.)<input value="${esc(q.note)}" oninput="setQ('${q.id}','note',this.value)"></label></div>
+    <div class="qfoot">${fileRow}<span class="sp"></span>${poBtn}<button class="btn sm bad" onclick="delQ('${q.id}')">Hapus quotation</button></div></div>`;
+}
+const getQ=id=>draft.quotations.find(x=>x.id===id);
+function setQ(id,k,v){getQ(id)[k]=v;if(k==='vendor'&&getQ(id).status==='Terpilih'){draft.vendor=v;}}
+function setQM(id,el){const q=getQ(id);q.amount=parseNum(el.value);const h=$('#hq_'+id);if(h)h.textContent=q.amount?quoteMoneyC(q.amount,q.currency):'';updB();}
+function setQCurrency(id,currency){const q=getQ(id);q.currency=currency;const h=$('#hq_'+id);if(h)h.textContent=q.amount?quoteMoneyC(q.amount,currency):'';updB();}
+function setQStatus(id,v){
+  const q=getQ(id);
+  if(v==='Terpilih'){draft.quotations.forEach(x=>{if(x.status==='Terpilih')x.status='Diterima';});if(q.vendor)draft.vendor=q.vendor;}
+  q.status=v;drawTab();
+}
+function addQ(){draft.quotations.push({id:uid(),vendor:'',amount:0,currency:DB.settings.currency||'IDR',status:'Diterima',date:fd(today()),valid:'',no:'',link:'',file:'',fileName:'',note:''});drawTab();}
+function delQ(id){if(!confirm('Hapus quotation ini?'))return;draft.quotations=draft.quotations.filter(x=>x.id!==id);drawTab();}
+function rmFile(id){const q=getQ(id);q.file='';q.fileName='';drawTab();}
+async function attachFile(id,input){
+  const f=input.files[0];if(!f)return;
+  if(f.size>FILE_MAX){toast('File terlalu besar (maksimal 100 MB). Simpan di SharePoint lalu tempel linknya.');input.value='';return;}
+  toast('Mengunggah '+f.name+' ...');
+  try{
+    const r=await api('/api/files',{method:'POST',headers:{'Content-Type':'application/octet-stream','X-Filename':encodeURIComponent(f.name),'X-Prefix':encodeURIComponent(draft.code||'PRJ')},body:f});
+    const q=getQ(id);q.file=r.name;q.fileName=f.name;
+    toast('File tersimpan di server');drawTab();
+  }catch(e){toast('Gagal mengunggah file: '+e.message);input.value='';}
+}
+async function openQ(pid,qid){
+  const p=getProj(pid),q=p&&p.quotations.find(x=>x.id===qid);if(!q)return;
+  if(q.file){window.open(apiURL('/api/files/'+encodeURIComponent(q.file)),'_blank');return;}
+  if(q.link){
+    if(/^https?:/i.test(q.link)){window.open(q.link,'_blank','noopener');return;}
+    try{navigator.clipboard.writeText(q.link);toast('Path disalin ke clipboard: tempel di File Explorer');}catch(e){prompt('Salin path ini:',q.link);}
+    return;
+  }
+  toast('Quotation ini belum punya file/link.');
+}
+/* --- milestone & log --- */
+function tMs(){
+  return `<div class="qh"><h4>Milestone</h4><button class="btn sm pri" onclick="addMs()">+ Milestone</button></div>`+
+  (draft.milestones.map(m=>`<div class="msrow"><input type="checkbox" ${m.done?'checked':''} onchange="setMs('${m.id}','done',this.checked)"><input type="text" value="${esc(m.name)}" placeholder="Nama milestone" oninput="setMs('${m.id}','name',this.value)"><input type="date" value="${esc(m.date)}" oninput="setMs('${m.id}','date',this.value)"><button class="btn sm bad" onclick="delMs('${m.id}')">Hapus</button></div>`).join('')||'<div class="empty">Belum ada milestone (contoh: PO terbit, FAT, instalasi, SAT).</div>');
+}
+function addMs(){draft.milestones.push({id:uid(),name:'',date:'',done:false});drawTab();}
+function setMs(id,k,v){draft.milestones.find(m=>m.id===id)[k]=v;}
+function delMs(id){draft.milestones=draft.milestones.filter(m=>m.id!==id);drawTab();}
+function tLog(){
+  return (draft.log||[]).slice().reverse().map(l=>`<div class="logi"><b>${esc(l.by||'-')}</b> <small>${fmtDT(l.t)}</small><div>${l.items.map(i=>'• '+esc(i)).join('<br>')}</div></div>`).join('')||'<div class="empty">Belum ada riwayat perubahan.</div>';
+}
+function diffLog(o,n){
+  if(!o)return ['Project dibuat'];
+  const L=[],f=(lb,a,b,fm)=>{if(String(a==null?'':a)!==String(b==null?'':b)){fm=fm||(x=>x);L.push(lb+': '+(fm(a)||'-')+' → '+(fm(b)||'-'));}};
+  f('Status',o.status,n.status);f('Progres',o.progress,n.progress,x=>x+'%');f('Mulai',o.start,n.start,fmtDate);f('Target',o.end,n.end,fmtDate);f('PIC',o.pic,n.pic);
+  f('Vendor utama',o.vendor,n.vendor);f('Budget',o.budget,n.budget,money);f('Aktual/PO',o.actual,n.actual,money);f('No. PO',o.po,n.po);
+  const so=selQ(o),sn=selQ(n);
+  if(o.quotations.length<n.quotations.length)L.push('Quotation ditambah ('+n.quotations.length+' total)');
+  if(o.quotations.length>n.quotations.length)L.push('Quotation dihapus');
+  if((so?so.id:'')!==(sn?sn.id:''))L.push('Quotation terpilih: '+(sn?sn.vendor+' '+poMoney(sn.amount,sn.currency):'-'));
+  (n.pos||[]).forEach(x=>{if(!(o.pos||[]).some(y=>y.id===x.id))L.push('PO dibuat: '+x.no+' ('+x.vendor+')');});
+  (o.pos||[]).forEach(x=>{if(!(n.pos||[]).some(y=>y.id===x.id))L.push('PO dihapus: '+x.no);});
+  const om={};(o.stages||[]).forEach(s=>{om[s.id]=s;});let added=0;
+  (n.stages||[]).forEach(s=>{const a=om[s.id];
+    if(!a){added++;return;}
+    if(!a.af&&s.af)L.push('Stage selesai: '+s.name+' ('+fmtDate(s.af)+')');
+    else if(!a.as&&s.as)L.push('Stage mulai: '+s.name+' ('+fmtDate(s.as)+')');
+    else if(a.ps!==s.ps||a.pf!==s.pf)L.push('Plan stage diubah: '+s.name);
+    else if(a.status!==s.status)L.push('Status stage '+s.name+': '+a.status+' → '+s.status);
+    else if(a.as!==s.as||a.af!==s.af)L.push('Actual stage diubah: '+s.name);
+  });
+  if(added)L.push(added+' stage ditambah');
+  (o.stages||[]).forEach(s=>{if(!(n.stages||[]).some(x=>x.id===s.id))L.push('Stage dihapus: '+s.name);});
+  if(!L.length&&JSON.stringify(o.quotations)!==JSON.stringify(n.quotations))L.push('Data quotation diperbarui');
+  if(!L.length&&(JSON.stringify(o.milestones)!==JSON.stringify(n.milestones)||JSON.stringify(o.pos)!==JSON.stringify(n.pos)||JSON.stringify(o.stages)!==JSON.stringify(n.stages)||o.name!==n.name||o.desc!==n.desc||o.category!==n.category||o.area!==n.area||o.priority!==n.priority))L.push('Info project diperbarui');
+  return L.slice(0,12);
+}
+async function saveProject(){
+  if(!canEdit()){toast('Akses Viewer hanya dapat melihat data');return;}
+  const d=draft;
+  if(!d.name.trim()){toast('Nama project wajib diisi');return;}
+  applyAuto(d);
+  if(!d.start||!d.end){toast('Tanggal mulai dan target wajib diisi');return;}
+  if(d.end<d.start){toast('Target selesai tidak boleh sebelum tanggal mulai');return;}
+  const bad=d.stages.find(s=>!s.name.trim());if(bad){TAB='stage';drawTab();toast('Ada stage tanpa nama. Isi nama atau hapus stage tersebut.');return;}
+  const cur=byId(d.id);
+  if(!isNew&&cur&&cur.updatedAt!==baseAt){
+    if(!confirm('Project ini baru saja diubah oleh '+(cur.updatedBy||'pengguna lain')+' ('+fmtDT(cur.updatedAt)+'). Simpan dan timpa perubahan tersebut?'))return;
+  }
+  if(d.status==='Completed')d.progress=100;
+  let renum='';
+  const used={};DB.projects.forEach(p=>{if(p.id!==d.id)(p.pos||[]).forEach(o=>{used[o.no]=1;});});
+  d.pos.forEach(o=>{if(used[o.no]){const old=o.no;o.no=nextPONo();if(d.po===old)d.po=o.no;renum+=old+' → '+o.no+' ';}used[o.no]=1;});
+  const items=diffLog(isNew?null:cur,d);
+  d.log=(d.log||[]).slice(-59);
+  if(items.length)d.log.push({t:Date.now(),by:ME||'-',items:items});
+  d.updatedAt=Math.max(Date.now(),(cur?cur.updatedAt:0)+1);d.updatedBy=ME||'-';
+  if(cur)DB.projects[DB.projects.indexOf(cur)]=d;else DB.projects.push(d);
+  if(!DB.settings.categories.some(c=>c.name===d.category))DB.settings.categories.push({name:d.category,color:PALETTE[DB.settings.categories.length%PALETTE.length]});
+  closeModal();await persist();render();
+  const dp=dupPOs();
+  toast(dp.length?'Tersimpan, tetapi ada nomor PO ganda: '+dp.join(', ')+'. Perbaiki nomor PO tersebut.':(renum?'Tersimpan. Nomor PO diganti karena sudah dipakai: '+renum:'Tersimpan'));
+}
+async function delP(){
+  if(!canEdit()){toast('Akses Viewer hanya dapat melihat data');return;}
+  if(!confirm('Hapus project "'+draft.name+'"? Tindakan ini juga berlaku untuk seluruh tim.'))return;
+  const id=draft.id,old=byId(id);DB.projects=DB.projects.filter(p=>p.id!==id);DB.deleted[id]=Math.max(Date.now(),(old?old.updatedAt:0)+1);
+  closeModal();await persist();render();toast('Project dihapus');
+}
+
+/* ================= STAGE (tab di form project) ================= */
+let SBASE='';
+let STAGE_DOC_ID='';
+let STAGE_DOC_VIEW=null;
+function tStage(){
+  const d=draft,tp=DB.settings.templates||[];
+  if(!SBASE)SBASE=d.start||fd(today());
+  const defT=(tp.find(t=>t.category===d.category)||tp[0]||{}).id;
+  const cs=curStage(d);
+  const bar=`<div class="stbar"><span class="muted small">Template</span><select id="tsel">${tp.map(t=>`<option value="${esc(t.id)}" ${t.id===defT?'selected':''}>${esc(t.name)} (${t.stages.length} tahap)</option>`).join('')||'<option value="">(belum ada template)</option>'}</select>
+    <span class="muted small">Mulai plan</span><input type="date" id="sbase" value="${esc(SBASE)}" onchange="SBASE=this.value">
+    <button class="btn sm pri" onclick="loadTpl()">Muat template</button><button class="btn sm" onclick="reflowStages()">Susun ulang plan berurutan</button><button class="btn sm" onclick="saveAsTpl()">Simpan sebagai template</button></div>`;
+  const rows=d.stages.map((s,i)=>{
+    const e=stEff(s),dv=stDev(s);
+    const dtxt=e==='Delayed'?`<span style="color:var(--bad);font-weight:700">Terlambat +${dv} hr</span>`:dv===null?'<span class="muted">-</span>':dv>0?`<span style="color:var(--bad);font-weight:700">+${dv} hr</span>`:dv<0?`<span style="color:var(--ok);font-weight:700">${dv} hr</span>`:'<span style="color:var(--ok)">tepat waktu</span>';
+    const docCount=(s.attachments||[]).length+(s.docLinks||[]).length,docAction=PROJECT_READ_ONLY?`viewStageDocs('${d.id}','${s.id}')`:`openStageDocs('${s.id}')`,docButton=PROJECT_READ_ONLY?(docCount?`<button class="btn sm" onclick="${docAction}">Dokumentasi (${docCount})</button> `:''):`<button class="btn sm" onclick="${docAction}">${docCount?'Dokumentasi ('+docCount+')':'Tambah dokumentasi'}</button> `;
+    return `<tr><td class="muted">${i+1}</td>
+    <td style="min-width:160px"><input value="${esc(s.name)}" oninput="setS('${s.id}','name',this.value,1)"></td>
+    <td style="width:95px"><input value="${esc(s.pic)}" list="plist2" oninput="setS('${s.id}','pic',this.value,1)"></td>
+    <td><input type="date" value="${esc(s.ps)}" onchange="setS('${s.id}','ps',this.value)"></td>
+    <td><input type="date" value="${esc(s.pf)}" onchange="setS('${s.id}','pf',this.value)"></td>
+    <td style="width:58px"><input type="number" min="1" value="${s.ps&&s.pf?stageDays(s):''}" onchange="setS('${s.id}','days',this.value)"></td>
+    <td><input type="date" value="${esc(s.as)}" onchange="setS('${s.id}','as',this.value)"></td>
+    <td><input type="date" value="${esc(s.af)}" onchange="setS('${s.id}','af',this.value)"></td>
+    <td style="width:110px"><select onchange="setS('${s.id}','status',this.value)">${STG_ST.map(o=>`<option ${o===s.status?'selected':''}>${o}</option>`).join('')}</select></td>
+    <td>${dtxt}</td>
+    <td style="min-width:120px"><input value="${esc(s.note)}" placeholder="catatan" oninput="setS('${s.id}','note',this.value,1)"></td>
+    <td style="white-space:nowrap">${docButton}${PROJECT_READ_ONLY?'':`<button class="btn sm" onclick="moveS('${s.id}',-1)">▲</button> <button class="btn sm" onclick="moveS('${s.id}',1)">▼</button> <button class="btn sm bad" onclick="delS('${s.id}')">✕</button>`}</td></tr>`;
+  }).join('');
+  return bar+`<datalist id="plist2">${[...new Set(DB.projects.map(p=>p.pic).filter(Boolean))].map(x=>`<option value="${esc(x)}">`).join('')}</datalist>
+  <div class="qh"><h4>Stage / tahapan (${d.stages.length})${cs?' <span class="muted small" style="font-weight:400">· selesai '+cs.done+', saat ini: '+esc(cs.txt)+'</span>':''}</h4><button class="btn sm pri" onclick="addStage()">+ Tambah stage</button></div>
+  ${d.stages.length?`<div class="tw" style="border:1px solid var(--line);border-radius:8px"><table class="stt"><thead><tr><th>#</th><th>Stage</th><th>PIC</th><th>Plan mulai</th><th>Plan selesai</th><th>Hari</th><th>Actual mulai</th><th>Actual selesai</th><th>Status</th><th>Deviasi</th><th>Catatan</th><th>Dokumentasi / aksi</th></tr></thead><tbody>${rows}</tbody></table></div>
+  <div class="small muted" style="margin-top:8px">Isi Actual selesai untuk menandai stage selesai. Isi Actual mulai saat stage mulai berjalan. Stage yang plan selesainya terlewat dan belum selesai ditandai Terlambat otomatis. Stage boleh berjalan paralel.</div>`:'<div class="empty">Belum ada stage. Pilih template lalu klik "Muat template", atau klik "+ Tambah stage".</div>'}`;
+}
+function openStageDocs(id){if(!draft)return;STAGE_DOC_ID=id;drawStageDocs();}
+function viewStageDocs(projectId,stageId){STAGE_DOC_VIEW={projectId,stageId};drawStageDocsViewer();}
+function closeStageDocs(){$('#modal2').innerHTML='';STAGE_DOC_ID='';STAGE_DOC_VIEW=null;}
+function stageDocsMarkup(stage,editable){
+  const files=(stage.attachments||[]).map(file=>{
+    const url=apiURL('/api/files/'+encodeURIComponent(file.file)),image=/\.(png|jpe?g|gif|webp)$/i.test(file.name||''),video=/\.(mp4|webm|mov|m4v)$/i.test(file.name||'');
+    const preview=image?`<img src="${esc(url)}" alt="${esc(file.name)}">`:video?`<video controls preload="metadata" src="${esc(url)}"></video>`:`<span class="badge" style="background:#64748b">${esc(((file.name||'').split('.').pop()||'FILE').toUpperCase())}</span>`;
+    return `<div class="stage-doc"><div class="stage-doc-preview">${preview}</div><div class="stage-doc-info"><b>${esc(file.name)}</b><div class="small muted">${file.size?fmtNum(Math.ceil(file.size/1024))+' KB':''}${file.uploadedBy?' · '+esc(file.uploadedBy):''}${file.uploadedAt?' · '+esc(fmtDT(file.uploadedAt)):''}</div></div><div class="stage-doc-actions"><button class="btn sm" onclick="openStageDocFile('${esc(file.file)}')">Buka</button>${editable&&canEdit()?`<button class="btn sm bad" onclick="detachStageDoc('${esc(file.id)}')">Lepas</button>`:''}</div></div>`;
+  }).join('');
+  const links=(stage.docLinks||[]).map(link=>`<div class="stage-doc-link"><div class="stage-doc-link-info"><b>${esc(link.title||link.url)}</b><div class="small muted">${esc(link.url)}</div></div><div class="stage-doc-actions"><button class="btn sm" onclick="openStageDocLink('${esc(stage.id)}','${esc(link.id)}')">Buka</button>${editable&&canEdit()?`<button class="btn sm bad" onclick="removeStageDocLink('${esc(link.id)}')">Hapus</button>`:''}</div></div>`).join('');
+  return files+links;
+}
+function drawStageDocsViewer(){
+  const project=STAGE_DOC_VIEW&&byId(STAGE_DOC_VIEW.projectId),stage=project&&project.stages.find(s=>s.id===STAGE_DOC_VIEW.stageId);if(!stage){closeStageDocs();return;}
+  const files=stageDocsMarkup(stage,false);
+  const count=(stage.attachments||[]).length+(stage.docLinks||[]).length;
+  $('#modal2').innerHTML=`<div class="ov"><div class="dlg wide"><div class="dh"><h3>${esc(project.name)} · ${esc(stage.name||'Stage')}</h3><button class="x" onclick="closeStageDocs()">✕</button></div><div class="db"><div class="small muted" style="margin-bottom:12px">Dokumentasi stage (${count})</div><div class="stage-doc-list">${files||'<div class="empty">Belum ada dokumentasi untuk stage ini.</div>'}</div></div><div class="df"><button class="btn" onclick="closeStageDocs()">Tutup</button></div></div></div>`;
+}
+function drawStageDocs(){
+  const stage=draft&&draft.stages.find(s=>s.id===STAGE_DOC_ID);if(!stage){closeStageDocs();return;}
+  const files=stageDocsMarkup(stage,true);
+  const upload=canEdit()?(isNew?'<div class="small muted">Simpan project terlebih dahulu sebelum mengunggah dokumentasi.</div>':'<label class="btn sm pri stage-doc-upload">Tambah file<input type="file" accept="image/*,video/mp4,video/webm,video/quicktime,.m4v,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.csv,.txt" multiple onchange="uploadStageDocs(this)"></label>'):'';
+  const linkForm=canEdit()?`<div class="fg" style="margin-top:14px"><label>Nama link (opsional)<input id="stage_doc_link_title" placeholder="Contoh: Report FAT"></label><label class="full">Tempel link OneDrive / SharePoint<input id="stage_doc_link_url" type="url" placeholder="https://..." onkeydown="if(event.key==='Enter'){event.preventDefault();addStageDocLink()}"></label><div><button class="btn sm" onclick="addStageDocLink()">+ Tambah link</button></div></div>`:'';
+  $('#modal2').innerHTML=`<div class="ov"><div class="dlg wide"><div class="dh"><h3>Dokumentasi · ${esc(stage.name||'Stage')}</h3><button class="x" onclick="closeStageDocs()">✕</button></div><div class="db"><div style="display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin-bottom:12px">${upload}<span class="small muted">Foto, video, dan dokumen · Maksimal 100 MB per file</span></div><div class="stage-doc-list">${files||'<div class="empty">Belum ada dokumentasi untuk stage ini.</div>'}</div><h4 style="margin:18px 0 0">Link dokumentasi</h4>${linkForm}<div class="small muted" style="margin-top:10px">Klik Simpan pada form project agar perubahan dokumentasi tersinkron dan terlihat di Gantt.</div></div><div class="df"><button class="btn" onclick="closeStageDocs()">Tutup</button></div></div></div>`;
+}
+function addStageDocLink(){
+  if(!canEdit()||!draft)return;
+  const stage=draft.stages.find(s=>s.id===STAGE_DOC_ID);if(!stage)return;
+  const rawUrl=$('#stage_doc_link_url').value.trim(),title=$('#stage_doc_link_title').value.trim();
+  let parsed;try{parsed=new URL(rawUrl);}catch(e){toast('Link tidak valid.');return;}
+  if(!['http:','https:'].includes(parsed.protocol)||parsed.username||parsed.password){toast('URL harus menggunakan http atau https.');return;}
+  stage.docLinks=stage.docLinks||[];stage.docLinks.push({id:uid(),title:title||parsed.hostname,url:parsed.href});
+  drawTab();drawStageDocs();toast('Link ditambahkan; klik Simpan project agar tersinkron.');
+}
+function removeStageDocLink(id){
+  if(!canEdit()||!draft)return;
+  const stage=draft.stages.find(s=>s.id===STAGE_DOC_ID);if(!stage)return;
+  stage.docLinks=(stage.docLinks||[]).filter(link=>link.id!==id);drawTab();drawStageDocs();
+}
+function openStageDocLink(stageId,linkId){
+  const stage=STAGE_DOC_ID===stageId&&draft?draft.stages.find(s=>s.id===stageId):STAGE_DOC_VIEW&&byId(STAGE_DOC_VIEW.projectId)?.stages.find(s=>s.id===stageId);
+  const link=stage&&(stage.docLinks||[]).find(item=>item.id===linkId);if(!link)return;
+  try{const url=new URL(link.url);if(!['http:','https:'].includes(url.protocol)||url.username||url.password)throw new Error();window.open(url.href,'_blank','noopener,noreferrer');}catch(e){toast('Link dokumentasi tidak valid.');}
+}
+async function uploadStageDocs(input){
+  const stage=draft&&draft.stages.find(s=>s.id===STAGE_DOC_ID);if(!canEdit()||!stage)return;
+  if(isNew){toast('Simpan project terlebih dahulu sebelum mengunggah dokumentasi.');input.value='';return;}
+  const allowed=/\.(png|jpe?g|gif|webp|mp4|webm|mov|m4v|pdf|docx?|xlsx?|pptx?|csv|txt)$/i;
+  for(const file of Array.from(input.files||[])){
+    if(file.size>FILE_MAX){toast('File terlalu besar (maksimal 100 MB).');continue;}
+    if(!allowed.test(file.name)){toast('Format file tidak didukung.');continue;}
+    toast('Mengunggah '+file.name+' ...');
+    try{
+      const uploaded=await api('/api/files',{method:'POST',headers:{'Content-Type':'application/octet-stream','X-Filename':encodeURIComponent(file.name),'X-Prefix':encodeURIComponent(draft.code||'PRJ')},body:file});
+      stage.attachments=stage.attachments||[];stage.attachments.push({id:uid(),name:file.name,file:uploaded.name,size:uploaded.size||file.size,type:file.type||uploaded.mime_type||'',uploadedAt:Date.now(),uploadedBy:ME});
+      toast('File diunggah; klik Simpan project agar dokumentasi tersinkron.');
+    }catch(e){toast('Gagal mengunggah dokumentasi: '+e.message);}
+  }
+  input.value='';drawTab();drawStageDocs();
+}
+function detachStageDoc(id){
+  if(!canEdit()||!draft)return;
+  const stage=draft.stages.find(s=>s.id===STAGE_DOC_ID);if(!stage)return;
+  stage.attachments=(stage.attachments||[]).filter(file=>file.id!==id);drawTab();drawStageDocs();
+}
+function openStageDocFile(file){window.open(apiURL('/api/files/'+encodeURIComponent(file)),'_blank','noopener');}
+function setS(id,k,v,quiet){
+  const s=draft.stages.find(x=>x.id===id);if(!s)return;
+  const t=fd(today());
+  if(k==='days'){const n=Math.max(1,parseInt(v,10)||1);if(s.ps)s.pf=fd(addDays(pd(s.ps),n-1));}
+  else if(k==='status'){
+    s.status=v;
+    if(v==='Completed'){s.af=s.af||t;s.as=s.as||((s.ps&&s.ps<=s.af)?s.ps:s.af);}
+    else if(v==='Not Started'){s.as='';s.af='';}
+    else if(v==='On Progress'){s.af='';s.as=s.as||t;}
+    else if(v==='On Hold'){s.af='';}
+  }
+  else if(k==='af'){
+    s.af=v;
+    if(v){s.status='Completed';if(!s.as)s.as=(s.ps&&s.ps<=v)?s.ps:v;}
+    else s.status=s.as?'On Progress':'Not Started';
+  }
+  else if(k==='as'){
+    s.as=v;
+    if(v&&s.status==='Not Started')s.status='On Progress';
+    if(!v&&!s.af&&s.status==='On Progress')s.status='Not Started';
+  }
+  else s[k]=v;
+  if((k==='pf'||k==='ps')&&s.ps&&s.pf&&s.pf<s.ps){if(k==='pf')toast('Plan selesai tidak boleh sebelum plan mulai');s.pf=s.ps;}
+  if(quiet)return;
+  applyAuto(draft);drawTab();
+}
+function addStage(){
+  const st=draft.stages,last=st[st.length-1];
+  const ps=last&&last.pf?fd(addDays(pd(last.pf),1)):(SBASE||draft.start||fd(today()));
+  st.push({id:uid(),name:'',pic:'',ps:ps,pf:fd(addDays(pd(ps),6)),as:'',af:'',status:'Not Started',note:'',par:false});
+  applyAuto(draft);drawTab();
+}
+function moveS(id,dir){const a=draft.stages,i=a.findIndex(x=>x.id===id),j=i+dir;if(i<0||j<0||j>=a.length)return;const t=a[i];a[i]=a[j];a[j]=t;drawTab();}
+function delS(id){const s=draft.stages.find(x=>x.id===id);if(!s)return;if(!confirm('Hapus stage "'+(s.name||'tanpa nama')+'"?'))return;draft.stages=draft.stages.filter(x=>x.id!==id);applyAuto(draft);drawTab();}
+function loadTpl(){
+  const t=(DB.settings.templates||[]).find(x=>x.id===$('#tsel').value);if(!t){toast('Belum ada template. Buat di Pengaturan > Template stage.');return;}
+  if(draft.stages.length&&!confirm('Ganti '+draft.stages.length+' stage yang ada dengan template "'+t.name+'"? Data actual yang sudah diisi akan hilang.'))return;
+  SBASE=$('#sbase').value||draft.start||fd(today());
+  draft.stages=buildStages(t.stages,SBASE);
+  draft.stages.forEach(s=>{if(!s.pic)s.pic=draft.pic||'';});
+  if(draft.status==='Completed')draft.status='On Progress';
+  applyAuto(draft);drawTab();toast('Template "'+t.name+'" dimuat: '+draft.stages.length+' stage');
+}
+function reflowStages(){
+  if(!draft.stages.length)return;
+  if(!confirm('Susun ulang plan semua stage secara berurutan dari tanggal mulai plan? Durasi tiap stage tetap, actual tidak berubah.'))return;
+  const defs=draft.stages.map(s=>({name:s.name,days:stageDays(s),par:s.par}));
+  const b=buildStages(defs,$('#sbase').value||SBASE||draft.start);
+  draft.stages.forEach((s,i)=>{s.ps=b[i].ps;s.pf=b[i].pf;});
+  applyAuto(draft);drawTab();
+}
+async function saveAsTpl(){
+  if(!isAdmin()){toast('Hanya admin yang dapat menyimpan template stage');return;}
+  if(!draft.stages.length){toast('Belum ada stage');return;}
+  const nm=prompt('Nama template baru:',(draft.category||'Template')+' - '+draft.name);if(!nm||!nm.trim())return;
+  DB.settings.templates.push({id:uid(),name:nm.trim(),category:draft.category||'',stages:draft.stages.map(s=>({name:s.name,pic:s.pic||'',days:stageDays(s),par:!!s.par}))});
+  DB.settings.settingsAt=Date.now();await persist();if(draft&&TAB==='stage')drawTab();toast('Template "'+nm.trim()+'" tersimpan');
+}
+
+/* ================= PURCHASE ORDER ================= */
+let PD=null,POISNEW=false;
+const getPO=id=>draft.pos.find(x=>x.id===id);
+function openDoc(html){
+  try{const url=URL.createObjectURL(new Blob([html],{type:'text/html'}));const w=window.open(url,'_blank');if(!w){toast('Pop-up diblokir browser. Izinkan pop-up untuk halaman ini, lalu coba lagi.');return;}setTimeout(()=>URL.revokeObjectURL(url),120000);}
+  catch(e){toast('Gagal membuka dokumen: '+e.message);}
+}
+function fillPOdef(o){const S=DB.settings.po;['shipName','shipAddr','shipTel','shipAttn','leadTime'].forEach(k=>{if(o[k]===undefined)o[k]=S[k]||'';});['tel','email','attn','addr'].forEach(k=>{if(o[k]===undefined)o[k]='';});if(o.useSig===undefined)o.useSig=!!S.sigDefault;(o.items||[]).forEach(i=>{if(i.due===undefined)i.due='';});return o;}
+async function makePO(qid){
+  const q=getQ(qid);if(!q)return;
+  try{await syncNow();}catch(e){}
+  const S=DB.settings.po;
+  PD=fillPOdef({id:uid(),no:nextPONo(),date:fd(today()),qid:q.id,vendor:q.vendor,addr:'',attn:'',tel:'',email:'',qno:q.no||'',subject:draft.name,
+    items:[{id:uid(),desc:draft.name+(q.note?' - '+q.note:''),qty:1,unit:'Unit',price:q.amount,due:''}],currency:q.currency||DB.settings.currency||'IDR',tax:S.tax,terms:S.terms,delivery:S.delivery,leadTime:S.leadTime,note:S.note,by:ME,at:Date.now()});
+  POISNEW=true;drawPO();
+}
+function editPO(id){const o=getPO(id);if(!o)return;PD=fillPOdef(JSON.parse(JSON.stringify(o)));POISNEW=false;drawPO();}
+function drawPO(){
+  const o=PD,hasSig=(DB.settings.po.sign||[]).some(x=>x.img);
+  const t=(l,k,x)=>`<label>${l}<input value="${esc(o[k])}" oninput="PD.${k}=this.value" ${x||''}></label>`;
+  const ta=(l,k,r)=>`<label class="full">${l}<textarea rows="${r||2}" oninput="PD.${k}=this.value">${esc(o[k])}</textarea></label>`;
+  $('#modal2').innerHTML=`<div class="ov"><div class="dlg wide"><div class="dh"><h3>${POISNEW?'Buat Purchase Order':'Purchase Order '+esc(o.no)}</h3><button class="x" onclick="closeM2()">✕</button></div><div class="db">
+  <div class="fg">
+   <div class="sec">Dokumen</div>
+  ${t('No. PO','no')}<label>Tanggal PO<input type="date" value="${esc(o.date)}" oninput="PD.date=this.value"></label><label>Mata uang PO<select onchange="PD.currency=this.value;updPOT()">${Object.keys(SYMS).map(c=>`<option value="${c}" ${(o.currency||DB.settings.currency||'IDR')===c?'selected':''}>${c} · ${SYMS[c]}</option>`).join('')}</select></label>${t('Ref. No. Quotation','qno')}${t('Perihal / project','subject')}
+   <div class="sec">Kepada (TO) - vendor, isi manual</div>
+   ${t('Nama vendor','vendor','list="vlist"')}${t('Attn / kontak vendor','attn')}${t('Telp vendor','tel')}${t('E-mail vendor','email')}
+   ${ta('Alamat vendor','addr',2)}
+   <div class="sec">Kirim ke (SHIP TO)</div>
+   ${t('Nama','shipName')}${t('Telp','shipTel')}${t('Attn','shipAttn')}
+   ${ta('Alamat pengiriman','shipAddr',2)}
+  </div>
+  <div class="qh"><h4>Item</h4><button class="btn sm" onclick="addPOItem()">+ Baris</button></div><div id="poit"></div>
+  <div class="bsum" id="pot" style="margin-top:10px"></div>
+  <div class="fg" style="margin-top:10px"><label>PPN (%)<input type="number" min="0" step="0.1" value="${esc(o.tax)}" oninput="PD.tax=Number(this.value)||0;updPOT()"></label><span></span>
+   <div class="sec">Ketentuan</div>
+   ${ta('Payment (termin pembayaran)','terms',2)}${t('Lead Time','leadTime')}${t('Delivery Place (lokasi pengiriman)','delivery')}
+   ${ta('Catatan tambahan (opsional)','note',2)}
+   <label class="full" style="display:flex;gap:8px;align-items:center;color:var(--fg)"><input type="checkbox" style="width:auto" ${o.useSig?'checked':''} onchange="PD.useSig=this.checked"> Cetak tanda tangan digital pada PO ini (kalau tidak dicentang, kolom dikosongkan untuk tanda tangan basah)</label>
+   ${hasSig?'':'<div class="small muted full">Belum ada gambar tanda tangan digital. Unggah di Pengaturan &gt; Template &amp; nomor PO.</div>'}
+  </div>
+  <div class="small muted" style="margin-top:8px">Kop surat, logo, nomor, tanda tangan, dan teks standar PO diatur di Pengaturan &gt; Template &amp; nomor PO. PO baru tersimpan untuk seluruh tim setelah Anda klik Simpan PO.</div>
+  </div><div class="df"><button class="btn l" onclick="openDoc(poHTML(PD,draft,true))">Cetak / PDF</button><button class="btn" onclick="dlPOWord()">Unduh Word</button><button class="btn" onclick="closeM2()">Batal</button><button class="btn pri" onclick="savePO()">Simpan PO</button></div></div></div>`;
+  drawPOItems();updPOT();
+}
+function drawPOItems(){
+  $('#poit').innerHTML='<div class="itrow muted small"><span>Deskripsi</span><span>Qty</span><span>Satuan</span><span>Due Date</span><span>Harga satuan</span><span></span></div>'+PD.items.map(i=>`<div class="itrow"><input value="${esc(i.desc)}" oninput="setPOI('${i.id}','desc',this.value)"><input type="number" step="any" value="${esc(i.qty)}" oninput="setPOI('${i.id}','qty',this.value)"><input value="${esc(i.unit)}" oninput="setPOI('${i.id}','unit',this.value)"><input type="date" value="${esc(i.due||'')}" oninput="setPOI('${i.id}','due',this.value)"><input type="number" step="any" value="${esc(i.price)}" oninput="setPOI('${i.id}','price',this.value)"><button class="btn sm bad" onclick="delPOI('${i.id}')">✕</button></div>`).join('');
+}
+function setPOI(id,k,v){const i=PD.items.find(x=>x.id===id);if(!i)return;i[k]=(k==='qty'||k==='price')?(Number(v)||0):v;updPOT();}
+function addPOItem(){PD.items.push({id:uid(),desc:'',qty:1,unit:'Unit',price:0,due:''});drawPOItems();updPOT();}
+function delPOI(id){PD.items=PD.items.filter(x=>x.id!==id);drawPOItems();updPOT();}
+function updPOT(){const T=poTotals(PD),el=$('#pot');if(el)el.innerHTML=`<div><small>Subtotal</small><b>${poMoney(T.sub,PD.currency)}</b></div><div><small>PPN ${esc(PD.tax||0)}%</small><b>${poMoney(T.tax,PD.currency)}</b></div><div style="border-color:var(--pri)"><small>Total PO</small><b>${poMoney(T.total,PD.currency)}</b></div>`;}
+function dlPOWord(){dl((PD.no||'PO').replace(/[\\/:*?"<>|]+/g,'-')+'.doc',poHTML(PD,draft,false),'application/msword',false);}
+function markPOStage(date){
+  const s=draft.stages.find(x=>/\bPO\b|purchase order/i.test(x.name)&&stEff(x)!=='Completed');
+  if(s){s.as=s.as||((s.ps&&s.ps<date)?s.ps:date);s.af=date;s.status='Completed';}
+}
+async function savePO(){
+  const o=PD;o.no=(o.no||'').trim();
+  if(!o.no){toast('Nomor PO wajib diisi');return;}
+  if(!o.items.length||!o.items.some(i=>i.desc.trim())){toast('Isi minimal satu item PO');return;}
+  if(allPOs().some(x=>x.id!==o.id&&x.no===o.no)){toast('Nomor PO "'+o.no+'" sudah dipakai. Gunakan nomor lain.');return;}
+  const i=draft.pos.findIndex(x=>x.id===o.id);
+  if(i>=0)draft.pos[i]=o;else{draft.pos.push(o);markPOStage(o.date);}
+  draft.po=o.no;if(!draft.vendor)draft.vendor=o.vendor;
+  applyAuto(draft);
+  closeM2();await saveProject();
+}
+function delPO(id){const o=getPO(id);if(!o||!confirm('Hapus PO '+o.no+'? Nomor PO ini tidak dipakai ulang secara otomatis.'))return;draft.pos=draft.pos.filter(x=>x.id!==id);if(draft.po===o.no)draft.po=draft.pos.length?draft.pos[draft.pos.length-1].no:'';drawTab();}
+
+/* ================= TEMPLATE STAGE & PENGATURAN PO ================= */
+let TPL=[],TSEL=0,POS=null;
+function openTpl(){if(!isAdmin()){toast('Hanya admin yang dapat mengubah template stage');return;}TPL=JSON.parse(JSON.stringify(DB.settings.templates||[]));TSEL=0;if(!TPL.length)tplNew(true);drawTpl();}
+function tplNew(noDraw){TPL.push({id:uid(),name:'Template baru',category:'',stages:[{name:'Tahap 1',pic:'',days:7,par:false}]});TSEL=TPL.length-1;if(!noDraw)drawTpl();}
+function tplDup(){const t=JSON.parse(JSON.stringify(TPL[TSEL]));t.id=uid();t.name+=' (salinan)';TPL.push(t);TSEL=TPL.length-1;drawTpl();}
+function tplRemove(){if(!confirm('Hapus template "'+TPL[TSEL].name+'"? Project yang sudah memakainya tidak berubah.'))return;TPL.splice(TSEL,1);TSEL=0;if(!TPL.length)tplNew(true);drawTpl();}
+function tplS(i,k,v){const s=TPL[TSEL].stages[i];s[k]=(k==='days')?(Math.max(1,parseInt(v,10)||1)):v;}
+function tplMove(i,dir){const a=TPL[TSEL].stages,j=i+dir;if(j<0||j>=a.length)return;const t=a[i];a[i]=a[j];a[j]=t;drawTpl();}
+function tplDel(i){TPL[TSEL].stages.splice(i,1);drawTpl();}
+function tplAdd(){TPL[TSEL].stages.push({name:'',pic:'',days:7,par:false});drawTpl();}
+function drawTpl(){
+  const t=TPL[TSEL],cats=DB.settings.categories.map(c=>c.name);
+  const b=buildStages(t.stages,fd(today()));let tot=0;
+  if(b.length){let mn=b[0].ps,mx=b[0].pf;b.forEach(s=>{if(s.ps<mn)mn=s.ps;if(s.pf>mx)mx=s.pf;});tot=diffDays(pd(mn),pd(mx))+1;}
+  $('#modal2').innerHTML=`<div class="ov"><div class="dlg wide"><div class="dh"><h3>Template Stage</h3><button class="x" onclick="closeM2()">✕</button></div><div class="db"><div class="tplwrap">
+   <div class="tpll">${TPL.map((x,i)=>`<button class="btn ${i===TSEL?'on':''}" onclick="TSEL=${i};drawTpl()">${esc(x.name||'(tanpa nama)')} <span class="muted">(${x.stages.length})</span></button>`).join('')}<button class="btn sm pri" onclick="tplNew()">+ Template baru</button></div>
+   <div><div class="fg"><label>Nama template<input value="${esc(t.name)}" oninput="TPL[TSEL].name=this.value"></label>
+    <label>Klasifikasi tujuan (dipilih otomatis di project)<select onchange="TPL[TSEL].category=this.value"><option value="">Semua klasifikasi</option>${cats.map(c=>`<option ${c===t.category?'selected':''}>${esc(c)}</option>`).join('')}</select></label></div>
+    <div class="qh"><h4>Stage (${t.stages.length}) <span class="muted small" style="font-weight:400">· total durasi sekitar ${tot} hari</span></h4><button class="btn sm pri" onclick="tplAdd()">+ Stage</button></div>
+    <div class="strow muted small"><span>#</span><span>Nama stage</span><span>PIC default</span><span>Hari</span><span>Paralel</span><span></span></div>
+    ${t.stages.map((s,i)=>`<div class="strow"><span class="muted">${i+1}</span><input type="text" value="${esc(s.name)}" oninput="tplS(${i},'name',this.value)"><input type="text" value="${esc(s.pic||'')}" oninput="tplS(${i},'pic',this.value)"><input type="number" min="1" value="${s.days}" oninput="tplS(${i},'days',this.value)"><label style="display:flex;gap:4px;align-items:center;font-size:11px;font-weight:400"><input type="checkbox" style="width:auto;margin:0" ${s.par?'checked':''} onchange="tplS(${i},'par',this.checked);drawTpl()"> dgn sebelumnya</label><span style="white-space:nowrap"><button class="btn sm" onclick="tplMove(${i},-1)">▲</button> <button class="btn sm" onclick="tplMove(${i},1)">▼</button> <button class="btn sm bad" onclick="tplDel(${i})">✕</button></span></div>`).join('')}
+    <div class="small muted">Hari = durasi standar. Saat template dimuat ke project, plan mulai dan selesai tiap stage dihitung berurutan dari tanggal mulai. Stage bertanda Paralel mulai bersamaan dengan stage sebelumnya. Mengubah template tidak mengubah project yang sudah berjalan.</div>
+    <div style="margin-top:10px;display:flex;gap:8px"><button class="btn sm" onclick="tplDup()">Duplikat template</button><button class="btn sm bad" onclick="tplRemove()">Hapus template ini</button></div></div></div></div>
+   <div class="df"><button class="btn" onclick="closeM2()">Batal</button><button class="btn pri" onclick="tplSave()">Simpan template</button></div></div></div>`;
+}
+async function tplSave(){
+  const out=TPL.map(t=>({id:t.id,name:(t.name||'').trim(),category:t.category||'',stages:t.stages.filter(s=>(s.name||'').trim()).map(s=>({name:s.name.trim(),pic:s.pic||'',days:Math.max(1,Number(s.days)||1),par:!!s.par}))})).filter(t=>t.name);
+  DB.settings.templates=out;DB.settings.settingsAt=Date.now();closeM2();await persist();render();toast('Template stage tersimpan ('+out.length+' template)');
+}
+function openPOS(){if(!isAdmin()){toast('Hanya admin yang dapat mengubah template PO');return;}POS=JSON.parse(JSON.stringify(DB.settings.po));POS.sign=normSigners(POS.sign);drawPOS();}
+function loadImg(file,maxW,maxH,sig){return new Promise((res,rej)=>{
+  if(!file||!/^image\/(png|jpeg)$/.test(file.type)){rej(new Error('File harus berupa gambar PNG atau JPG'));return;}
+  if(file.size>6*1024*1024){rej(new Error('Ukuran gambar maksimal 6 MB'));return;}
+  const fr=new FileReader();fr.onerror=()=>rej(new Error('Gagal membaca file'));
+  fr.onload=()=>{const im=new Image();im.onerror=()=>rej(new Error('Gambar tidak dapat dibaca'));
+    im.onload=()=>{
+      const r=Math.min(1,maxW/im.width,maxH/im.height),w=Math.max(1,Math.round(im.width*r)),h=Math.max(1,Math.round(im.height*r));
+      const c=document.createElement('canvas');c.width=w;c.height=h;const x=c.getContext('2d');x.drawImage(im,0,0,w,h);
+      if(sig){const d=x.getImageData(0,0,w,h),a=d.data;for(let i=0;i<a.length;i+=4){const mn=Math.min(a[i],a[i+1],a[i+2]);if(mn>=235)a[i+3]=0;else if(mn>180)a[i+3]=Math.round(a[i+3]*(235-mn)/55);}x.putImageData(d,0,0);}
+      res(c.toDataURL('image/png'));};
+    im.src=fr.result;};
+  fr.readAsDataURL(file);});}
+function pickImg(kind,i){
+  const inp=document.createElement('input');inp.type='file';inp.accept='image/png,image/jpeg';
+  inp.onchange=async()=>{const f=inp.files&&inp.files[0];if(!f)return;
+    try{if(kind==='logo')POS.logo=await loadImg(f,480,200,false);else POS.sign[i].img=await loadImg(f,360,160,true);drawPOS();toast(kind==='logo'?'Logo dimuat':'Tanda tangan digital dimuat');}
+    catch(e){toast(e.message);}};
+  inp.click();
+}
+function samplePO(S){
+  return {id:'sample',no:nextPONo(S.pattern),date:fd(today()),qno:'QT-0001',subject:'Contoh project',vendor:'PT CONTOH VENDOR',addr:'Jl. Contoh No. 1\nJakarta',tel:'(021) 0000 0000',attn:'Mr. Contoh',email:'vendor@contoh.com',
+    items:[{id:'a',desc:'AUTOMATIC BOX FOLDING MACHINE INCLUDING 5 SETS OF ADDITIONAL MOLD',qty:1,unit:'set',due:fd(addDays(today(),30)),price:97284702}],
+    tax:S.tax,terms:S.terms||'100% After Delivery within 14 Days',leadTime:S.leadTime||'3 Weeks After Receiving PO',delivery:S.delivery,useSig:!!S.sigDefault};
+}
+function drawPOS(){
+  const S=POS;
+  const f=(l,k,t)=>`<label>${l}<input value="${esc(S[k])}" ${t==='num'?'type="number" step="any"':''} oninput="POS['${k}']=this.value"></label>`;
+  const ta=(l,k,r,h)=>`<label class="full">${l}<textarea rows="${r}" oninput="POS['${k}']=this.value">${esc(S[k])}</textarea>${h?`<small class="hint" style="text-align:left">${h}</small>`:''}</label>`;
+  const sel=(l,k,opts)=>`<label>${l}<select onchange="POS['${k}']=this.value">${opts.map(o=>`<option value="${esc(o[0])}" ${S[k]===o[0]?'selected':''}>${esc(o[1])}</option>`).join('')}</select></label>`;
+  const thumb=(src,clr,pk)=>(/^data:image\//.test(src||'')?`<img src="${src}" style="max-height:44px;max-width:150px;background:#fff;border:1px solid var(--line);border-radius:4px;padding:2px;vertical-align:middle"> <button class="btn sm bad" onclick="${clr}">Hapus</button>`:'<span class="muted small">Belum ada gambar</span>')+' '+pk;
+  const sg=S.sign.map((x,i)=>`<div class="sgrow"><label>Judul ${i+1}<input value="${esc(x.label)}" oninput="POS.sign[${i}].label=this.value"></label><label>Nama<input value="${esc(x.name)}" oninput="POS.sign[${i}].name=this.value"></label><label>Jabatan<input value="${esc(x.title)}" oninput="POS.sign[${i}].title=this.value"></label>
+    <div style="grid-column:1/-1">${thumb(x.img,`POS.sign[${i}].img='';drawPOS()`,`<button class="btn sm" onclick="pickImg('sign',${i})">Unggah TTD digital</button>`)}</div></div>`).join('');
+  $('#modal2').innerHTML=`<div class="ov"><div class="dlg wide"><div class="dh"><h3>Template &amp; nomor PO</h3><button class="x" onclick="closeM2()">✕</button></div><div class="db"><div class="fg">
+   <div class="sec">Kop dokumen</div>
+   ${f('Nama perusahaan','company')}${f('Kode dokumen (pojok kanan atas)','docCode')}${f('Judul dokumen','title')}
+   ${ta('Alamat perusahaan','address',2)}${ta('Telp / Fax / Website','contact',2)}
+   <div class="full">Logo perusahaan: ${thumb(S.logo,"POS.logo='';drawPOS()",`<button class="btn sm" onclick="pickImg('logo')">Unggah logo</button>`)}<small class="hint" style="text-align:left">PNG atau JPG. Gambar otomatis diperkecil. Logo dengan latar transparan (PNG) paling bagus.</small></div>
+   <div class="sec">Nomor, tanggal, bahasa</div>
+   <label class="full">Format nomor PO<input value="${esc(S.pattern)}" oninput="POS.pattern=this.value;$('#pnex').textContent=nextPONo(this.value)"><small class="hint" style="text-align:left">Kode: {NNN} nomor urut, {YYYY} tahun 4 digit, {YY} tahun 2 digit, {MM} bulan angka, {RM} bulan Romawi. Contoh: {NNN}/PO/PI/{RM}/{YYYY}. Nomor berikutnya: <b id="pnex">${esc(nextPONo(S.pattern))}</b>. Nomor urut mulai lagi dari 001 bila kode bulan atau tahun berubah.</small></label>
+   ${sel('Format tanggal','dateFmt',[['dd-Mmm-yy','28-Aug-26'],['dd Mmm yyyy','28 Aug 2026'],['dd Mmmm yyyy','28 August 2026'],['dd/mm/yyyy','28/08/2026']])}
+   ${sel('Bahasa label PO','lang',[['en','English (PO. Number, DESCRIPTION, ...)'],['id','Indonesia (No. PO, DESKRIPSI, ...)']])}
+   ${f('PPN / Tax default (%)','tax','num')}
+   <div class="sec">Ship To standar</div>
+   ${f('Nama','shipName')}${f('Telp','shipTel')}${f('Attn','shipAttn')}${ta('Alamat pengiriman','shipAddr',2)}
+   <div class="sec">Ketentuan standar</div>
+   ${ta('Payment (termin pembayaran) standar','terms',2)}${f('Lead Time standar','leadTime')}${f('Delivery Place standar','delivery')}
+   ${ta('Daftar dokumen penagihan','billing',6,'Baris pertama menjadi judul (tebal dan bergaris bawah), baris berikutnya berupa daftar.')}
+   ${ta('Pernyataan standar (anti-suap, whistleblower, dan sejenisnya)','notice',7,'Tampil di tengah dengan huruf tebal. Pisahkan paragraf dengan satu baris kosong. Kosongkan kalau tidak diperlukan.')}
+   ${ta('Catatan kaki standar (opsional)','note',2)}
+   <div class="sec">Tanda tangan</div>
+   <label class="full" style="display:flex;gap:8px;align-items:center;color:var(--fg)"><input type="checkbox" style="width:auto" ${S.sigDefault?'checked':''} onchange="POS.sigDefault=this.checked"> Cetak tanda tangan digital secara default pada PO baru (matikan untuk tanda tangan basah)</label>
+   <div class="small muted full">Kosongkan "Judul" kalau kolom itu tidak dipakai. Gambar tanda tangan hanya tercetak kalau opsi digital dicentang di PO yang bersangkutan. Latar putih pada gambar tanda tangan dihapus otomatis.</div>
+   ${sg}
+  </div></div><div class="df"><button class="btn l" onclick="openDoc(poHTML(samplePO(POS),null,false,POS))">Pratinjau</button><button class="btn" onclick="closeM2()">Batal</button><button class="btn pri" onclick="savePOS()">Simpan</button></div></div></div>`;
+}
+async function savePOS(){
+  const P=POS;P.tax=Number(P.tax)||0;P.sign=normSigners(P.sign);
+  if(!String(P.pattern||'').trim())P.pattern=DEFPO.pattern;
+  DB.settings.po=Object.assign({},DEFPO,P);DB.settings.settingsAt=Date.now();closeM2();await persist();render();toast('Template PO tersimpan');
+}
+
+/* ================= PENGATURAN ================= */
+function openSettings(){
+  CD=DB.settings.categories.map(c=>({name:c.name,color:c.color,orig:c.name}));
+  const S=DB.settings,ad=isAdmin(),viewer=isViewer();
+  const chk=(id,v,t,last)=>`<label style="display:flex;gap:8px;align-items:center;font-weight:400;color:var(--text);${last?'':'margin-bottom:6px'}"><input type="checkbox" id="${id}" style="width:auto;margin:0" ${v?'checked':''}> ${t}</label>`;
+  $('#modal').innerHTML=`<div class="ov"><div class="dlg sm"><div class="dh"><h3>Pengaturan</h3><button class="x" onclick="closeModal()">✕</button></div><div class="db">
+    <h4 style="margin-top:0">Akun</h4>
+    <div class="small" style="margin-bottom:8px">Masuk sebagai <b>${esc(ME)}</b> (${ad?'admin':viewer?'viewer':isContributor()?'kontributor':'pengguna'}). Nama ini dicatat di riwayat perubahan.</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">${viewer?'':'<button class="btn sm" onclick="openPin()">Ganti PIN saya</button>'}${ad?'<button class="btn sm" onclick="openUsers()">Kelola pengguna</button> <button class="btn sm" onclick="backupNow()">Backup sekarang</button>':''}</div>
+    ${ad?`<h4>Aplikasi</h4><label>Nama aplikasi (tampil di header dan tab browser)<input id="s_app" value="${esc(S.appName||'PI Project Management')}"></label>
+    <h4>Stage &amp; PO</h4>
+    <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" onclick="openTpl()">Template stage (${(S.templates||[]).length})</button><button class="btn" onclick="openPOS()">Template &amp; nomor PO</button></div>
+    <h4>Fitur</h4>
+    ${chk('s_ub',S.useBudget,'Pakai kolom budget (opsional, tidak tampil di Dashboard)')}
+    ${chk('s_ap',S.autoProgress!==false,'Progres project dihitung otomatis dari stage yang selesai')}
+    ${chk('s_ad',S.autoDates!==false,'Tanggal mulai dan target project mengikuti plan stage',true)}
+    <h4>Mata uang</h4><label><select id="s_cur">${Object.keys(SYMS).map(c=>`<option ${c===S.currency?'selected':''}>${c}</option>`).join('')}</select></label>
+    <h4>Klasifikasi / kategori project</h4><div id="catl"></div><button class="btn sm" onclick="addCat()">+ Kategori</button>`:`<div class="small muted" style="margin-top:12px">Template stage, template PO, kategori, dan fitur dikelola oleh admin.</div>`}
+    <h4>Tampilan</h4><label><select id="s_theme"><option value="light">Terang</option><option value="dark" ${document.documentElement.dataset.theme==='dark'?'selected':''}>Gelap</option></select></label>
+    <h4>Ekspor${ad?' / Impor':''}</h4>
+    <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn sm" onclick="exportCSV()">Project (CSV)</button><button class="btn sm" onclick="exportStages()">Stage Plan vs Actual (CSV)</button><button class="btn sm" onclick="exportQ()">Quotation (CSV)</button><button class="btn sm" onclick="exportPOcsv()">PO (CSV)</button><button class="btn sm" onclick="exportJSON()">Backup (JSON)</button>${ad?'<label class="btn sm" style="margin:0;cursor:pointer;color:var(--text)">Impor JSON<input type="file" accept=".json" style="display:none" onchange="importJSON(this)"></label>':''}</div>
+    </div><div class="df"><button class="btn" onclick="closeModal()">Tutup</button><button class="btn pri" onclick="saveSettings()">Simpan</button></div></div></div>`;
+  if(ad)drawCats();
+}
+function drawCats(){
+  $('#catl').innerHTML=CD.map((c,i)=>`<div class="catrow"><input type="color" value="${c.color}" oninput="CD[${i}].color=this.value"><input type="text" value="${esc(c.name)}" oninput="CD[${i}].name=this.value"><button class="btn sm bad" ${CD.length<2?'disabled title="Minimal satu kategori harus tersisa"':''} onclick="removeCat(${i})">Hapus</button></div>`).join('');
+}
+function addCat(){CD.push({name:'',color:PALETTE[CD.length%PALETTE.length],orig:''});drawCats();}
+function removeCat(index){
+  const category=CD[index];if(!category)return;
+  if(CD.length<2){toast('Minimal satu kategori harus tersisa');return;}
+  const fallback=CD.find((item,i)=>i!==index&&item.name.trim());if(!fallback){toast('Isi nama kategori lain terlebih dahulu');return;}
+  const oldName=category.orig||category.name.trim(),count=DB.projects.filter(p=>p.category===oldName||p.category===category.name.trim()).length;
+  if(count&&!confirm('Hapus klasifikasi "'+category.name+'"? '+count+' project yang menggunakannya akan dipindahkan ke "'+fallback.name.trim()+'" saat pengaturan disimpan.'))return;
+  CD.splice(index,1);drawCats();
+}
+async function saveSettings(){
+  if(isAdmin()){
+    const cds=CD.filter(c=>c.name.trim());
+    if(!cds.length){toast('Minimal satu kategori');return;}
+    const now=Date.now();
+    const removed=DB.settings.categories.filter(old=>!CD.some(c=>c.orig===old.name)),fallback=cds[0].name.trim();
+    removed.forEach(old=>{
+      DB.projects.forEach(p=>{if(p.category===old.name){p.category=fallback;p.updatedAt=Math.max(now,(p.updatedAt||0)+1);p.updatedBy=ME;p.log=(p.log||[]).concat([{t:p.updatedAt,by:ME,items:['Klasifikasi '+old.name+' dihapus; dipindahkan ke '+fallback]}]);}});
+      (DB.settings.templates||[]).forEach(t=>{if(t.category===old.name)t.category=fallback;});
+    });
+    cds.forEach(c=>{if(c.orig&&c.orig!==c.name.trim()){
+      DB.projects.forEach(p=>{if(p.category===c.orig){p.category=c.name.trim();p.updatedAt=now;p.updatedBy=ME;}});
+      (DB.settings.templates||[]).forEach(t=>{if(t.category===c.orig)t.category=c.name.trim();});
+    }});
+    DB.settings.categories=cds.map(c=>({name:c.name.trim(),color:c.color}));
+    DB.settings.currency=$('#s_cur').value;DB.settings.settingsAt=now;
+    DB.settings.appName=($('#s_app').value||'').trim()||'PI Project Management';
+    DB.settings.useBudget=$('#s_ub').checked;DB.settings.autoProgress=$('#s_ap').checked;DB.settings.autoDates=$('#s_ad').checked;
+  }
+  const th=$('#s_theme').value;document.documentElement.dataset.theme=th;localStorage.setItem('pt_theme',th);
+  closeModal();await persist();render();toast('Pengaturan tersimpan');
+}
+/* ---- export / import ---- */
+function dl(name,text,type,bom){const b=new Blob([(bom?'\ufeff':'')+text],{type:type});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),3000);}
+function exportCSV(){
+  const ub=useBud();
+  const rows=[['Kode','Project','Klasifikasi','Prioritas','Status','PIC','Area','Mulai','Target','Progres %','Tahap saat ini','Stage selesai','Total stage','Stage terlambat','Vendor','No PO','Jumlah Quotation','Quotation Terendah','Quotation Terpilih'].concat(ub?['Budget','Aktual/PO','Status Budget']:[]).concat(['Deskripsi'])];
+  getL(false).forEach(p=>{const lq=lowQ(p),sq=selQ(p),cs=curStage(p);rows.push([p.code,p.name,p.category,p.priority,effStatus(p),p.pic,p.area,p.start,p.end,p.progress,cs?cs.txt:'',cs?cs.done:'',p.stages.length,p.stages.filter(s=>stEff(s)==='Delayed').length,p.vendor,p.pos.length?p.pos.map(o=>o.no).join('; '):p.po,quotes(p).length,lq?lq.amount:'',sq?sq.amount:''].concat(ub?[p.budget,p.actual,budgetState(p).label]:[]).concat([p.desc]));});
+  dl('projects.csv',rows.map(r=>r.map(csvCell).join(',')).join('\r\n'),'text/csv;charset=utf-8',true);
+}
+function exportStages(){
+  const rows=[['Kode','Project','No','Stage','PIC','Plan Mulai','Plan Selesai','Actual Mulai','Actual Selesai','Status','Deviasi Selesai (hari, + = terlambat)','Catatan']];
+  getL(false).forEach(p=>p.stages.forEach((s,i)=>{const dv=stDev(s);rows.push([p.code,p.name,i+1,s.name,s.pic,s.ps,s.pf,s.as,s.af,stEff(s),dv===null?'':dv,s.note]);}));
+  dl('stages-plan-actual.csv',rows.map(r=>r.map(csvCell).join(',')).join('\r\n'),'text/csv;charset=utf-8',true);
+}
+function exportPOcsv(){
+  const rows=[['No PO','Tanggal','Kode','Project','Vendor','Mata Uang','Ref Quotation','Payment','Lead Time','Subtotal','PPN %','PPN','Total','Dibuat oleh']];
+  getL(false).forEach(p=>p.pos.forEach(o=>{const T=poTotals(o);rows.push([o.no,o.date,p.code,p.name,o.vendor,o.currency||DB.settings.currency,o.qno,o.terms||'',o.leadTime||'',T.sub,o.tax,T.tax,T.total,o.by]);}));
+  dl('purchase-orders.csv',rows.map(r=>r.map(csvCell).join(',')).join('\r\n'),'text/csv;charset=utf-8',true);
+}
+function exportQ(){
+  const rows=[['Kode','Project','Vendor','No Quotation','Harga','Mata Uang','Tanggal Diterima','Berlaku s/d','Status','Link','File','Catatan']];
+  getL(false).forEach(p=>quotes(p).forEach(q=>rows.push([p.code,p.name,q.vendor,q.no,q.amount,q.currency||DB.settings.currency||'IDR',q.date,q.valid,q.status,q.link,q.fileName||q.file,q.note])));
+  dl('quotations.csv',rows.map(r=>r.map(csvCell).join(',')).join('\r\n'),'text/csv;charset=utf-8',true);
+}
+function exportJSON(){dl('tracker-backup-'+fd(new Date())+'.json',JSON.stringify(DB,null,1),'application/json',false);}
+function importJSON(input){
+  const f=input.files[0];if(!f)return;const r=new FileReader();
+  r.onload=async()=>{try{if(!isAdmin()){toast('Hanya admin yang dapat mengimpor data');return;}const o=normDB(JSON.parse(r.result));DB=mergeDB(DB,o);closeModal();await persist();render();toast('Data berhasil digabung dari file');}catch(e){toast('File tidak valid: '+e.message);}};
+  r.readAsText(f);
+}
+
+/* ================= SERVER (v4): login, sinkronisasi, real-time ================= */
+let CSRF_TOKEN='',PIN_MIN=6;
+const isAdmin=()=>!!(USER&&USER.role==='admin');
+const isViewer=()=>!!(USER&&USER.role==='viewer');
+const isContributor=()=>!!(USER&&USER.role==='contributor');
+const canEdit=()=>!!(USER&&(USER.role==='admin'||USER.role==='user'));
+const canModifyProj=p=>{
+  if(isAdmin())return true;
+  if(!canEdit())return false;
+  if(!p)return true;
+  const me=(ME||'').trim().toLowerCase();
+  if(!me)return false;
+  const pic=(p.pic||'').trim().toLowerCase();
+  if(!pic||pic===me)return true;
+  if(((p.createdBy||'').trim().toLowerCase())===me)return true;
+  if((p.stages||[]).some(s=>((s&&s.pic)||'').trim().toLowerCase()===me))return true;
+  return false;
+};
+const canDeleteProj=p=>{
+  if(isAdmin())return true;
+  if(!canEdit()||!p)return false;
+  const me=(ME||'').trim().toLowerCase();
+  if(!me)return false;
+  const pic=(p.pic||'').trim().toLowerCase();
+  if(pic&&pic===me)return true;
+  if(((p.createdBy||'').trim().toLowerCase())===me)return true;
+  if(!pic&&((p.updatedBy||'').trim().toLowerCase())===me)return true;
+  return false;
+};
+const canSubmitImprovement=()=>!!USER&&!isViewer();
+const canReviewImprovement=()=>canEdit();
+const canEditImprovement=()=>!!USER&&!isViewer()&&(IISNEW||(isContributor()&&!!(IDRAFT&&IDRAFT.submittedBy===ME)));
+const appName=()=>(DB&&DB.settings&&DB.settings.appName)||'PI Project Management';
+function apiURL(path){const base=location.pathname.replace(/\/+$/,'');const url=new URL(base+'/api.php',location.origin);url.searchParams.set('route',path);return url.toString();}
+async function api(path,opt){
+  opt=Object.assign({credentials:'same-origin'},opt||{});
+  const baseHdr={'X-PT':'1'};
+  if(CSRF_TOKEN)baseHdr['X-CSRF-Token']=CSRF_TOKEN;
+  opt.headers=Object.assign(baseHdr,opt.headers||{});
+  let r;
+  try{r=await fetch(apiURL(path),opt);}catch(e){const er=new Error('Server tidak dapat dihubungi');er.status=0;throw er;}
+  let j=null;try{j=await r.json();}catch(e){}
+  if(!r.ok){
+    const er=new Error((j&&j.error)||('Kesalahan server ('+r.status+')'));er.status=r.status;
+    if(r.status===401&&path!=='/api/me'&&path!=='/api/login'&&path!=='/api/setup'&&USER){USER=null;CSRF_TOKEN='';stopSSE();showLogin('Sesi berakhir, silakan masuk lagi.');}
+    throw er;
+  }
+  if(j&&j.csrfToken)CSRF_TOKEN=j.csrfToken;
+  return j;
+}
+function applyRemote(res){
+  if(!res||res.unchanged){if(res)REV=res.rev;return false;}
+  const before=sig(DB)+'|'+(DB.settings.settingsAt||0);
+  if(res.rejectedProjectAuth){
+    DB=normDB({settings:res.settings||DB.settings,projects:res.projects||[],improvements:res.improvements||DB.improvements,deleted:res.deleted||{}});
+    toast('Perubahan ditolak: Anda hanya dapat mengubah/menghapus project yang menjadi tanggung jawab (PIC) Anda.');
+  }else{
+    const remote=normDB({settings:res.settings||DB.settings,projects:res.projects||[],improvements:res.improvements||DB.improvements,deleted:res.deleted||{}});
+    DB=mergeDB(DB,remote);
+  }
+  if(res.settings&&res.forceSettings)DB.settings=normDB({settings:res.settings}).settings;
+  KNOWN={};(res.projects||[]).forEach(p=>{KNOWN[p.id]=p.updatedAt;});
+  KNOWNI={};(res.improvements||[]).forEach(x=>{KNOWNI[x.id]=x.updatedAt;});
+  KDEL=res.deleted||{};KSET=res.settingsAt||0;REV=res.rev;
+  return before!==sig(DB)+'|'+(DB.settings.settingsAt||0);
+}
+/* Kirim perubahan lokal ke server dan ambil perubahan terbaru. Mengembalikan true bila data berubah. */
+async function syncNow(){
+  if(!USER)return false;
+  if(PUSHING){AGAIN=true;return false;}
+  PUSHING=true;let changed=false;
+  try{
+    do{
+      AGAIN=false;
+      const push={projects:DB.projects.filter(p=>KNOWN[p.id]!==p.updatedAt),deleted:{}};
+      push.improvements=DB.improvements.filter(x=>KNOWNI[x.id]!==x.updatedAt);
+      for(const k in DB.deleted)if((KDEL[k]||0)<DB.deleted[k])push.deleted[k]=DB.deleted[k];
+      if(isAdmin()&&(DB.settings.settingsAt||0)>KSET)push.settings=DB.settings;
+      const res=await api('/api/sync',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({rev:REV,sa:DB.settings.settingsAt||0,push:push})});
+      if(applyRemote(res))changed=true;
+    }while(AGAIN);
+    SYNCERR=null;lastSync=new Date();clearTimeout(RETRY);RETRY=null;
+  }catch(e){
+    SYNCERR=e.message||String(e);
+    if(USER&&!RETRY)RETRY=setTimeout(async()=>{RETRY=null;const ch=await syncNow();if(ch)render();},5000);
+  }finally{PUSHING=false;renderSync();}
+  return changed;
+}
+async function persist(){renderSync();await syncNow();if(SYNCERR)toast('Perubahan belum tersimpan di server: '+SYNCERR+'. Aplikasi mencoba lagi otomatis; jangan tutup halaman ini.');}
+function stopSSE(){if(SSE){try{SSE.close();}catch(e){}SSE=null;}ONLINE=[];}
+function startSSE(){
+  stopSSE();
+  if(typeof EventSource==='undefined')return;
+  const es=new EventSource(apiURL('/api/events'));SSE=es;
+  es.addEventListener('state',async e=>{
+    let d={};try{d=JSON.parse(e.data);}catch(_){}
+    if(d.online)ONLINE=d.online;
+    if(d.rev!==undefined&&d.rev!==REV){const ch=await syncNow();if(ch){render();if(d.by&&d.by!==ME)toast('Data diperbarui oleh '+d.by);}}
+    renderSync();
+  });
+  es.onopen=async()=>{if(SYNCERR==='Koneksi ke server terputus')SYNCERR=null;const ch=await syncNow();if(ch)render();renderSync();};
+  es.onerror=async()=>{
+    ONLINE=[];if(!SYNCERR)SYNCERR='Koneksi ke server terputus';renderSync();
+    if(es.readyState===2){ // ditutup browser (mis. sesi habis): cek ulang
+      setTimeout(async()=>{try{await api('/api/me');if(USER)startSSE();}catch(er){if(er.status===401&&USER){USER=null;showLogin('Sesi berakhir, silakan masuk lagi.');}else if(USER)startSSE();}},5000);
+    }
+  };
+}
+function syncClick(){syncNow().then(ch=>{if(ch)render();toast(SYNCERR?('Gagal sinkron: '+SYNCERR):'Data dimuat ulang');});}
+function renderSync(){
+  const el=$('#sync');if(!el)return;
+  if(!USER){el.className='sync warn';el.innerHTML='<i></i><span>Belum masuk</span>';return;}
+  if(SYNCERR){el.className='sync err';el.innerHTML='<i></i><span>Belum tersimpan · '+esc(SYNCERR)+' · klik untuk coba lagi</span>';el.title=SYNCERR;return;}
+  el.className='sync ok';
+  el.innerHTML=`<i></i><span>Terhubung · online: <b>${Math.max(ONLINE.length,1)}</b>${lastSync?' · sinkron '+lastSync.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'}):''}</span>`;
+  el.title=(ONLINE.length?'Sedang online: '+ONLINE.join(', ')+'. ':'')+'Klik untuk memuat ulang data sekarang';
+}
+
+/* ---- login ---- */
+let LOGIN_MODE='edit';
+function loginLanguageOptions(){return `<select id="auth-language" data-no-translate aria-label="Bahasa aplikasi" onchange="setLanguage(this.value)"><option value="id">Indonesia</option><option value="en">English</option><option value="ko">한국어</option></select>`;}
+function authPage(title,subtitle,content,actions){
+  return `<div class="auth-page"><section class="auth-visual"><div class="auth-visual-copy"><h1>PIE Project Management</h1><p>Project operations</p></div><div class="auth-visual-foot">Indonesia · English · 한국어</div></section><section class="auth-pane"><div class="auth-card"><div class="auth-tools">${loginLanguageOptions()}</div><h2>${esc(title)}</h2><p class="auth-subtitle">${esc(subtitle)}</p>${content}${actions}</div></section></div>`;
+}
+function chooseLoginMode(mode){LOGIN_MODE=['viewer','contributor'].includes(mode)?mode:'edit';showLogin();}
+async function showLogin(msg){
+  document.body.classList.add('auth-mode');
+  let pub;
+  try{pub=await api('/api/public');}
+  catch(e){
+    $('#modal').innerHTML=authPage('Server tidak terhubung','Project operations',`<div class="auth-note">${esc(e.message)}. Pastikan server aktif dan Anda terhubung ke jaringan kantor atau VPN.</div>`,`<button class="auth-submit" onclick="showLogin()">Coba lagi</button>`);applyLanguage();return;
+  }
+  if(pub.pinMinLength)PIN_MIN=pub.pinMinLength;
+  DB.settings.appName=pub.appName||DB.settings.appName;document.title=pub.appName||'PI Project Management';$('#appname').textContent=pub.appName||'PI Project Management';
+  const note=msg?`<div class="auth-note">${esc(msg)}</div>`:'';
+  let content,actions;
+  if(pub.needSetup){
+    if(pub.local){
+      content=`${note}<label>Nama admin<input id="lg_name" autocomplete="username"></label><label>PIN (minimal ${PIN_MIN} karakter)<input id="lg_pin" type="password" autocomplete="new-password"></label><label>Ulangi PIN<input id="lg_pin2" type="password" autocomplete="new-password" onkeydown="if(event.key==='Enter')doSetup()"></label><div id="setup_err" class="auth-error"></div>`;
+      actions=`<button class="auth-submit" onclick="doSetup()">Buat admin</button>`;
+    }else{
+      content=`${note}<div class="auth-note">Admin pertama belum dibuat. Buka aplikasi dari PC server untuk menyelesaikan pengaturan awal.</div>`;
+      actions=`<button class="auth-submit" onclick="showLogin()">Muat ulang</button>`;
+    }
+  }else{
+    const accounts=LOGIN_MODE==='viewer'?(pub.viewers||[]):LOGIN_MODE==='contributor'?(pub.contributors||[]):(pub.users||[]);
+    const modeOptions=`<div class="auth-access-options"><button type="button" class="${LOGIN_MODE==='edit'?'active':''}" onclick="chooseLoginMode('edit')">Akses edit</button><button type="button" class="${LOGIN_MODE==='contributor'?'active':''}" onclick="chooseLoginMode('contributor')">Kontributor</button><button type="button" class="${LOGIN_MODE==='viewer'?'active':''}" onclick="chooseLoginMode('viewer')">Viewer</button></div>`;
+    const viewerNote=LOGIN_MODE==='viewer'&&!accounts.length?'<div class="auth-note">Belum ada akun Viewer. Minta admin membuat akun Viewer melalui Pengaturan &gt; Kelola pengguna.</div>':'';
+    const contributorNote=LOGIN_MODE==='contributor'&&!accounts.length?'<div class="auth-note">Belum ada akun Kontributor. Minta admin membuat akun melalui Pengaturan &gt; Kelola pengguna.</div>':'';
+    content=`${note}${modeOptions}${viewerNote}${contributorNote}<label>Nama<select id="lg_name" ${accounts.length?'':'disabled'}>${accounts.map(n=>`<option>${esc(n)}</option>`).join('')}</select></label><label>PIN<input id="lg_pin" type="password" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()" ${accounts.length?'':'disabled'}></label><div id="lg_err" class="auth-error"></div>`;
+    actions=`<button class="auth-submit" onclick="doLogin()" ${accounts.length?'':'disabled'}>${LOGIN_MODE==='viewer'?'Masuk sebagai Viewer':LOGIN_MODE==='contributor'?'Masuk sebagai Kontributor':'Masuk'}</button>`;
+  }
+  const screenTitle=pub.needSetup?'Buat admin':LOGIN_MODE==='viewer'?'Viewer':LOGIN_MODE==='contributor'?'Kontributor':'Masuk';
+  $('#modal').innerHTML=authPage(screenTitle,'Masuk untuk melanjutkan.',content,actions);
+  applyLanguage();
+  setTimeout(()=>{const nameSelect=$('#lg_name'),last=localStorage.getItem('pt_last'),validNames=LOGIN_MODE==='viewer'?(pub.viewers||[]):LOGIN_MODE==='contributor'?(pub.contributors||[]):(pub.users||[]);if(nameSelect&&last&&validNames.includes(last))nameSelect.value=last;const focus=$('#lg_pin')||nameSelect;if(focus&&focus.focus)focus.focus();},60);
+}
+function loginErr(m){const e=$('#lg_err')||$('#setup_err');if(e)e.textContent=m;else toast(m);}
+async function doLogin(){
+  const name=$('#lg_name').value,pin=$('#lg_pin').value;
+  if(!pin){loginErr('Isi PIN');return;}
+  try{const r=await api('/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:name,pin:pin})});localStorage.setItem('pt_last',name);await enter(r);}
+  catch(e){loginErr(e.message);}
+}
+async function doSetup(){
+  const name=$('#lg_name').value.trim(),pin=$('#lg_pin').value,pin2=$('#lg_pin2').value;
+  if(name.length<2){loginErr('Nama minimal 2 karakter');return;}
+  if(pin.length<PIN_MIN){loginErr('PIN minimal '+PIN_MIN+' karakter');return;}
+  if(pin!==pin2){loginErr('Ulangi PIN tidak sama');return;}
+  try{const r=await api('/api/setup',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:name,pin:pin})});localStorage.setItem('pt_last',name);await enter(r);}
+  catch(e){loginErr(e.message);}
+}
+async function enter(r){
+  USER=r.user;ME=USER.name;if(r.csrfToken)CSRF_TOKEN=r.csrfToken;if(r.pinMinLength)PIN_MIN=r.pinMinLength;SKEW=r.serverTime?(Date.now()-r.serverTime):0;
+  document.body.classList.remove('auth-mode');
+  DB=normDB({});REV=-1;KNOWN={};KNOWNI={};KDEL={};KSET=-1;SYNCERR=null;
+  closeModal();
+  go('dash');
+  await syncNow();
+  render();startSSE();renderSync();
+  if(!DB.projects.length)toast('Belum ada project. Klik "+ Project" untuk memulai.');
+}
+async function logout(){
+  try{await api('/api/logout',{method:'POST'});}catch(e){}
+  USER=null;ME='';CSRF_TOKEN='';stopSSE();DB=normDB({});$('#main').innerHTML='';$('#who').textContent='';renderSync();showLogin();
+}
+async function openPin(){
+  $('#modal2').innerHTML=`<div class="ov"><div class="dlg sm"><div class="dh"><h3>Ganti PIN</h3><button class="x" onclick="closeM2()">✕</button></div><div class="db"><label>PIN lama<input id="pn_old" type="password"></label><label>PIN baru (minimal ${PIN_MIN} karakter)<input id="pn_new" type="password"></label><label>Ulangi PIN baru<input id="pn_new2" type="password"></label></div><div class="df"><button class="btn" onclick="closeM2()">Batal</button><button class="btn pri" onclick="savePin()">Simpan</button></div></div></div>`;
+}
+async function savePin(){
+  const o=$('#pn_old').value,n=$('#pn_new').value,n2=$('#pn_new2').value;
+  if(n.length<PIN_MIN){toast('PIN baru minimal '+PIN_MIN+' karakter');return;}
+  if(n!==n2){toast('Ulangi PIN baru tidak sama');return;}
+  try{await api('/api/pin',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({old:o,pin:n})});closeM2();toast('PIN diganti');}
+  catch(e){toast(e.message);}
+}
+/* ---- kelola pengguna (admin) ---- */
+let ULIST=[];
+async function openUsers(){
+  if(!isAdmin())return;
+  try{ULIST=(await api('/api/users')).users;}catch(e){toast(e.message);return;}
+  drawUsers();
+}
+function drawUsers(){
+  const rows=ULIST.map(u=>`<div class="catrow" style="grid-template-columns:minmax(110px,1fr) 180px auto auto"><b>${esc(u.name)}</b>
+      <select onchange="userRole('${esc(u.name).replace(/'/g,"\\'")}',this.value)" ${u.name===ME?'disabled':''}><option value="user" ${u.role==='user'?'selected':''}>Pengguna</option><option value="contributor" ${u.role==='contributor'?'selected':''}>Kontributor (akses terbatas)</option><option value="viewer" ${u.role==='viewer'?'selected':''}>Viewer (lihat saja)</option><option value="admin" ${u.role==='admin'?'selected':''}>Admin</option></select>
+      <button class="btn sm" onclick="userReset('${esc(u.name).replace(/'/g,"\\'")}')">Reset PIN</button><button class="btn sm bad" ${u.name===ME?'disabled':''} onclick="userDel('${esc(u.name).replace(/'/g,"\\'")}')">Hapus</button></div>`).join('');
+  $('#modal2').innerHTML=`<div class="ov"><div class="dlg sm"><div class="dh"><h3>Kelola pengguna</h3><button class="x" onclick="closeM2()">✕</button></div><div class="db">${rows}
+    <h4>Tambah pengguna</h4>
+    <div class="catrow" style="grid-template-columns:1fr 1fr auto auto"><input id="nu_name" placeholder="Nama"><input id="nu_pin" type="text" placeholder="PIN awal"><select id="nu_role"><option value="user">Pengguna</option><option value="contributor">Kontributor (akses terbatas)</option><option value="viewer">Viewer (lihat saja)</option><option value="admin">Admin</option></select><button class="btn sm pri" onclick="userAdd()">Tambah</button></div>
+    <div class="small muted">Beri tahu PIN awal ke yang bersangkutan; mereka bisa menggantinya di Pengaturan &gt; Ganti PIN saya.</div>
+  </div><div class="df"><button class="btn" onclick="closeM2()">Tutup</button></div></div></div>`;
+}
+async function userCall(method,path,body){
+  try{const r=await api(path,{method:method,headers:{'Content-Type':'application/json'},body:body?JSON.stringify(body):undefined});ULIST=r.users||ULIST;drawUsers();return true;}
+  catch(e){toast(e.message);return false;}
+}
+async function userAdd(){const n=$('#nu_name').value.trim(),p=$('#nu_pin').value,r=$('#nu_role').value;if(n.length<2){toast('Nama minimal 2 karakter');return;}if(p.length<PIN_MIN){toast('PIN minimal '+PIN_MIN+' karakter');return;}if(await userCall('POST','/api/users',{name:n,pin:p,role:r}))toast('Pengguna ditambahkan');}
+async function userRole(n,r){await userCall('PUT','/api/users/'+encodeURIComponent(n),{role:r});}
+async function userReset(n){const p=prompt('PIN baru untuk '+n+' (minimal '+PIN_MIN+' karakter):');if(p===null)return;if(p.length<PIN_MIN){toast('PIN minimal '+PIN_MIN+' karakter');return;}if(await userCall('PUT','/api/users/'+encodeURIComponent(n),{pin:p}))toast('PIN '+n+' direset');}
+async function userDel(n){if(!confirm('Hapus pengguna "'+n+'"? Riwayat perubahan yang sudah tercatat tetap ada.'))return;if(await userCall('DELETE','/api/users/'+encodeURIComponent(n)))toast('Pengguna dihapus');}
+async function backupNow(){try{const r=await api('/api/backup',{method:'POST'});toast('Backup dibuat: '+r.files.join(', '));}catch(e){toast(e.message);}}
+
+/* ================= boot ================= */
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){if($('#modal2').innerHTML){closeM2();return;}if($('#modal').innerHTML&&USER)closeModal();}});
+window.addEventListener&&window.addEventListener('focus',()=>{if(USER)syncNow().then(ch=>{if(ch)render();});});
+async function boot(){
+  document.documentElement.dataset.theme=localStorage.getItem('pt_theme')||'light';
+  applyLanguage();
+  renderSync();
+  try{const m=await api('/api/me');await enter(m);}
+  catch(e){showLogin();}
+}
+boot();
+</script>
+</body>
+</html>

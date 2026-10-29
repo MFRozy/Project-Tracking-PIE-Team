@@ -794,19 +794,33 @@ function translatedText(value){
   });
   return translated;
 }
+let APPLYING_LANG=false;
 function applyLanguage(){
-  document.documentElement.lang=APP_LANG;
-  const selector=$('#app-language'),authSelector=$('#auth-language');if(selector)selector.value=APP_LANG;if(authSelector)authSelector.value=APP_LANG;
-  document.querySelectorAll('.lang-pills button').forEach(btn=>btn.classList.toggle('on',btn.dataset.lang===APP_LANG));
-  const walker=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT);
-  let node;
-  while((node=walker.nextNode())){
-    if(node.parentElement&&node.parentElement.closest('script,style,textarea,[data-no-translate]'))continue;
-    node.nodeValue=translatedText(node.nodeValue);
+  APPLYING_LANG=true;
+  try{
+    if(document.documentElement.lang!==APP_LANG)document.documentElement.lang=APP_LANG;
+    const selector=$('#app-language'),authSelector=$('#auth-language');
+    if(selector&&selector.value!==APP_LANG)selector.value=APP_LANG;
+    if(authSelector&&authSelector.value!==APP_LANG)authSelector.value=APP_LANG;
+    document.querySelectorAll('.lang-pills button').forEach(btn=>btn.classList.toggle('on',btn.dataset.lang===APP_LANG));
+    const walker=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT);
+    let node;
+    while((node=walker.nextNode())){
+      if(node.parentElement&&node.parentElement.closest('script,style,textarea,[data-no-translate]'))continue;
+      const next=translatedText(node.nodeValue);
+      if(next!==node.nodeValue)node.nodeValue=next;
+    }
+    document.querySelectorAll('[placeholder],[title],[aria-label]').forEach(el=>{
+      ['placeholder','title','aria-label'].forEach(attr=>{
+        if(el.hasAttribute(attr)){
+          const cur=el.getAttribute(attr),next=translatedText(cur);
+          if(next!==cur)el.setAttribute(attr,next);
+        }
+      });
+    });
+  }finally{
+    APPLYING_LANG=false;
   }
-  document.querySelectorAll('[placeholder],[title],[aria-label]').forEach(el=>{
-    ['placeholder','title','aria-label'].forEach(attr=>{if(el.hasAttribute(attr))el.setAttribute(attr,translatedText(el.getAttribute(attr)));});
-  });
 }
 function setLanguage(language){
   if(!['id','en','ko'].includes(language))return;
@@ -822,9 +836,12 @@ function toggleTheme(){
 }
 let LANGUAGE_UPDATE_QUEUED=false;
 new MutationObserver(()=>{
-  if(LANGUAGE_UPDATE_QUEUED)return;
+  if(APPLYING_LANG||LANGUAGE_UPDATE_QUEUED)return;
   LANGUAGE_UPDATE_QUEUED=true;
-  requestAnimationFrame(()=>{LANGUAGE_UPDATE_QUEUED=false;applyLanguage();});
+  requestAnimationFrame(()=>{
+    LANGUAGE_UPDATE_QUEUED=false;
+    applyLanguage();
+  });
 }).observe(document.body,{childList:true,subtree:true,characterData:true});
 
 /* ================= konstanta ================= */
@@ -1350,9 +1367,10 @@ function rBudget(){
     const heading=`<tr class="project-group q-project-group" onclick="viewP('${p.id}','budget')"><td colspan="${ub?9:8}"><b>${esc(p.code)} · ${esc(p.name)}</b><span class="muted"> · ${items.length} quotation</span>${lq?`<span class="muted"> · Terendah: ${poMoney(lq.amount,lq.currency)} (${esc(lq.vendor||'-')})</span>`:items.length>1&&currencies.size>1?'<span class="muted"> · Mata uang berbeda, harga tidak dibandingkan</span>':''}${canMod?` <button class="btn sm pri" style="float:right" onclick="event.stopPropagation();editP('${p.id}',3)">Kelola Quotation &amp; PO</button>`:''}</td></tr>`;
     const rows=items.map(q=>{const isLow=lq&&lq.id===q.id,qCurrency=q.currency||DB.settings.currency||'IDR',pct=p.budget&&qCurrency===(DB.settings.currency||'IDR')?Math.round(q.amount/p.budget*100):null,note=String(q.note||''),notePreview=note.length>120?note.slice(0,120)+'...':note;
       const exp=q.valid?diffDays(today(),pd(q.valid)):null,hasPO=p.pos.some(x=>x.qid===q.id);
+      const statusCell=canMod?`<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap" onclick="event.stopPropagation()"><select style="padding:4px 8px;border:1px solid ${QCOL[q.status]||'var(--line)'};border-radius:6px;background:var(--card);font-size:11.5px;font-weight:700;color:${QCOL[q.status]||'var(--text)'}" onchange="quickQStatus('${p.id}','${q.id}',this.value)">${QSTAT.map(s=>`<option value="${s}" ${s===q.status?'selected':''}>${s}</option>`).join('')}</select>${q.status==='Terpilih'?`<button type="button" class="btn sm" title="Kembalikan status quotation ke semula" onclick="quickQStatus('${p.id}','${q.id}','${esc((q.prevStatus&&q.prevStatus!=='Terpilih')?q.prevStatus:'Diterima')}')">↺ Batalkan</button>`:''}${hasPO?'<span class="tag" style="background:#3b82f6">PO</span>':''}</div>`:`<span class="badge" style="background:${QCOL[q.status]}">${q.status}</span>${hasPO?' <span class="tag" style="background:#3b82f6">PO</span>':''}`;
       return `<tr class="quotation-row"><td><b>${esc(q.vendor||'-')}</b></td><td>${esc(q.no||'-')}</td><td class="r"><b>${poMoney(q.amount,qCurrency)}</b> ${isLow?'<span class="tag" style="background:#10b981">TERENDAH</span>':''}</td><td class="qnote">${note?`<div>${esc(notePreview)}</div>${note.length>120?`<details><summary>Lihat selengkapnya</summary><div class="q-note-full">${esc(note)}</div></details>`:''}`:'-'}</td>
       ${ub?`<td class="r" style="color:${pct>100?'var(--bad)':'inherit'}">${pct===null?'-':pct+'%'}</td>`:''}<td>${fmtDate(q.date)}</td><td>${q.valid?fmtDate(q.valid)+(exp!==null&&exp<0?' <span class="tag" style="background:#ef4444">EXPIRED</span>':exp!==null&&exp<=7?' <span class="tag" style="background:#f59e0b">'+exp+' hr</span>':''):'-'}</td>
-      <td><span class="badge" style="background:${QCOL[q.status]}">${q.status}</span>${hasPO?' <span class="tag" style="background:#3b82f6">PO</span>':''}</td><td>${(q.file||q.link)?`<button class="btn sm" onclick="event.stopPropagation();openQ('${p.id}','${q.id}')">Buka</button>`:'-'}</td></tr>`;}).join('');
+      <td>${statusCell}</td><td>${(q.file||q.link)?`<button class="btn sm" onclick="event.stopPropagation();openQ('${p.id}','${q.id}')">Buka</button>`:'-'}</td></tr>`;}).join('');
     return heading+rows;
   }).join('');
   const poProjects=L.filter(p=>p.pos.length).sort((a,b)=>a.code.localeCompare(b.code));
@@ -1807,6 +1825,46 @@ async function quickStage(pid,sid,k,v){
   render();
   await persist();
 }
+function applyQuoteStatusChange(proj,qid,v){
+  if(!proj||!QSTAT.includes(v))return null;
+  const q=(proj.quotations||[]).find(x=>x.id===qid);if(!q)return null;
+  const prevSel=selQ(proj);
+  const prevSelVendor=(prevSel&&prevSel.vendor)||'';
+  if(v==='Terpilih'){
+    (proj.quotations||[]).forEach(x=>{
+      if(x.id!==qid&&x.status==='Terpilih'){
+        x.status=(x.prevStatus&&x.prevStatus!=='Terpilih'&&QSTAT.includes(x.prevStatus))?x.prevStatus:'Diterima';
+      }
+    });
+    if(q.status&&q.status!=='Terpilih')q.prevStatus=q.status;
+    q.status='Terpilih';
+    if(q.vendor)proj.vendor=q.vendor;
+  }else{
+    const wasSel=q.status==='Terpilih';
+    q.status=v;
+    q.prevStatus=v;
+    if(wasSel){
+      const otherSel=selQ(proj);
+      if(otherSel&&otherSel.vendor)proj.vendor=otherSel.vendor;
+      else if(!(proj.pos||[]).length&&(!q.vendor||proj.vendor===q.vendor||proj.vendor===prevSelVendor))proj.vendor='';
+    }
+  }
+  return q;
+}
+async function quickQStatus(pid,qid,v){
+  const cur=byId(pid);if(!cur||!canEdit()||!canModifyProj(cur))return;
+  const next=JSON.parse(JSON.stringify(cur));
+  const q=applyQuoteStatusChange(next,qid,v);if(!q)return;
+  next.updatedAt=Math.max(Date.now(),(cur.updatedAt||0)+1);
+  next.updatedBy=ME||'-';
+  next.log=(next.log||[]).slice(-59);
+  next.log.push({t:Date.now(),by:ME||'-',items:[`Status quotation ${q.vendor||q.no||'-'}: ${v}`]});
+  DB.projects[DB.projects.indexOf(cur)]=next;
+  if(draft&&draft.id===pid){draft=JSON.parse(JSON.stringify(next));baseAt=draft.updatedAt;}
+  render();
+  toast(`Status quotation ${q.vendor||''} diubah menjadi ${v}`);
+  await persist();
+}
 async function quickMilestone(pid,mid,done){
   const cur=byId(pid);if(!cur||!canEdit()||!canModifyProj(cur))return;
   draft=JSON.parse(JSON.stringify(cur));
@@ -1880,13 +1938,14 @@ function rProjectDetail(){
   }else if(DETAIL_TAB==='budget'){
     const qRows=quotes(p).map(q=>{
       const hasPO=(p.pos||[]).some(o=>o.qid===q.id);
+      const stCell=canMod?`<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap"><select style="padding:4px 8px;border:1px solid ${QCOL[q.status]||'var(--line)'};border-radius:6px;background:var(--card);font-size:11.5px;font-weight:700;color:${QCOL[q.status]||'var(--text)'}" onchange="quickQStatus('${p.id}','${q.id}',this.value)">${QSTAT.map(s=>`<option value="${s}" ${s===q.status?'selected':''}>${s}</option>`).join('')}</select>${q.status==='Terpilih'?`<button type="button" class="btn sm" title="Kembalikan status quotation ke semula" onclick="quickQStatus('${p.id}','${q.id}','${esc((q.prevStatus&&q.prevStatus!=='Terpilih')?q.prevStatus:'Diterima')}')">↺ Batalkan</button>`:''}${hasPO?'<span class="tag" style="background:#3b82f6">PO</span>':''}</div>`:`<span class="badge" style="background:${QCOL[q.status]}">${esc(q.status)}</span>${hasPO?' <span class="tag" style="background:#3b82f6">PO</span>':''}`;
       return `<tr>
         <td><b>${esc(q.vendor||'-')}</b></td>
         <td>${esc(q.no||'-')}</td>
         <td class="r"><b>${poMoney(q.amount,q.currency)}</b></td>
         <td>${fmtDate(q.date)}</td>
         <td>${fmtDate(q.valid)}</td>
-        <td><span class="badge" style="background:${QCOL[q.status]}">${esc(q.status)}</span>${hasPO?' <span class="tag" style="background:#3b82f6">PO</span>':''}</td>
+        <td>${stCell}</td>
         <td>${esc(q.note||'-')}</td>
         <td class="r">${(q.file||q.link)?`<button class="btn sm" onclick="openQ('${p.id}','${q.id}')">Buka File</button>`:'-'}</td>
       </tr>`;
@@ -2060,7 +2119,7 @@ const inp=(l,k,type,extra)=>`<label>${l}<input type="${type||'text'}" value="${e
 function tInfo(){
   const d=draft,sts=d.status==='Delayed'?STATUS_INPUT.concat(['Delayed']):STATUS_INPUT;
   const hasS=d.stages.length>0,lockD=hasS&&gset('autoDates'),lockP=hasS&&gset('autoProgress');
-  const sel=(l,k,opts,id)=>`<label>${l}<select ${id?'id="'+id+'"':''} onchange="setD('${k}',this.value);${k==='status'?'onStat()':''}">${opts.map(o=>`<option ${o===d[k]?'selected':''}>${esc(o)}</option>`).join('')}</select></label>`;
+  const sel=(l,k,opts,id)=>`<label>${l}<select ${id?'id="'+id+'"':''} onchange="setD('${k}',this.value);${k==='status'?'onStat()':''}">${opts.map(o=>`<option value="${esc(o)}" ${o===d[k]?'selected':''}>${esc(o)}</option>`).join('')}</select></label>`;
   return `${hasS&&(lockD||lockP)?`<div class="banner info" style="margin-bottom:12px"><span>Project ini memiliki <b>${d.stages.length} task/tahapan</b>. ${lockD?'Tanggal mulai & target mengikuti jadwal task. ':''}${lockP?'Total progres dihitung otomatis dari progres tiap task.':''}</span><button type="button" class="btn sm pri" onclick="setWizStep(2)">Isi Progres per Task →</button></div>`:''}<div class="fg">${inp('Kode Project','code')}${inp('Nama Project *','name')}
     ${sel('Klasifikasi','category',DB.settings.categories.map(c=>c.name))}${sel('Prioritas','priority',['High','Medium','Low'])}
     ${sel('Status','status',sts,'f_status')}${inp('PIC Utama','pic','text','list="plist"')}${inp('Area / Line','area')}<span></span>
@@ -2112,10 +2171,13 @@ function tBudget(){
   <div id="polist">${d.pos.map(poRow).join('')||'<div class="muted small">Belum ada PO. Ubah status quotation menjadi Terpilih, lalu klik Buat PO pada quotation tersebut.</div>'}</div>`;
 }
 function qCard(q){
-  const fileRow=q.file?`<span class="fchip" title="${esc(q.fileName||q.file)}">${esc(q.fileName||q.file)}</span><button class="btn sm" onclick="openQ('draft','${q.id}')">Buka</button>${isViewer()?'':`<button class="btn sm" onclick="rmFile('${q.id}')">Lepas file</button>`}`
+  const fileRow=q.file?`<span class="fchip" title="${esc(q.fileName||q.file)}">${esc(q.fileName||q.file)}</span><button type="button" class="btn sm" onclick="openQ('draft','${q.id}')">Buka</button>${isViewer()?'':`<button type="button" class="btn sm" onclick="rmFile('${q.id}')">Lepas file</button>`}`
     :isViewer()?'<span class="muted">Tidak ada file</span>':`<span class="muted">File:</span><input type="file" onchange="attachFile('${q.id}',this)" style="max-width:260px">`;
   const po=(draft.pos||[]).find(x=>x.qid===q.id);
-  const poBtn=q.status==='Terpilih'?(po?(isViewer()?`<button class="btn sm" onclick="openDoc(poHTML(getPO('${po.id}'),draft,false))">Lihat PO ${esc(po.no)}</button>`:`<button class="btn sm" onclick="editPO('${po.id}')">Lihat PO ${esc(po.no)}</button>`):isViewer()?'':`<button class="btn sm pri" onclick="makePO('${q.id}')">Buat PO</button>`):'';
+  const revertStatus=(q.prevStatus&&q.prevStatus!=='Terpilih'&&QSTAT.includes(q.prevStatus))?q.prevStatus:'Diterima';
+  const unselectBtn=(q.status==='Terpilih'&&!isViewer())?`<button type="button" class="btn sm" title="Kembalikan status quotation ke ${esc(revertStatus)}" onclick="setQStatus('${q.id}','${esc(revertStatus)}')">↺ Batalkan Terpilih</button>`:'';
+  const selectBtn=(q.status!=='Terpilih'&&!isViewer())?`<button type="button" class="btn sm" onclick="setQStatus('${q.id}','Terpilih')">✓ Pilih Quotation</button>`:'';
+  const poBtn=q.status==='Terpilih'?(po?(isViewer()?`<button type="button" class="btn sm" onclick="openDoc(poHTML(getPO('${po.id}'),draft,false))">Lihat PO ${esc(po.no)}</button>`:`<button type="button" class="btn sm" onclick="editPO('${po.id}')">Lihat PO ${esc(po.no)}</button>`):isViewer()?'':`<button type="button" class="btn sm pri" onclick="makePO('${q.id}')">Buat PO</button>`):'';
   return `<div class="qcard ${q.status==='Terpilih'?'sel':''}" id="qc_${q.id}"><div class="qgrid">
     <label>Vendor<input value="${esc(q.vendor)}" list="vlist" oninput="setQ('${q.id}','vendor',this.value)"></label>
     <label>Harga Quotation<input class="num" inputmode="numeric" value="${q.amount?fmtNum(q.amount):''}" onfocus="this.value=getQ('${q.id}').amount||''" oninput="setQM('${q.id}',this)" onblur="this.value=getQ('${q.id}').amount?fmtNum(getQ('${q.id}').amount):''"><small class="hint" id="hq_${q.id}">${q.amount?quoteMoneyC(q.amount,q.currency):''}</small></label>
@@ -2123,19 +2185,18 @@ function qCard(q){
     <label>No. Quotation<input value="${esc(q.no)}" oninput="setQ('${q.id}','no',this.value)"></label>
     <label>Tanggal diterima<input type="date" value="${esc(q.date)}" oninput="setQ('${q.id}','date',this.value)"></label>
     <label>Berlaku sampai<input type="date" value="${esc(q.valid)}" oninput="setQ('${q.id}','valid',this.value)"></label>
-    <label>Status<select onchange="setQStatus('${q.id}',this.value)">${QSTAT.map(s=>`<option ${s===q.status?'selected':''}>${s}</option>`).join('')}</select></label>
+    <label>Status<select onchange="setQStatus('${q.id}',this.value)">${QSTAT.map(s=>`<option value="${s}" ${s===q.status?'selected':''}>${s}</option>`).join('')}</select></label>
     <label style="grid-column:1/-1">Link (SharePoint / URL / path jaringan)<input value="${esc(q.link)}" oninput="setQ('${q.id}','link',this.value)" placeholder="https://... atau \\\\server\\folder\\file.pdf"></label>
     <label style="grid-column:1/-1">Catatan (lead time, termin pembayaran, garansi, dll.)<input value="${esc(q.note)}" oninput="setQ('${q.id}','note',this.value)"></label></div>
-    <div class="qfoot">${fileRow}<span class="sp"></span>${poBtn}<button class="btn sm bad" onclick="delQ('${q.id}')">Hapus quotation</button></div></div>`;
+    <div class="qfoot">${fileRow}<span class="sp"></span>${selectBtn}${unselectBtn}${poBtn}<button type="button" class="btn sm bad" onclick="delQ('${q.id}')">Hapus quotation</button></div></div>`;
 }
 const getQ=id=>draft.quotations.find(x=>x.id===id);
-function setQ(id,k,v){getQ(id)[k]=v;if(k==='vendor'&&getQ(id).status==='Terpilih'){draft.vendor=v;}}
+function setQ(id,k,v){getQ(id)[k]=v;if(k==='vendor'&&getQ(id).status==='Terpilih'){draft.vendor=v;const vinp=document.querySelector('input[list="vlist"]');if(vinp)vinp.value=v;}}
 function setQM(id,el){const q=getQ(id);q.amount=parseNum(el.value);const h=$('#hq_'+id);if(h)h.textContent=q.amount?quoteMoneyC(q.amount,q.currency):'';updB();}
 function setQCurrency(id,currency){const q=getQ(id);q.currency=currency;const h=$('#hq_'+id);if(h)h.textContent=q.amount?quoteMoneyC(q.amount,currency):'';updB();}
 function setQStatus(id,v){
-  const q=getQ(id);
-  if(v==='Terpilih'){draft.quotations.forEach(x=>{if(x.status==='Terpilih')x.status='Diterima';});if(q.vendor)draft.vendor=q.vendor;}
-  q.status=v;drawTab();
+  if(!applyQuoteStatusChange(draft,id,v))return;
+  drawTab();
 }
 function addQ(){draft.quotations.push({id:uid(),vendor:'',amount:0,currency:DB.settings.currency||'IDR',status:'Diterima',date:fd(today()),valid:'',no:'',link:'',file:'',fileName:'',note:''});drawTab();}
 function delQ(id){if(!confirm('Hapus quotation ini?'))return;draft.quotations=draft.quotations.filter(x=>x.id!==id);drawTab();}
@@ -2279,7 +2340,7 @@ function tStage(){
         ${sp<100?`<button type="button" class="btn sm ok" style="padding:2px 6px" title="Tandai 100% Selesai" onclick="setS('${s.id}','prog',100)">✓</button>`:''}
       </div>
     </td>
-    <td style="width:110px"><select onchange="setS('${s.id}','status',this.value)">${STG_ST.map(o=>`<option ${o===s.status?'selected':''}>${o}</option>`).join('')}</select></td>
+    <td style="width:110px"><select onchange="setS('${s.id}','status',this.value)">${STG_ST.map(o=>`<option value="${o}" ${o===s.status?'selected':''}>${o}</option>`).join('')}</select></td>
     <td><input type="date" value="${esc(s.as)}" onchange="setS('${s.id}','as',this.value)"></td>
     <td><input type="date" value="${esc(s.af)}" onchange="setS('${s.id}','af',this.value)"></td>
     <td>${dtxt}</td>
@@ -2510,7 +2571,12 @@ async function savePO(){
   applyAuto(draft);
   closeM2();await saveProject();
 }
-function delPO(id){const o=getPO(id);if(!o||!confirm('Hapus PO '+o.no+'? Nomor PO ini tidak dipakai ulang secara otomatis.'))return;draft.pos=draft.pos.filter(x=>x.id!==id);if(draft.po===o.no)draft.po=draft.pos.length?draft.pos[draft.pos.length-1].no:'';drawTab();}
+function delPO(id){
+  const o=getPO(id);if(!o||!confirm('Hapus PO '+o.no+'? Nomor PO ini tidak dipakai ulang secara otomatis.'))return;
+  draft.pos=draft.pos.filter(x=>x.id!==id);
+  if(draft.po===o.no)draft.po=draft.pos.length?draft.pos[draft.pos.length-1].no:'';
+  drawTab();
+}
 
 /* ================= TEMPLATE STAGE & PENGATURAN PO ================= */
 let TPL=[],TSEL=0,POS=null;
@@ -2534,7 +2600,7 @@ function drawTpl(){
    <div><div class="fg" style="grid-template-columns:repeat(3,1fr)">
     <label>Nama Template<input value="${esc(t.name)}" placeholder="Contoh: Standar Mesin Filling" oninput="TPL[TSEL].name=this.value"></label>
     <label>PIC / Pemilik Template<input value="${esc(t.owner||'')}" list="tpl_pics" placeholder="Kosongkan = Umum (Semua PIC)" oninput="TPL[TSEL].owner=this.value"><small class="hint" style="text-align:left">Isi nama Anda/PIC agar otomatis diprioritaskan pada project milik PIC tersebut</small></label>
-    <label>Klasifikasi Tujuan<select onchange="TPL[TSEL].category=this.value"><option value="">Semua klasifikasi</option>${cats.map(c=>`<option ${c===t.category?'selected':''}>${esc(c)}</option>`).join('')}</select></label></div>
+    <label>Klasifikasi Tujuan<select onchange="TPL[TSEL].category=this.value"><option value="">Semua klasifikasi</option>${cats.map(c=>`<option value="${esc(c)}" ${c===t.category?'selected':''}>${esc(c)}</option>`).join('')}</select></label></div>
     <div class="qh"><h4>Daftar Task / Stage (${t.stages.length}) <span class="muted small" style="font-weight:400">· estimasi durasi sekitar ${tot} hari</span></h4><button class="btn sm pri" onclick="tplAdd()">+ Tambah Task</button></div>
     <div class="strow muted small"><span>#</span><span>Nama Task / Stage</span><span>PIC Default</span><span>Hari</span><span>Paralel</span><span></span></div>
     ${t.stages.map((s,i)=>`<div class="strow"><span class="muted">${i+1}</span><input type="text" value="${esc(s.name)}" placeholder="Nama tahap..." oninput="tplS(${i},'name',this.value)"><input type="text" list="tpl_pics" value="${esc(s.pic||'')}" placeholder="Mengikuti PIC project" oninput="tplS(${i},'pic',this.value)"><input type="number" min="1" value="${s.days}" oninput="tplS(${i},'days',this.value);drawTpl()"><label style="display:flex;gap:4px;align-items:center;font-size:11px;font-weight:400"><input type="checkbox" style="width:auto;margin:0" ${s.par?'checked':''} onchange="tplS(${i},'par',this.checked);drawTpl()"> dgn sebelumnya</label><span style="white-space:nowrap"><button class="btn sm" onclick="tplMove(${i},-1)">▲</button> <button class="btn sm" onclick="tplMove(${i},1)">▼</button> <button class="btn sm bad" onclick="tplDel(${i})">✕</button></span></div>`).join('')}
@@ -2624,7 +2690,7 @@ function openSettings(){
     ${chk('s_ub',S.useBudget,'Pakai kolom budget (opsional, tidak tampil di Dashboard)')}
     ${chk('s_ap',S.autoProgress!==false,'Progres project dihitung otomatis dari stage yang selesai')}
     ${chk('s_ad',S.autoDates!==false,'Tanggal mulai dan target project mengikuti plan stage',true)}
-    <h4>Mata uang</h4><label><select id="s_cur">${Object.keys(SYMS).map(c=>`<option ${c===S.currency?'selected':''}>${c}</option>`).join('')}</select></label>
+    <h4>Mata uang</h4><label><select id="s_cur">${Object.keys(SYMS).map(c=>`<option value="${c}" ${c===S.currency?'selected':''}>${c}</option>`).join('')}</select></label>
     <h4>Klasifikasi / kategori project</h4><div id="catl"></div><button class="btn sm" onclick="addCat()">+ Kategori</button>`:`<div class="small muted" style="margin-top:12px">Template PO, kategori, dan pengaturan sistem dikelola oleh admin.</div>`}
     <h4>Tampilan</h4><label><select id="s_theme"><option value="light">Terang</option><option value="dark" ${document.documentElement.dataset.theme==='dark'?'selected':''}>Gelap</option></select></label>
     <h4>Ekspor${ad?' / Impor':''}</h4>
@@ -2845,7 +2911,7 @@ async function showLogin(msg){
     const modeOptions=`<div class="auth-access-options"><button type="button" class="${LOGIN_MODE==='edit'?'active':''}" onclick="chooseLoginMode('edit')">Akses edit</button><button type="button" class="${LOGIN_MODE==='contributor'?'active':''}" onclick="chooseLoginMode('contributor')">Kontributor</button><button type="button" class="${LOGIN_MODE==='viewer'?'active':''}" onclick="chooseLoginMode('viewer')">Viewer</button></div>`;
     const viewerNote=LOGIN_MODE==='viewer'&&!accounts.length?'<div class="auth-note">Belum ada akun Viewer. Minta admin membuat akun Viewer melalui Pengaturan &gt; Kelola pengguna.</div>':'';
     const contributorNote=LOGIN_MODE==='contributor'&&!accounts.length?'<div class="auth-note">Belum ada akun Kontributor. Minta admin membuat akun melalui Pengaturan &gt; Kelola pengguna.</div>':'';
-    content=`${note}${modeOptions}${viewerNote}${contributorNote}<label>Nama<select id="lg_name" ${accounts.length?'':'disabled'}>${accounts.map(n=>`<option>${esc(n)}</option>`).join('')}</select></label><label>PIN<input id="lg_pin" type="password" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()" ${accounts.length?'':'disabled'}></label><div id="lg_err" class="auth-error"></div>`;
+    content=`${note}${modeOptions}${viewerNote}${contributorNote}<label>Nama<select id="lg_name" ${accounts.length?'':'disabled'}>${accounts.map(n=>`<option value="${esc(n)}">${esc(n)}</option>`).join('')}</select></label><label>PIN<input id="lg_pin" type="password" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()" ${accounts.length?'':'disabled'}></label><div id="lg_err" class="auth-error"></div>`;
     actions=`<button class="auth-submit" onclick="doLogin()" ${accounts.length?'':'disabled'}>${LOGIN_MODE==='viewer'?'Masuk sebagai Viewer':LOGIN_MODE==='contributor'?'Masuk sebagai Kontributor':'Masuk'}</button>`;
   }
   const screenTitle=pub.needSetup?'Buat admin':LOGIN_MODE==='viewer'?'Viewer':LOGIN_MODE==='contributor'?'Kontributor':'Masuk';

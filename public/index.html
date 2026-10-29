@@ -5,18 +5,90 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>PI Project Management</title>
 <style>
-:root{--bg:#f7f4f4;--card:#fff;--text:#0f172a;--muted:#64748b;--line:#e8dfe0;--pri:#ed1c24;--soft:#fff7f7;--ok:#10b981;--warn:#f59e0b;--bad:#ef4444;--r:10px}
-[data-theme=dark]{--bg:#0b1220;--card:#121a2b;--text:#e6eaf3;--muted:#8d9ab3;--line:#30252a;--soft:#191316;--pri:#ff5961}
+:root{--bg:#f4f4f6;--card:#ffffff;--sidebar:#ffffff;--text:#0f172a;--muted:#64748b;--line:#e4e4e7;--pri:#ed1c24;--soft:#f8fafc;--ok:#10b981;--warn:#f59e0b;--bad:#ef4444;--r:12px}
+[data-theme=dark]{--bg:#09090b;--card:#121215;--sidebar:#0d0d10;--text:#f4f4f5;--muted:#a1a1aa;--line:#232329;--soft:#18181c;--pri:#ed1c24}
 *{box-sizing:border-box}
-body{margin:0;font:14px/1.45 -apple-system,"Segoe UI",Roboto,Arial,sans-serif;background-color:var(--bg);background-image:url('public/cosmax-mark.svg');background-repeat:no-repeat;background-position:right 38px bottom 28px;background-size:min(34vw,420px) auto;background-attachment:fixed;color:var(--text)}
+body{margin:0;font:14px/1.45 -apple-system,"Segoe UI",Roboto,Inter,Arial,sans-serif;background-color:var(--bg);color:var(--text);min-height:100vh}
 button,input,select,textarea{font:inherit;color:inherit}
-header{display:flex;align-items:center;gap:16px;padding:10px 20px;background:var(--card);border-bottom:1px solid var(--line);box-shadow:0 2px 12px rgba(15,23,42,.04);position:sticky;top:0;z-index:20;flex-wrap:wrap}
-.brand{display:flex;align-items:center;gap:10px}
-.logo{width:34px;height:34px;border-radius:8px;background:var(--pri);color:#fff;display:grid;place-items:center;font-weight:700;font-size:13px}
-.brand b{display:block;line-height:1.1}.brand small{color:var(--muted);cursor:pointer}
-nav{display:flex;gap:4px;flex:1}
-nav button{border:0;background:none;padding:8px 14px;border-radius:8px;cursor:pointer;color:var(--muted);font-weight:600}
-nav button:hover{background:var(--soft)}nav button.on{background:var(--pri);color:#fff}
+
+/* Cosmax Enterprise App Shell */
+.app-shell{display:flex;min-height:100vh;width:100%}
+.app-sidebar{width:252px;flex:none;background:var(--sidebar);border-right:1px solid var(--line);display:flex;flex-direction:column;position:sticky;top:0;height:100vh;z-index:30;user-select:none;transition:transform .2s ease}
+.sb-brand{display:flex;align-items:center;gap:11px;padding:16px 16px 14px;border-bottom:1px solid var(--line)}
+.logo{width:32px;height:32px;border-radius:8px;background:var(--pri);color:#fff;display:grid;place-items:center;font-weight:800;font-size:12px;letter-spacing:.02em;flex:none;box-shadow:0 4px 12px rgba(237,28,36,.28)}
+.sb-brand b{display:block;font-size:13.5px;font-weight:700;line-height:1.2;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sb-brand small{display:block;font-size:11px;color:var(--muted)}
+.sb-scroll{flex:1;overflow-y:auto;padding:10px 10px 16px}
+.sb-group{margin-bottom:14px}
+.sb-label{font-size:11px;font-weight:600;color:var(--muted);padding:4px 10px 6px;letter-spacing:.02em}
+.sb-item{display:flex;align-items:center;gap:10px;width:100%;border:0;background:transparent;color:var(--text);padding:8px 11px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:500;text-align:left;margin-bottom:2px;transition:background .15s,color .15s}
+.sb-item svg{width:16px;height:16px;flex:none;opacity:.8}
+.sb-item:hover{background:var(--soft)}
+.sb-item.on{background:var(--pri);color:#fff;font-weight:600;box-shadow:0 4px 12px rgba(237,28,36,.22)}
+.sb-item.on svg{opacity:1}
+.sb-badge{margin-left:auto;font-size:10.5px;font-weight:700;padding:1px 7px;border-radius:999px;background:var(--soft);color:var(--muted);border:1px solid var(--line)}
+.sb-item.on .sb-badge{background:rgba(255,255,255,.2);color:#fff;border-color:transparent}
+.sb-foot{padding:12px;border-top:1px solid var(--line);display:flex;align-items:center;gap:10px;background:var(--sidebar)}
+.sb-avatar{width:32px;height:32px;border-radius:50%;background:var(--soft);border:1px solid var(--line);display:grid;place-items:center;font-weight:700;font-size:12px;color:var(--text);flex:none}
+.sb-user{flex:1;min-width:0;cursor:pointer}
+.sb-user b{display:block;font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sb-user small{display:block;font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sb-icon-btn{border:1px solid var(--line);background:var(--card);color:var(--muted);width:30px;height:30px;border-radius:7px;display:grid;place-items:center;cursor:pointer;flex:none}
+.sb-icon-btn:hover{color:var(--text);background:var(--soft)}
+
+.app-main{flex:1;min-width:0;display:flex;flex-direction:column;min-height:100vh}
+header.app-topbar{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:10px 24px;background:var(--sidebar);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:20;flex-wrap:wrap}
+.tb-left{display:flex;align-items:center;gap:10px;min-width:0}
+.tb-toggle{display:none;border:1px solid var(--line);background:var(--card);width:32px;height:32px;border-radius:8px;cursor:pointer;place-items:center}
+.crumbs{display:flex;align-items:center;gap:7px;font-size:13px;color:var(--muted);flex-wrap:wrap}
+.crumbs b{color:var(--text);font-weight:600}
+.crumbs .sep{opacity:.45;font-size:12px}
+.crumbs .crumb-link{cursor:pointer;color:var(--muted)}.crumbs .crumb-link:hover{color:var(--text);text-decoration:underline}
+.hr{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.lang-pills{display:inline-flex;align-items:center;background:var(--soft);border:1px solid var(--line);border-radius:999px;padding:3px;gap:2px}
+.lang-pills button{border:0;background:transparent;color:var(--muted);padding:4px 10px;border-radius:999px;font-size:11.5px;font-weight:700;cursor:pointer;transition:.15s}
+.lang-pills button.on{background:var(--pri);color:#fff}
+
+/* Page Headings & Workspace */
+.page-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:16px;flex-wrap:wrap}
+.page-head h1{margin:0;font-size:21px;font-weight:700;letter-spacing:-.01em}
+.page-head p{margin:3px 0 0;color:var(--muted);font-size:13px}
+.page-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+
+/* KPI Cards Cosmax Style */
+.kpi-icon{position:absolute;top:12px;right:14px;color:var(--muted);opacity:.65;font-size:15px}
+
+/* Stepper & Stage Pipeline (Cosmax Process Style) */
+.wiz-wrap{max-width:980px;margin:0 auto}
+.wiz-top{margin-bottom:18px}
+.wiz-step-counter{font-size:12.5px;color:var(--muted);margin-bottom:12px;font-weight:500}
+.wiz-stepper{display:flex;align-items:flex-start;justify-content:space-between;gap:4px;margin-bottom:20px;overflow-x:auto;padding-bottom:6px}
+.wiz-node{display:flex;flex-direction:column;align-items:center;gap:7px;flex:1;min-width:110px;position:relative;cursor:pointer;text-align:center}
+.wiz-node:not(:last-child)::after{content:'';position:absolute;top:16px;left:calc(50% + 22px);right:calc(-50% + 22px);height:1.5px;background:var(--line);z-index:1}
+.wiz-node.done:not(:last-child)::after{background:rgba(237,28,36,.55)}
+.wiz-circle{width:32px;height:32px;border-radius:50%;display:grid;place-items:center;font-size:12.5px;font-weight:700;border:1.5px solid var(--line);background:var(--card);color:var(--muted);position:relative;z-index:2;transition:.15s}
+.wiz-node.done .wiz-circle{border-color:var(--pri);color:var(--pri);background:rgba(237,28,36,.1)}
+.wiz-node.active .wiz-circle{border-color:var(--pri);background:var(--pri);color:#fff;box-shadow:0 0 0 4px rgba(237,28,36,.18)}
+.wiz-node.late .wiz-circle{border-color:var(--bad);background:rgba(239,68,68,.15);color:var(--bad)}
+.wiz-title{font-size:11.5px;font-weight:600;color:var(--muted);line-height:1.25;max-width:130px}
+.wiz-node.active .wiz-title,.wiz-node.done .wiz-title{color:var(--text)}
+.wiz-sub{font-size:10.5px;color:var(--muted);line-height:1.2}
+.wiz-card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:20px;margin-bottom:16px}
+.wiz-foot{display:flex;align-items:center;justify-content: flex-end;gap:10px;padding-top:14px;border-top:1px solid var(--line);flex-wrap:wrap}
+.wiz-foot .l{margin-right:auto}
+
+/* Output Detail Grid & Cards */
+.out-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-bottom:14px}
+.out-kv{padding:12px 14px;border:1px solid var(--line);border-radius:10px;background:var(--soft)}
+.out-kv small{display:block;font-size:11px;color:var(--muted);margin-bottom:3px}
+.out-kv b{font-size:14px;display:block;word-break:break-word}
+.out-section{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:18px;margin-bottom:14px}
+.out-section-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.out-section-head h3{margin:0;font-size:15px}
+.mode-pill{display:inline-flex;align-items:center;gap:6px;padding:3px 10px;border-radius:999px;font-size:11px;font-weight:700;border:1px solid var(--line);background:var(--soft);color:var(--muted)}
+.mode-pill.output{border-color:rgba(16,185,129,.35);color:#10b981;background:rgba(16,185,129,.08)}
+.mode-pill.input{border-color:rgba(237,28,36,.4);color:var(--pri);background:rgba(237,28,36,.1)}
+
 .reminder-period{display:flex;gap:4px;margin:0}.reminder-period button{border:1px solid var(--line);background:var(--card);padding:5px 10px;border-radius:6px;cursor:pointer;font-weight:600;color:var(--muted)}.reminder-period button.on{background:var(--pri);border-color:var(--pri);color:#fff}.priority-controls{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .imp-row{padding:12px 0;border-bottom:1px solid var(--line);display:grid;grid-template-columns:minmax(180px,1.3fr) minmax(140px,.8fr) 150px 130px auto;gap:12px;align-items:center}.imp-row:last-child{border-bottom:0}.imp-row:hover{background:var(--soft)}.imp-desc{white-space:normal;color:var(--muted);font-size:12px}
 .imp-attachments{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px}.imp-attachment{display:grid;grid-template-columns:64px 1fr auto;gap:8px;align-items:center;padding:7px;border:1px solid var(--line);border-radius:6px;background:var(--soft);min-width:0}.imp-attachment img{width:64px;height:48px;object-fit:cover;border-radius:4px;background:var(--card)}.imp-attachment-name{min-width:0;overflow-wrap:anywhere}.imp-link{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:6px 0;border-bottom:1px solid var(--line)}
@@ -149,7 +221,7 @@ label input[type=range]{padding:0;border:0}
 .itrow input{padding:6px 8px;border:1px solid var(--line);border-radius:6px;background:var(--card);width:100%}
 .deadline-reminders{margin-bottom:12px}.deadline-reminders .ai{align-items:center}.deadline-reminders.has-overdue{border-color:#fecaca}
 body.auth-mode{min-height:100vh;background:#fff}
-body.auth-mode>header,body.auth-mode>.filters,body.auth-mode>#main,body.auth-mode>#modal2,body.auth-mode>#toast{display:none!important}
+body.auth-mode>.app-shell,body.auth-mode>#modal2,body.auth-mode>#toast{display:none!important}
 body.auth-mode>#modal{min-height:100vh}
 .auth-page{min-height:100vh;display:grid;grid-template-columns:minmax(280px,1fr) minmax(360px,500px);background:#fff}
 .auth-visual{min-height:100vh;padding:clamp(28px,6vw,76px);display:flex;flex-direction:column;justify-content:space-between;background-color:#fbfbfb;background-image:linear-gradient(112deg,rgba(255,255,255,.99) 0%,rgba(255,255,255,.92) 48%,rgba(255,255,255,.52) 100%),url('public/cosmax-mark.svg');background-repeat:no-repeat;background-size:cover,min(52vw,640px) auto;background-position:center,right -80px bottom -130px;color:#202124;position:relative;overflow:hidden;border-right:1px solid #e5e7eb}
@@ -163,42 +235,146 @@ body.auth-mode>#modal{min-height:100vh}
 .auth-card .auth-submit{width:100%;min-height:46px;margin-top:8px;background:#ed1c24;color:#fff;border:0;border-radius:7px;font-weight:700;cursor:pointer}.auth-card .auth-submit:hover{background:#ce171e}
 .auth-card .auth-error{min-height:20px;color:#b42318;font-size:13px;margin:6px 0 0}.auth-note{padding:10px 12px;background:#fff8e6;border:1px solid #f4d58d;border-radius:7px;color:#70541b;font-size:13px;margin-bottom:14px}
 .viewer-badge{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);border-radius:6px;padding:4px 8px;font-size:11px;font-weight:700;color:var(--muted)}
+@media(max-width:960px){
+  .app-sidebar{position:fixed;left:0;top:0;bottom:0;transform:translateX(-100%);box-shadow:0 20px 40px rgba(0,0,0,.45)}
+  body.sb-open .app-sidebar{transform:translateX(0)}
+  .tb-toggle{display:grid}
+}
 @media(max-width:800px){.auth-page{grid-template-columns:1fr}.auth-visual{min-height:210px;padding:24px 24px 30px;background-size:cover,230px auto;background-position:center,right -28px bottom -48px}.auth-visual-copy{margin-top:42px}.auth-visual-copy h1{font-size:34px}.auth-visual-copy p,.auth-visual-foot{display:none}.auth-pane{min-height:calc(100vh - 210px);align-items:flex-start;padding:28px 22px}.auth-tools{margin-bottom:28px}}
-@media(max-width:800px){.tplwrap{grid-template-columns:1fr}.porow{grid-template-columns:1fr}.imp-row{grid-template-columns:1fr;gap:4px}.imp-row .btn{justify-self:start}nav{order:3;flex-basis:100%;overflow-x:auto}.hr{margin-left:auto}}
-
+@media(max-width:800px){.tplwrap{grid-template-columns:1fr}.porow{grid-template-columns:1fr}.imp-row{grid-template-columns:1fr;gap:4px}.imp-row .btn{justify-self:start}.hr{margin-left:auto}}
 @media(max-width:800px){.pb,.brow{grid-template-columns:1fr}.filters #q{width:100%}}
-@media(max-width:800px){body{background-position:right 12px bottom 18px;background-size:180px auto}}
 </style>
 </head>
 <body>
-<header>
-  <div class="brand"><div class="logo">PI</div><div><b id="appname">PI Project Management</b><small id="who" onclick="openSettings()"></small></div></div>
-  <nav id="nav">
-    <button data-v="dash" onclick="go('dash')">Dashboard</button>
-    <button data-v="gantt" onclick="go('gantt')">Gantt Chart</button>
-    <button data-v="list" onclick="go('list')">Daftar Project</button>
-    <button data-v="budget" onclick="go('budget')">Quotation &amp; PO</button>
-    <button data-v="improvements" onclick="go('improvements')">Improvement</button>
-  </nav>
-  <div class="hr">
-    <select id="app-language" class="btn" aria-label="Bahasa aplikasi" data-no-translate onchange="setLanguage(this.value)">
-      <option value="id">Indonesia</option>
-      <option value="en">English</option>
-      <option value="ko">한국어</option>
-    </select>
-    <button id="sync" class="sync" onclick="syncClick()"></button>
-    <button class="btn" onclick="openSettings()">Pengaturan</button>
-    <button class="btn" onclick="logout()">Keluar</button>
-    <button id="new-project-button" class="btn pri" onclick="newP()">+ Project</button>
+<div class="app-shell">
+  <aside class="app-sidebar" id="nav">
+    <div class="sb-brand">
+      <div class="logo">PIE</div>
+      <div style="min-width:0">
+        <b id="appname">PI Project Management</b>
+        <small>Cosmax Indonesia · PIE</small>
+      </div>
+    </div>
+    <div class="sb-scroll">
+      <div class="sb-group">
+        <div class="sb-label">Ringkasan</div>
+        <button class="sb-item" data-v="dash" onclick="go('dash')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
+          <span>Dashboard</span>
+        </button>
+        <button class="sb-item" data-v="gantt" onclick="go('gantt')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="6" x2="14" y2="6"/><line x1="8" y1="12" x2="20" y2="12"/><line x1="5" y1="18" x2="16" y2="18"/></svg>
+          <span>Gantt Chart</span>
+        </button>
+      </div>
+
+      <div class="sb-group">
+        <div class="sb-label">Project</div>
+        <button class="sb-item" data-v="my_projects" onclick="go('my_projects')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+          <span>Pekerjaan Saya</span>
+          <span class="sb-badge" id="sb-my-cnt">0</span>
+        </button>
+        <button class="sb-item" data-v="list" onclick="go('list')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <span>Pemantauan Proses</span>
+        </button>
+        <button class="sb-item" id="sb-new-proj" data-v="project_form" onclick="newP()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+          <span>Input Project Baru</span>
+        </button>
+      </div>
+
+      <div class="sb-group">
+        <div class="sb-label">Improvement</div>
+        <button class="sb-item" data-v="improvements" onclick="go('improvements')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+          <span>Pemantauan Issue</span>
+        </button>
+        <button class="sb-item" id="sb-imp-rev" data-v="imp_review" onclick="go('imp_review')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          <span>Perlu Ditinjau PI</span>
+          <span class="sb-badge" id="sb-imp-cnt">0</span>
+        </button>
+        <button class="sb-item" id="sb-new-imp" data-v="imp_form" onclick="newImprovement()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+          <span>Catat Issue Baru</span>
+        </button>
+      </div>
+
+      <div class="sb-group">
+        <div class="sb-label">Pengadaan &amp; Laporan</div>
+        <button class="sb-item" data-v="budget" onclick="go('budget')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+          <span>Quotation &amp; PO</span>
+        </button>
+      </div>
+
+      <div class="sb-group">
+        <div class="sb-label">Master &amp; Sistem</div>
+        <button class="sb-item" id="sb-tpl" onclick="openTpl()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+          <span>Template Stage</span>
+        </button>
+        <button class="sb-item" id="sb-pos" onclick="openPOS()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+          <span>Template &amp; Nomor PO</span>
+        </button>
+        <button class="sb-item" id="sb-usr" onclick="openUsers()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          <span>Pengguna</span>
+        </button>
+        <button class="sb-item" onclick="openSettings()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          <span>Pengaturan &amp; Ekspor</span>
+        </button>
+      </div>
+    </div>
+    <div class="sb-foot">
+      <div class="sb-avatar" id="user-avatar">U</div>
+      <div class="sb-user" onclick="openSettings()" title="Pengaturan Akun">
+        <b id="who">Pengguna</b>
+        <small id="who-role">PIE Team</small>
+      </div>
+      <button class="sb-icon-btn" onclick="logout()" title="Keluar" aria-label="Keluar">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+      </button>
+    </div>
+  </aside>
+
+  <div class="app-main">
+    <header class="app-topbar">
+      <div class="tb-left">
+        <button class="tb-toggle" onclick="document.body.classList.toggle('sb-open')" aria-label="Toggle Menu">☰</button>
+        <div class="crumbs" id="breadcrumb"><span>Ringkasan</span><span class="sep">›</span><b>Dashboard</b></div>
+      </div>
+      <div class="hr">
+        <button id="sync" class="sync" onclick="syncClick()"></button>
+        <button id="new-project-button" class="btn pri sm" onclick="newP()">+ Project</button>
+        <button class="btn sm" id="theme-toggle" onclick="toggleTheme()" title="Ubah Tema Terang / Gelap">☾</button>
+        <div class="lang-pills" data-no-translate>
+          <button type="button" data-lang="id" onclick="setLanguage('id')">ID</button>
+          <button type="button" data-lang="en" onclick="setLanguage('en')">EN</button>
+          <button type="button" data-lang="ko" onclick="setLanguage('ko')">한국어</button>
+        </div>
+        <select id="app-language" hidden aria-label="Bahasa aplikasi" data-no-translate onchange="setLanguage(this.value)">
+          <option value="id">Indonesia</option>
+          <option value="en">English</option>
+          <option value="ko">한국어</option>
+        </select>
+      </div>
+    </header>
+
+    <div class="filters">
+      <input id="q" placeholder="Cari project, vendor, PIC, No. PO, stage..." oninput="F.q=this.value;render()">
+      <span id="fsel"></span>
+      <button class="btn sm" onclick="resetF()">Reset filter</button>
+      <span id="cnt"></span>
+    </div>
+
+    <main id="main"></main>
   </div>
-</header>
-<div class="filters">
-  <input id="q" placeholder="Cari project, vendor, PIC, No. PO, stage..." oninput="F.q=this.value;render()">
-  <span id="fsel"></span>
-  <button class="btn sm" onclick="resetF()">Reset filter</button>
-  <span id="cnt"></span>
 </div>
-<main id="main"></main>
 <datalist id="vlist"></datalist>
 <div id="modal"></div>
 <div id="modal2"></div>
@@ -539,7 +715,29 @@ const LANG_TEXT={
   'Belum ada project. Klik "+ Project" untuk memulai.':{en:'No projects yet. Select "+ Project" to get started.',ko:'프로젝트가 없습니다. "+ 프로젝트"를 눌러 시작하세요.'},
   'Belum ada data budget.':{en:'No budget data yet.',ko:'예산 데이터가 없습니다.'},
   'Belum ada quotation.':{en:'No quotations yet.',ko:'견적이 없습니다.'},
-  'Belum ada PO.':{en:'No POs yet.',ko:'발주서가 없습니다.'}
+  'Belum ada PO.':{en:'No POs yet.',ko:'발주서가 없습니다.'},
+  'Ringkasan':{en:'Overview',ko:'요약'},
+  'Pekerjaan Saya':{en:'My Work',ko:'내 작업'},
+  'Pemantauan Proses':{en:'Process Monitoring',ko:'프로세스 모니터링'},
+  'Input Project Baru':{en:'New Project Input',ko:'신규 프로젝트 입력'},
+  'Pemantauan Issue':{en:'Issue Monitoring',ko:'이슈 모니터링'},
+  'Perlu Ditinjau PI':{en:'Needs PI Review',ko:'PI 검토 필요'},
+  'Catat Issue Baru':{en:'Submit New Issue',ko:'신규 이슈 등록'},
+  'Pengadaan & Laporan':{en:'Procurement & Reports',ko:'조달 및 보고서'},
+  'Master & Sistem':{en:'Master & System',ko:'마스터 및 시스템'},
+  'Template Stage':{en:'Stage Templates',ko:'단계 템플릿'},
+  'Template & Nomor PO':{en:'PO Template & Numbering',ko:'PO 템플릿 및 번호'},
+  'Pengaturan & Ekspor':{en:'Settings & Export',ko:'설정 및 내보내기'},
+  'Informasi Header':{en:'Header Information',ko:'기본 헤더 정보'},
+  'Rencana & Update Stage':{en:'Stage Plan & Execution',ko:'단계 계획 및 실행'},
+  'Tinjau & Simpan':{en:'Review & Save',ko:'검토 및 저장'},
+  'Tinjau & Kirim':{en:'Review & Submit',ko:'검토 및 제출'},
+  'Identifikasi Masalah':{en:'Issue Identification',ko:'문제 식별'},
+  'Tujuan & Lampiran':{en:'Goals & Attachments',ko:'목표 및 첨부파일'},
+  'Kembali':{en:'Back',ko:'이전'},
+  'Berikutnya':{en:'Next',ko:'다음'},
+  'Lihat Output':{en:'View Output',ko:'결과 보기'},
+  'Update Proses':{en:'Update Process',ko:'프로세스 업데이트'}
 };
 const LANG_SOURCE={};
 Object.entries(LANG_TEXT).forEach(([source,values])=>{LANG_SOURCE[source]=source;Object.values(values).forEach(value=>{LANG_SOURCE[value]=source;});});
@@ -564,6 +762,8 @@ function translatedText(value){
   if(match)return value.replace(trimmed,APP_LANG==='id'?`${match[1]} hari lagi`:APP_LANG==='en'?`${match[1]} days left`:`${match[1]}일 남음`);
   match=trimmed.match(/^Terlambat (\d+) hari$/);
   if(match)return value.replace(trimmed,APP_LANG==='id'?`Terlambat ${match[1]} hari`:APP_LANG==='en'?`${match[1]} days overdue`:`${match[1]}일 지연`);
+  match=trimmed.match(/^(?:Langkah (\d+) dari (\d+)|Step (\d+) of (\d+)|(\d+)\/(\d+) 단계)$/);
+  if(match){const s=match[1]||match[3]||match[5],t=match[2]||match[4]||match[6];return value.replace(trimmed,APP_LANG==='id'?`Langkah ${s} dari ${t}`:APP_LANG==='en'?`Step ${s} of ${t}`:`${s}/${t} 단계`);}
 
   let translated=value;
   LANG_VARIANTS.forEach(variant=>{
@@ -579,6 +779,7 @@ function translatedText(value){
 function applyLanguage(){
   document.documentElement.lang=APP_LANG;
   const selector=$('#app-language'),authSelector=$('#auth-language');if(selector)selector.value=APP_LANG;if(authSelector)authSelector.value=APP_LANG;
+  document.querySelectorAll('.lang-pills button').forEach(btn=>btn.classList.toggle('on',btn.dataset.lang===APP_LANG));
   const walker=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT);
   let node;
   while((node=walker.nextNode())){
@@ -594,6 +795,12 @@ function setLanguage(language){
   APP_LANG=language;localStorage.setItem('pt_language',language);
   const authSelector=$('#auth-language');if(authSelector)authSelector.value=language;
   render();applyLanguage();
+}
+function toggleTheme(){
+  const cur=document.documentElement.dataset.theme==='dark'?'light':'dark';
+  document.documentElement.dataset.theme=cur;
+  localStorage.setItem('pt_theme',cur);
+  const btn=$('#theme-toggle');if(btn)btn.textContent=cur==='dark'?'☀':'☾';
 }
 let LANGUAGE_UPDATE_QUEUED=false;
 new MutationObserver(()=>{
@@ -624,10 +831,10 @@ function poDate(iso,fmt,lang){const d=pd(iso);if(!d)return '';const dd=String(d.
 
 /* ================= state ================= */
 let DB=normDB({}),ME='',USER=null;
-let VIEW='dash',F={cat:'',status:'',pic:'',q:''},SORT={k:'end',d:1},RPERIOD='day',PRIORITY_COLLAPSED=false;
+let VIEW='dash',PREV_VIEW='dash',F={cat:'',status:'',pic:'',q:''},SORT={k:'end',d:1},RPERIOD='day',PRIORITY_COLLAPSED=false;
 let GS='month',GGROUP=true,GJUMP=true;
 let REV=-1,KNOWN={},KNOWNI={},KDEL={},KSET=-1,SSE=null,ONLINE=[],SYNCERR=null,lastSync=null,PUSHING=false,AGAIN=false,RETRY=null,SKEW=0;
-let draft=null,baseAt=0,isNew=false,TAB='info',CD=[],IDRAFT=null,IBASE=null,IISNEW=false,IMPFILTER='all',IMPQ='',PROJECT_READ_ONLY=false;
+let draft=null,baseAt=0,isNew=false,TAB='info',WIZ_STEP=1,DETAIL_TAB='overview',CD=[],IDRAFT=null,IBASE=null,IISNEW=false,IMP_WIZ_STEP=1,IMPFILTER='all',IMPQ='',PROJECT_READ_ONLY=false;
 
 /* ================= data ================= */
 function buildStages(defs,base){
@@ -801,10 +1008,16 @@ function getL(ignoreStatus){
 function toast(m){const t=$('#toast');t.textContent=m;t.style.display='block';clearTimeout(toast._t);toast._t=setTimeout(()=>{t.style.display='none';},3500);}
 function badge(st){return `<span class="badge" style="background:${ST_COLOR[st]}">${esc(st)}</span>`;}
 function chip(c){return `<span class="chip" style="background:${catColor(c)}">${esc(c)}</span>`;}
-function go(v){VIEW=v;if(v==='gantt')GJUMP=true;document.querySelectorAll('#nav button').forEach(b=>b.classList.toggle('on',b.dataset.v===v));render();}
+function go(v){
+  if(['dash','gantt','my_projects','list','budget','improvements','imp_review'].includes(VIEW))PREV_VIEW=VIEW;
+  VIEW=v;
+  if(v==='gantt')GJUMP=true;
+  document.body.classList.remove('sb-open');
+  render();
+}
 function setStatus(s){F.status=(!s||F.status===s)?'':s;render();}
 function setCat(c){F.cat=F.cat===c?'':c;render();}
-function resetF(){F={cat:'',status:'',pic:'',q:''};$('#q').value='';render();}
+function resetF(){F={cat:'',status:'',pic:'',q:''};const qEl=$('#q');if(qEl)qEl.value='';render();}
 function renderFilters(){
   const pics=[...new Set(DB.projects.map(p=>p.pic).filter(Boolean))].sort();
   const o=(arr,cur,all)=>`<option value="">${all}</option>`+arr.map(x=>`<option value="${esc(x)}" ${x===cur?'selected':''}>${esc(x)}</option>`).join('');
@@ -812,13 +1025,52 @@ function renderFilters(){
   const vs=new Set();DB.projects.forEach(p=>{if(p.vendor)vs.add(p.vendor);quotes(p).forEach(q=>q.vendor&&vs.add(q.vendor));});
   $('#vlist').innerHTML=[...vs].sort().map(v=>`<option value="${esc(v)}">`).join('');
 }
+function myProjectsList(){
+  const me=(ME||'').trim().toLowerCase();
+  if(!me)return [];
+  return DB.projects.filter(p=>((p.pic||'').trim().toLowerCase()===me)||((p.createdBy||'').trim().toLowerCase()===me)||(p.stages||[]).some(s=>((s&&s.pic)||'').trim().toLowerCase()===me));
+}
+function updateBreadcrumb(){
+  const el=$('#breadcrumb');if(!el)return;
+  const map={
+    dash:['Ringkasan','Dashboard'],
+    gantt:['Ringkasan','Gantt Chart'],
+    my_projects:['Project','Pekerjaan Saya'],
+    list:['Project','Pemantauan Proses'],
+    project_detail:['Project','Pemantauan Proses',draft?(draft.code+' · Output & Stage'):'Detail Output'],
+    project_form:['Project',isNew?'Input Project Baru':('Update Proses · '+(draft?draft.code:'')),`Langkah ${WIZ_STEP} dari 5`],
+    budget:['Pengadaan & Laporan','Quotation & PO'],
+    improvements:['Improvement','Pemantauan Issue'],
+    imp_review:['Improvement','Perlu Ditinjau PI'],
+    imp_detail:['Improvement','Pemantauan Issue',IDRAFT?(IDRAFT.title||'Detail Output'):'Detail Output'],
+    imp_form:['Improvement',IISNEW?'Catat Issue Baru':'Edit Laporan Issue',`Langkah ${IMP_WIZ_STEP} dari 3`],
+    imp_review_form:['Improvement','Perlu Ditinjau PI','Input Keputusan & Review PI']
+  };
+  const parts=map[VIEW]||['Ringkasan','Dashboard'];
+  el.innerHTML=parts.map((p,i)=>i===parts.length-1?`<b>${esc(p)}</b>`:`<span>${esc(p)}</span><span class="sep">›</span>`).join('');
+}
 function render(){
   renderFilters();renderSync();
-  $('#who').textContent=ME?(ME+(isAdmin()?' · admin':isViewer()?' · viewer':isContributor()?' · kontributor':'')):'';$('#appname').textContent=appName();document.title=appName();
-  const createButton=$('#new-project-button');if(createButton)createButton.hidden=!canEdit()||VIEW==='improvements';
-  const filters=$('.filters');if(filters)filters.hidden=VIEW==='improvements';
-  $('#cnt').textContent=VIEW==='improvements'?DB.improvements.length+' improvement':getL(false).length+' dari '+DB.projects.length+' project';
-  ({dash:rDash,gantt:rGantt,list:rList,budget:rBudget,improvements:rImprovements})[VIEW]();
+  const roleLabel=isAdmin()?'Administrator · PIE':isViewer()?'Viewer (Read-Only)':isContributor()?'Kontributor Dept':'Project Engineer · PIE';
+  $('#who').textContent=ME||'Pengguna';
+  const wr=$('#who-role');if(wr)wr.textContent=roleLabel;
+  const av=$('#user-avatar');if(av)av.textContent=(ME||'U').trim().charAt(0).toUpperCase();
+  $('#appname').textContent=appName();document.title=appName();
+  const myCnt=$('#sb-my-cnt');if(myCnt)myCnt.textContent=myProjectsList().filter(p=>effStatus(p)!=='Completed').length;
+  const impRevCnt=(DB.improvements||[]).filter(x=>['Baru','Review PI','Menunggu Data'].includes(x.status)).length;
+  const sbImpCnt=$('#sb-imp-cnt');if(sbImpCnt)sbImpCnt.textContent=impRevCnt;
+  const sbNewProj=$('#sb-new-proj');if(sbNewProj)sbNewProj.hidden=!canEdit();
+  const sbImpRev=$('#sb-imp-rev');if(sbImpRev)sbImpRev.hidden=!canReviewImprovement();
+  const sbNewImp=$('#sb-new-imp');if(sbNewImp)sbNewImp.hidden=!canSubmitImprovement();
+  ['sb-tpl','sb-pos','sb-usr'].forEach(id=>{const b=$('#'+id);if(b)b.hidden=!isAdmin();});
+  document.querySelectorAll('#nav .sb-item[data-v]').forEach(b=>b.classList.toggle('on',b.dataset.v===VIEW||(VIEW==='project_detail'&&b.dataset.v==='list')||(VIEW==='imp_detail'&&b.dataset.v==='improvements')||(VIEW==='imp_review_form'&&b.dataset.v==='imp_review')));
+  const createButton=$('#new-project-button');if(createButton)createButton.hidden=!canEdit()||['project_form','imp_form','imp_review_form'].includes(VIEW);
+  const showFilters=['dash','gantt','list','budget'].includes(VIEW);
+  const filters=$('.filters');if(filters)filters.hidden=!showFilters;
+  $('#cnt').textContent=['improvements','imp_review'].includes(VIEW)?DB.improvements.length+' improvement':getL(false).length+' dari '+DB.projects.length+' project';
+  updateBreadcrumb();
+  const views={dash:rDash,gantt:rGantt,my_projects:rMyProjects,list:rList,project_detail:rProjectDetail,project_form:rProjectForm,budget:rBudget,improvements:rImprovements,imp_review:rImpReviewQueue,imp_detail:rImpDetail,imp_form:rImpForm,imp_review_form:rImpReviewForm};
+  (views[VIEW]||rDash)();
   applyLanguage();
 }
 
@@ -992,26 +1244,64 @@ function rGantt(){
   if(GJUMP){sc.scrollLeft=Math.max(0,tx-(sc.clientWidth-LW)*0.3);sc.scrollTop=0;GJUMP=false;}else{sc.scrollLeft=sl;sc.scrollTop=stp;}
 }
 
-/* ================= DAFTAR ================= */
+/* ================= PEKERJAAN SAYA & DAFTAR PROJECT ================= */
 const SORTV={code:p=>p.code,name:p=>p.name.toLowerCase(),category:p=>p.category,pic:p=>(p.pic||'').toLowerCase(),status:p=>ST_ORDER.indexOf(effStatus(p)),progress:p=>p.progress,stage:p=>{const c=curStage(p);return c?c.txt.toLowerCase():'~';},start:p=>p.start,end:p=>p.end,vendor:p=>(p.vendor||'').toLowerCase(),budget:p=>p.budget,cost:p=>committed(p),quotes:p=>quotes(p).length,po:p=>p.pos.length};
 function sortBy(k){SORT=SORT.k===k?{k:k,d:-SORT.d}:{k:k,d:1};render();}
+function rMyProjects(){
+  const L=getL(false).filter(p=>isMyProject(p)).slice().sort((a,b)=>(b.updatedAt||0)-(a.updatedAt||0));
+  const active=L.filter(p=>effStatus(p)==='On Progress').length,late=L.filter(p=>effStatus(p)==='Delayed').length,done=L.filter(p=>effStatus(p)==='Completed').length;
+  const rows=L.map(p=>{
+    const st=effStatus(p),cs=curStage(p),lateStg=p.stages.filter(s=>stEff(s)==='Delayed').length;
+    const canMod=canEdit()&&canModifyProj(p);
+    return `<tr>
+      <td><b>${esc(p.code)}</b></td>
+      <td><b style="cursor:pointer;color:var(--pri)" onclick="viewP('${p.id}')">${esc(p.name)}</b><div class="small muted">${esc(p.area||'Area belum diisi')}</div></td>
+      <td>${chip(p.category)}</td>
+      <td>${badge(st)}</td>
+      <td><span class="pbar"><div style="width:${p.progress}%"></div></span><b>${p.progress}%</b></td>
+      <td>${cs?`<span style="font-weight:600">${esc(cs.txt)}</span> <span class="muted small">(${cs.done}/${cs.total} stage)</span>`+(lateStg?` <span class="tag" style="background:#ef4444">${lateStg} telat</span>`:''):'<span class="muted">Belum ada stage</span>'}</td>
+      <td>${fmtDate(p.end)}</td>
+      <td class="r" style="white-space:nowrap">
+        <button class="btn sm" onclick="viewP('${p.id}')">Lihat Output</button>
+        ${canMod?`<button class="btn sm pri" onclick="editP('${p.id}',2)">Update Stage</button>`:''}
+      </td>
+    </tr>`;
+  }).join('');
+  $('#main').innerHTML=`
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-bottom:14px">
+      <div><h2 style="font-size:20px;margin:0;font-weight:800">Pekerjaan Saya (${esc(ME)})</h2><div class="muted small">Daftar project yang Anda kelola sebagai PIC atau pembuat project, terpisah antara pemantauan output dan form input update.</div></div>
+      ${canEdit()?`<button class="btn pri" onclick="newP()">+ Buat Project Baru</button>`:''}
+    </div>
+    <div class="grid kpis" style="grid-template-columns:repeat(auto-fit,minmax(170px,1fr))">
+      <div class="kpi static"><i style="background:var(--pri)"></i><b>${L.length}</b><span>Total Project Saya</span><small>PIC / Pembuat: ${esc(ME)}</small></div>
+      <div class="kpi static"><i style="background:#3b82f6"></i><b>${active}</b><span>Sedang Berjalan</span><small>On Progress</small></div>
+      <div class="kpi static"><i style="background:#ef4444"></i><b>${late}</b><span>Terlambat / Perlu Aksi</span><small>Melewati target stage/project</small></div>
+      <div class="kpi static"><i style="background:#10b981"></i><b>${done}</b><span>Selesai</span><small>Completed 100%</small></div>
+    </div>
+    <div class="card" style="padding:0"><div class="tw"><table><thead><tr><th>Kode</th><th>Project</th><th>Klasifikasi</th><th>Status</th><th>Progres</th><th>Stage Saat Ini</th><th>Target Selesai</th><th class="r">Jendela Fitur</th></tr></thead><tbody>${rows||`<tr><td colspan="8" class="empty">Belum ada project yang ditugaskan kepada ${esc(ME)}. Klik "+ Buat Project Baru" untuk memulai proses input.</td></tr>`}</tbody></table></div></div>`;
+}
 function rList(){
   const ub=useBud();
   const L=getL(false).slice().sort((a,b)=>{const x=SORTV[SORT.k](a),y=SORTV[SORT.k](b);return (x<y?-1:x>y?1:0)*SORT.d;});
   const cols=[['code','Kode'],['name','Project'],['category','Klasifikasi'],['pic','PIC'],['status','Status'],['progress','Progres'],['stage','Tahap saat ini'],['start','Mulai'],['end','Target'],['vendor','Vendor']].concat(ub?[['budget','Budget'],['cost','Komitmen']]:[]).concat([['quotes','Quotation'],['po','PO']]);
-  const th=cols.map(c=>`<th class="${c[0]==='budget'||c[0]==='cost'?'r':''}" onclick="sortBy('${c[0]}')">${c[1]}${SORT.k===c[0]?(SORT.d>0?' ▲':' ▼'):''}</th>`).join('');
+  const th=cols.map(c=>`<th class="${c[0]==='budget'||c[0]==='cost'?'r':''}" onclick="sortBy('${c[0]}')">${c[1]}${SORT.k===c[0]?(SORT.d>0?' ▲':' ▼'):''}</th>`).join('')+'<th class="r">Aksi</th>';
   const tb=L.map(p=>{const st=effStatus(p),bs=budgetState(p),cm=committed(p),lq=lowQ(p),cs=curStage(p);
     const late=p.stages.filter(s=>stEff(s)==='Delayed').length;
-    return `<tr onclick="openP('${p.id}')"><td>${esc(p.code)}</td><td><b>${esc(p.name)}</b></td><td>${chip(p.category)}</td><td>${esc(p.pic||'-')}</td><td>${badge(st)}</td>
+    const canMod=canEdit()&&canModifyProj(p);
+    return `<tr onclick="viewP('${p.id}')"><td>${esc(p.code)}</td><td><b>${esc(p.name)}</b></td><td>${chip(p.category)}</td><td>${esc(p.pic||'-')}</td><td>${badge(st)}</td>
     <td><span class="pbar"><div style="width:${p.progress}%"></div></span>${p.progress}%</td><td>${cs?esc(cs.txt)+' <span class="muted small">('+cs.done+'/'+cs.total+')</span>'+(late?' <span class="tag" style="background:#ef4444">'+late+' telat</span>':''):'-'}</td><td>${fmtDate(p.start)}</td><td>${fmtDate(p.end)}</td><td>${esc(p.vendor||'-')}</td>
-    ${ub?`<td class="r">${p.budget?money(p.budget):'-'}</td><td class="r" style                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        ="color:${bs.key==='over'?'var(--bad)':'inherit'};                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        font-weight:$                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        {b                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        s.key==='over'?700:400}">${cm?money(cm):(bs.c.amt?'<span class="muted">est. '+moneyC(bs.c.amt)+'</span>':'-')}</td>`:''}
-    <td>${quotes(p).length?quotes(p).length+(lq?' · terendah '+poMoney(lq.amount,lq.currency):''):'-'}</td><td>${p.pos.length?esc(p.pos.map(o=>o.no).join(', ')):esc(p.po||'-')}</td></tr>`;}).join('');
+    ${ub?`<td class="r">${p.budget?money(p.budget):"-"}</td><td class="r" style="color:${bs.key==="over"?"var(--bad)":"inherit"};font-weight:${bs.key==="over"?700:400}">${cm?money(cm):(bs.c.amt?`<span class="muted">est. ${moneyC(bs.c.amt)}</span>`:"-")}</td>`:""}
+    <td>${quotes(p).length?quotes(p).length+(lq?' · terendah '+poMoney(lq.amount,lq.currency):''):'-'}</td><td>${p.pos.length?esc(p.pos.map(o=>o.no).join(', ')):esc(p.po||'-')}</td>
+    <td class="r" style="white-space:nowrap" onclick="event.stopPropagation()">
+      <button class="btn sm" onclick="viewP('${p.id}')">Lihat Output</button>
+      ${canMod?`<button class="btn sm pri" onclick="editP('${p.id}',1)">Update Proses</button>`:''}
+    </td></tr>`;}).join('');
   const sb=L.reduce((a,p)=>a+p.budget,0),sc=L.reduce((a,p)=>a+committed(p),0);
-  const foot=ub?`<tfoot><tr><td colspan="10" class="r"><b>Total (${L.length} project)</b></td><td class="r"><b>${money(sb)}</b></td><td class="r"><b>${money(sc)}</b></td><td colspan="2"></td></tr></tfoot>`:'';
-  $('#main').innerHTML=`<div class="card" style="padding:0"><div class="tw" style="max-height:calc(100vh - 210px)"><table><thead><tr>${th}</tr></thead><tbody>${tb||`<tr><td colspan="${cols.length}" class="empty">Tidak ada project. Klik "+ Project" untuk menambah.</td></tr>`}</tbody>${foot}</table></div></div>`;
+  const foot=ub?`<tfoot><tr><td colspan="10" class="r"><b>Total (${L.length} project)</b></td><td class="r"><b>${money(sb)}</b></td><td class="r"><b>${money(sc)}</b></td><td colspan="3"></td></tr></tfoot>`:'';
+  $('#main').innerHTML=`<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px;flex-wrap:wrap"><div><h2 style="font-size:19px;margin:0;font-weight:800">Pemantauan Proses Project</h2><div class="muted small">Klik baris project atau "Lihat Output" untuk memantau stage & hasil, atau klik "Update Proses" untuk membuka jendela input bertahap.</div></div>${canEdit()?`<button class="btn pri" onclick="newP()">+ Project Baru</button>`:''}</div><div class="card" style="padding:0"><div class="tw" style="max-height:calc(100vh - 240px)"><table><thead><tr>${th}</tr></thead><tbody>${tb||`<tr><td colspan="${cols.length+1}" class="empty">Tidak ada project. Klik "+ Project Baru" untuk menambah.</td></tr>`}</tbody>${foot}</table></div></div>`;
 }
 
-/* ================= BUDGET & QU                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        OTATION ================= */
+/* ================= BUDGET & QUOTATION ================= */
 function rBudget(){
   const L=getL(false),ub=useBud();
   let chart='';
@@ -1019,7 +1309,7 @@ function rBudget(){
     const rows=L.filter(p=>p.budget>0||costBasis(p).amt>0).sort((a,b)=>b.budget-a.budget);
     const mx=Math.max.apply(null,rows.map(p=>Math.max(p.budget,costBasis(p).amt)).concat([1]));
     chart=`<div class="card" style="margin-bottom:12px"><h3>Budget vs Komitmen per Project <span class="muted small" style="font-weight:400">· hanya untuk project yang punya budget</span></h3>`+(rows.map(p=>{const bs=budgetState(p),candidate=lowQ(p),lq=candidate&&(candidate.currency||DB.settings.currency||'IDR')===(DB.settings.currency||'IDR')?candidate:null;
-      return `<div class="brow" onclick="openP('${p.id}','budget')"><div><b>${esc(p.name)}</b><div class="small muted">${esc(p.code)} · ${esc(p.vendor||'vendor belum dipilih')}</div></div>
+      return `<div class="brow" onclick="viewP('${p.id}','budget')"><div><b>${esc(p.name)}</b><div class="small muted">${esc(p.code)} · ${esc(p.vendor||'vendor belum dipilih')}</div></div>
       <div class="btrack"><div class="bbud" style="width:${p.budget/mx*100}%"></div><div class="bfill" style="width:${bs.c.amt/mx*100}%;background:${bs.color};opacity:${p.actual>0||selQ(p)?1:.55}"></div>${lq?`<div class="blow" style="left:${lq.amount/mx*100}%"></div>`:''}</div>
       <div style="text-align:right;font-size:12px"><b>${bs.c.amt?moneyC(bs.c.amt):'-'}</b> / ${p.budget?moneyC(p.budget):'-'}<br><span style="color:${bs.color};font-weight:700">${bs.label}</span></div></div>`;}).join('')||'<div class="empty">Belum ada data budget.</div>')+'</div>';
   }
@@ -1027,7 +1317,8 @@ function rBudget(){
   const flat=[];L.forEach(p=>quotes(p).forEach(q=>flat.push({p:p,q:q})));
   const qrows=qProjects.map(p=>{const items=quotes(p).slice(),lq=lowQ(p),currencies=new Set(items.map(q=>q.currency||DB.settings.currency||'IDR'));
     items.sort((a,b)=>lq?(a.id===lq.id?-1:b.id===lq.id?1:a.amount-b.amount):(String(a.currency||DB.settings.currency||'IDR').localeCompare(String(b.currency||DB.settings.currency||'IDR'))||a.amount-b.amount));
-    const heading=`<tr class="project-group q-project-group" onclick="openP('${p.id}','budget')"><td colspan="${ub?9:8}"><b>${esc(p.code)} · ${esc(p.name)}</b><span class="muted"> · ${items.length} quotation</span>${lq?`<span class="muted"> · Terendah: ${poMoney(lq.amount,lq.currency)} (${esc(lq.vendor||'-')})</span>`:items.length>1&&currencies.size>1?'<span class="muted"> · Mata uang berbeda, harga tidak dibandingkan</span>':''}</td></tr>`;
+    const canMod=canEdit()&&canModifyProj(p);
+    const heading=`<tr class="project-group q-project-group" onclick="viewP('${p.id}','budget')"><td colspan="${ub?9:8}"><b>${esc(p.code)} · ${esc(p.name)}</b><span class="muted"> · ${items.length} quotation</span>${lq?`<span class="muted"> · Terendah: ${poMoney(lq.amount,lq.currency)} (${esc(lq.vendor||'-')})</span>`:items.length>1&&currencies.size>1?'<span class="muted"> · Mata uang berbeda, harga tidak dibandingkan</span>':''}${canMod?` <button class="btn sm pri" style="float:right" onclick="event.stopPropagation();editP('${p.id}',3)">Kelola Quotation &amp; PO</button>`:''}</td></tr>`;
     const rows=items.map(q=>{const isLow=lq&&lq.id===q.id,qCurrency=q.currency||DB.settings.currency||'IDR',pct=p.budget&&qCurrency===(DB.settings.currency||'IDR')?Math.round(q.amount/p.budget*100):null,note=String(q.note||''),notePreview=note.length>120?note.slice(0,120)+'...':note;
       const exp=q.valid?diffDays(today(),pd(q.valid)):null,hasPO=p.pos.some(x=>x.qid===q.id);
       return `<tr class="quotation-row"><td><b>${esc(q.vendor||'-')}</b></td><td>${esc(q.no||'-')}</td><td class="r"><b>${poMoney(q.amount,qCurrency)}</b> ${isLow?'<span class="tag" style="background:#10b981">TERENDAH</span>':''}</td><td class="qnote">${note?`<div>${esc(notePreview)}</div>${note.length>120?`<details><summary>Lihat selengkapnya</summary><div class="q-note-full">${esc(note)}</div></details>`:''}`:'-'}</td>
@@ -1038,16 +1329,17 @@ function rBudget(){
   const poProjects=L.filter(p=>p.pos.length).sort((a,b)=>a.code.localeCompare(b.code));
   const fpo=[];L.forEach(p=>p.pos.forEach(o=>fpo.push({p:p,o:o})));
   const dups=dupPOs();
-  const prow=poProjects.map(p=>`<tr class="project-group po-project-group" onclick="openP('${p.id}','budget')"><td colspan="6"><b>${esc(p.code)} · ${esc(p.name)}</b><span class="muted"> · ${p.pos.length} PO</span></td></tr>`+p.pos.slice().sort((a,b)=>a.date<b.date?1:-1).map(o=>`<tr onclick="openP('${p.id}','budget')"><td><b>${esc(o.no)}</b>${dups.includes(o.no)?' <span class="tag" style="background:#ef4444">GANDA</span>':''}</td><td>${fmtDate(o.date)}</td><td>${esc(o.vendor)}</td><td class="r"><b>${poMoney(poTotals(o).total,o.currency)}</b></td><td>${esc(o.by||'-')}</td><td><button class="btn sm" onclick="event.stopPropagation();printSaved('${p.id}','${o.id}')">Cetak / PDF</button></td></tr>`).join('')).join('');
+  const prow=poProjects.map(p=>`<tr class="project-group po-project-group" onclick="viewP('${p.id}','budget')"><td colspan="6"><b>${esc(p.code)} · ${esc(p.name)}</b><span class="muted"> · ${p.pos.length} PO</span></td></tr>`+p.pos.slice().sort((a,b)=>a.date<b.date?1:-1).map(o=>`<tr onclick="viewP('${p.id}','budget')"><td><b>${esc(o.no)}</b>${dups.includes(o.no)?' <span class="tag" style="background:#ef4444">GANDA</span>':''}</td><td>${fmtDate(o.date)}</td><td>${esc(o.vendor)}</td><td class="r"><b>${poMoney(poTotals(o).total,o.currency)}</b></td><td>${esc(o.by||'-')}</td><td><button class="btn sm" onclick="event.stopPropagation();printSaved('${p.id}','${o.id}')">Cetak / PDF</button></td></tr>`).join('')).join('');
   const vm={};
   L.forEach(p=>{quotes(p).forEach(q=>{const v=(q.vendor||'(tanpa nama)').trim(),o=vm[v]=vm[v]||{n:0,pr:{},sel:{},selN:0,po:{},poN:0};o.n++;o.pr[p.id]=1;if(q.status==='Terpilih'){const c=q.currency||DB.settings.currency||'IDR';o.sel[c]=(o.sel[c]||0)+q.amount;o.selN++;}});p.pos.forEach(x=>{const v=(x.vendor||'(tanpa nama)').trim();const o=vm[v]=vm[v]||{n:0,pr:{},sel:{},selN:0,po:{},poN:0},c=x.currency||DB.settings.currency||'IDR';o.poN++;o.po[c]=(o.po[c]||0)+poTotals(x).total;});});
   const poValue=v=>Object.keys(vm[v].po).map(c=>poMoney(vm[v].po[c],c)).join('<br>')||'-';
   const selectedQuoteValue=v=>Object.keys(vm[v].sel).map(c=>poMoney(vm[v].sel[c],c)).join('<br>')||'-';
   const vrows=Object.keys(vm).sort((a,b)=>Object.keys(vm[b].po).length-Object.keys(vm[a].po).length||vm[b].selN-vm[a].selN||vm[b].n-vm[a].n).map(v=>`<tr><td><b>${esc(v)}</b></td><td class="r">${Object.keys(vm[v].pr).length}</td><td class="r">${vm[v].n}</td><td class="r">${vm[v].selN}</td><td class="r">${selectedQuoteValue(v)}</td><td class="r">${vm[v].poN}</td><td class="r">${poValue(v)}</td></tr>`).join('');
   $('#main').innerHTML=chart+`<div class="card" style="margin-bottom:12px;padding:0"><div style="padding:14px 16px 0"><h3>Semua Quotation (${flat.length})</h3></div><div class="tw" style="max-height:420px"><table><thead><tr><th>Vendor</th><th>No. Quotation</th><th class="r">Harga</th><th>Catatan</th>${ub?'<th class="r">% Budget</th>':''}<th>Diterima</th><th>Berlaku s/d</th><th>Status</th><th>File</th></tr></thead><tbody>${qrows||`<tr><td colspan="${ub?9:8}" class="empty">Belum ada quotation.</td></tr>`}</tbody></table></div></div>
-  <div class="card" style="margin-bottom:12px;padding:0"><div style="padding:14px 16px 0"><h3>Purchase Order (${fpo.length})</h3><div class="muted small" style="margin-bottom:8px">PO dibuat dari quotation berstatus Terpilih: buka project, tab Quotation &amp; PO, klik Buat PO.</div></div><div class="tw" style="max-height:340px"><table><thead><tr><th>No. PO</th><th>Tanggal</th><th>Vendor</th><th class="r">Total</th><th>Dibuat oleh</th><th></th></tr></thead><tbody>${prow||'<tr><td colspan="6" class="empty">Belum ada PO.</td></tr>'}</tbody></table></div></div>
+  <div class="card" style="margin-bottom:12px;padding:0"><div style="padding:14px 16px 0"><h3>Purchase Order (${fpo.length})</h3><div class="muted small" style="margin-bottom:8px">PO dibuat dari quotation berstatus Terpilih: klik "Kelola Quotation &amp; PO" pada project, lalu klik Buat PO.</div></div><div class="tw" style="max-height:340px"><table><thead><tr><th>No. PO</th><th>Tanggal</th><th>Vendor</th><th class="r">Total</th><th>Dibuat oleh</th><th></th></tr></thead><tbody>${prow||'<tr><td colspan="6" class="empty">Belum ada PO.</td></tr>'}</tbody></table></div></div>
   <div class="card" style="padding:0"><div style="padding:14px 16px 0"><h3>Ringkasan Vendor</h3></div><div class="tw"><table><thead><tr><th>Vendor</th><th class="r">Project</th><th class="r">Quotation</th><th class="r">Terpilih</th><th class="r">Nilai Terpilih</th><th class="r">PO</th><th class="r">Nilai PO</th></tr></thead><tbody>${vrows||'<tr><td colspan="7" class="empty">-</td></tr>'}</tbody></table></div></div>`;
 }
+/* ================= IMPROVEMENT (INPUT & OUTPUT TERPISAH) ================= */
 function improvementTypeLabel(type){return ({saving_mp:'Saving MP',quality:'Quality',efficiency:'Efisiensi proses',other:'Lainnya'})[type]||'Efisiensi proses';}
 function improvementStatusColor(status){return status==='Disetujui'?'#10b981':status==='Tidak Perlu Improvement'?'#64748b':status==='Review PI'?'var(--pri)':status==='Menunggu Data'?'#f59e0b':'#64748b';}
 function rImprovements(){
@@ -1056,28 +1348,79 @@ function rImprovements(){
   const visible=(DB.improvements||[]).filter(x=>canReviewImprovement()||x.submittedBy===ME);
   const rows=visible.filter(x=>(IMPFILTER==='all'||x.status===IMPFILTER)&&(!q||[x.title,x.department,x.submittedBy,x.issue,x.type].join(' ').toLowerCase().includes(q))).slice().sort((a,b)=>(b.updatedAt||0)-(a.updatedAt||0));
   const count=s=>visible.filter(x=>x.status===s).length;
-  $('#main').innerHTML=`<div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:12px"><div style="flex:1"><h2 style="font-size:19px;margin:0">Improvement lintas departemen</h2><div class="muted small">Catat masalah, konteks, tujuan, lalu tindak lanjut dan feedback PI.</div></div>${canSubmitImprovement()?'<button class="btn pri" onclick="newImprovement()">+ Catat issue</button>':''}</div>
-  <div class="grid kpis"><div class="kpi static"><i style="background:#64748b"></i><b>${count('Baru')}</b><span>Baru</span></div><div class="kpi static"><i style="background:var(--pri)"></i><b>${count('Review PI')}</b><span>Review PI</span></div><div class="kpi static"><i style="background:#10b981"></i><b>${count('Disetujui')}</b><span>Disetujui</span></div><div class="kpi static"><i style="background:#64748b"></i><b>${count('Tidak Perlu Improvement')}</b><span>Tidak Perlu Improvement</span></div></div>
+  $('#main').innerHTML=`<div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px"><div style="flex:1"><h2 style="font-size:20px;margin:0;font-weight:800">Pemantauan Issue Improvement</h2><div class="muted small">Pantau status pengajuan improvement lintas departemen, hasil review PI, dan konversi menjadi project.</div></div>${canSubmitImprovement()?'<button class="btn pri" onclick="newImprovement()">+ Catat Issue Baru</button>':''}</div>
+  <div class="grid kpis"><div class="kpi static"><i style="background:#64748b"></i><b>${count('Baru')}</b><span>Baru</span><small>Menunggu antrean review</small></div><div class="kpi static"><i style="background:var(--pri)"></i><b>${count('Review PI')}</b><span>Review PI</span><small>Sedang dianalisa tim PI</small></div><div class="kpi static"><i style="background:#10b981"></i><b>${count('Disetujui')}</b><span>Disetujui</span><small>Dilanjutkan ke project</small></div><div class="kpi static"><i style="background:#64748b"></i><b>${count('Tidak Perlu Improvement')}</b><span>Saran Alternatif</span><small>Tidak perlu project baru</small></div></div>
   <div class="stbar"><input style="min-width:220px" placeholder="Cari issue, departemen, pelapor..." value="${esc(IMPQ)}" oninput="IMPQ=this.value;rImprovements()"><select onchange="IMPFILTER=this.value;rImprovements()"><option value="all">Semua status</option>${statuses.map(s=>`<option value="${s}" ${IMPFILTER===s?'selected':''}>${s}</option>`).join('')}</select><span class="muted small">${rows.length} dari ${visible.length} issue</span></div>
-  <div class="card">${rows.map(x=>`<div class="imp-row" onclick="openImprovement('${x.id}')"><div><b>${esc(x.title)}</b><div class="imp-desc">${esc(x.department||'-')} · ${esc(x.submittedBy||'-')} · ${improvementTypeLabel(x.type)}</div></div><div class="imp-desc">${esc(x.issue)}</div><span class="badge" style="background:${improvementStatusColor(x.status)}">${esc(x.status)}</span><span class="small muted">${x.projectId?'Project '+esc((byId(x.projectId)||{}).code||'terkait'):x.updatedAt?fmtDT(x.updatedAt):fmtDate(fd(new Date(x.submittedAt||Date.now())))}</span><button class="btn sm" onclick="event.stopPropagation();openImprovement('${x.id}')">Buka</button></div>`).join('')||'<div class="empty">Belum ada issue improvement.</div>'}</div>`;
+  <div class="card">${rows.map(x=>`<div class="imp-row" onclick="viewImprovement('${x.id}')"><div><b>${esc(x.title)}</b><div class="imp-desc">${esc(x.department||'-')} · ${esc(x.submittedBy||'-')} · ${improvementTypeLabel(x.type)}</div></div><div class="imp-desc">${esc(x.issue)}</div><span class="badge" style="background:${improvementStatusColor(x.status)}">${esc(x.status)}</span><span class="small muted">${x.projectId?'Project '+esc((byId(x.projectId)||{}).code||'terkait'):x.updatedAt?fmtDT(x.updatedAt):fmtDate(fd(new Date(x.submittedAt||Date.now())))}</span><div style="display:flex;gap:6px" onclick="event.stopPropagation()"><button class="btn sm" onclick="viewImprovement('${x.id}')">Lihat Output</button>${canReviewImprovement()?`<button class="btn sm pri" onclick="reviewImprovement('${x.id}')">Review PI</button>`:(canSubmitImprovement()&&x.submittedBy===ME&&!x.projectId?`<button class="btn sm pri" onclick="editImprovement('${x.id}')">Edit Input</button>`:'')}</div></div>`).join('')||'<div class="empty">Belum ada issue improvement.</div>'}</div>`;
+}
+function rImpReviewQueue(){
+  if(!canReviewImprovement()){go('improvements');return;}
+  const all=(DB.improvements||[]).slice().sort((a,b)=>(b.updatedAt||0)-(a.updatedAt||0));
+  const pending=all.filter(x=>['Baru','Review PI','Menunggu Data'].includes(x.status));
+  const decided=all.filter(x=>!['Baru','Review PI','Menunggu Data'].includes(x.status));
+  $('#main').innerHTML=`
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:14px;flex-wrap:wrap">
+      <div><h2 style="font-size:20px;margin:0;font-weight:800">Antrean Perlu Ditinjau (Tim PI)</h2><div class="muted small">Daftar pengajuan improvement dari kontributor yang memerlukan analisa, keputusan, atau konversi ke Project oleh Tim PI.</div></div>
+      <button class="btn" onclick="go('improvements')">Lihat Semua Issue (${all.length})</button>
+    </div>
+    <div class="grid kpis" style="grid-template-columns:repeat(auto-fit,minmax(180px,1fr))">
+      <div class="kpi static"><i style="background:#ef4444"></i><b>${all.filter(x=>x.status==='Baru').length}</b><span>Issue Baru</span><small>Belum direview</small></div>
+      <div class="kpi static"><i style="background:var(--pri)"></i><b>${all.filter(x=>x.status==='Review PI').length}</b><span>Dalam Review PI</span><small>Sedang ditinjau</small></div>
+      <div class="kpi static"><i style="background:#f59e0b"></i><b>${all.filter(x=>x.status==='Menunggu Data').length}</b><span>Menunggu Data</span><small>Perlu kelengkapan kontributor</small></div>
+      <div class="kpi static"><i style="background:#10b981"></i><b>${decided.length}</b><span>Telah Diputuskan</span><small>Disetujui / Saran alternatif</small></div>
+    </div>
+    <div class="card" style="margin-bottom:14px">
+      <h3>Menunggu Keputusan PI (${pending.length})</h3>
+      ${pending.map(x=>`<div class="imp-row" onclick="viewImprovement('${x.id}')">
+        <div><b>${esc(x.title)}</b><div class="imp-desc">${esc(x.department||'-')} · Pelapor: ${esc(x.submittedBy||'-')} · ${improvementTypeLabel(x.type)}</div></div>
+        <div class="imp-desc">${esc(x.issue)}</div>
+        <span class="badge" style="background:${improvementStatusColor(x.status)}">${esc(x.status)}</span>
+        <span class="small muted">${fmtDT(x.updatedAt||x.submittedAt)}</span>
+        <div style="display:flex;gap:6px" onclick="event.stopPropagation()">
+          <button class="btn sm" onclick="viewImprovement('${x.id}')">Lihat Detail</button>
+          <button class="btn sm pri" onclick="reviewImprovement('${x.id}')">Tinjau &amp; Putuskan</button>
+        </div>
+      </div>`).join('')||'<div class="empty">Semua pengajuan improvement sudah ditinjau!</div>'}
+    </div>`;
 }
 function newImprovement(){
   if(!canSubmitImprovement()){toast('Akun ini tidak memiliki akses untuk mengisi improvement.');return;}
-  IDRAFT=normImprovement({id:uid(),submittedBy:ME,submittedAt:Date.now(),status:'Baru'});IBASE=null;IISNEW=true;drawImprovementModal();
+  PREV_VIEW=VIEW==='imp_form'?'improvements':VIEW;
+  IDRAFT=normImprovement({id:uid(),submittedBy:ME,submittedAt:Date.now(),status:'Baru'});IBASE=null;IISNEW=true;IMP_WIZ_STEP=1;
+  VIEW='imp_form';render();
 }
-function openImprovement(id){
+function viewImprovement(id){
   const item=(DB.improvements||[]).find(x=>x.id===id);if(!item)return;
-  IDRAFT=JSON.parse(JSON.stringify(item));IBASE=JSON.parse(JSON.stringify(item));IISNEW=false;drawImprovementModal();
+  if(!['imp_detail','imp_form','imp_review_form'].includes(VIEW))PREV_VIEW=VIEW;
+  IDRAFT=JSON.parse(JSON.stringify(item));IBASE=JSON.parse(JSON.stringify(item));IISNEW=false;
+  VIEW='imp_detail';render();
 }
-function improvementAttachmentMarkup(){
+function editImprovement(id){
+  const item=(DB.improvements||[]).find(x=>x.id===id);if(!item)return;
+  if(!['imp_detail','imp_form','imp_review_form'].includes(VIEW))PREV_VIEW=VIEW;
+  IDRAFT=JSON.parse(JSON.stringify(item));IBASE=JSON.parse(JSON.stringify(item));IISNEW=false;IMP_WIZ_STEP=1;
+  VIEW='imp_form';render();
+}
+function reviewImprovement(id){
+  if(!canReviewImprovement()){viewImprovement(id);return;}
+  const item=(DB.improvements||[]).find(x=>x.id===id);if(!item)return;
+  if(!['imp_detail','imp_form','imp_review_form'].includes(VIEW))PREV_VIEW=VIEW;
+  IDRAFT=JSON.parse(JSON.stringify(item));IBASE=JSON.parse(JSON.stringify(item));IISNEW=false;
+  VIEW='imp_review_form';render();
+}
+function openImprovement(id){viewImprovement(id);}
+function refreshImpView(){if(['imp_detail','imp_form','imp_review_form'].includes(VIEW))render();else drawImprovementModal();}
+function improvementAttachmentMarkup(readOnly){
+  const editable=!readOnly&&canEditImprovement();
   return (IDRAFT.attachments||[]).map(a=>{
     const image=/\.(png|jpe?g|gif|webp)$/i.test(a.name||'');
     const preview=image?`<img src="${apiURL('/api/files/'+encodeURIComponent(a.file))}" alt="${esc(a.name)}">`:'<span class="badge" style="background:#64748b">FILE</span>';
-    return `<div class="imp-attachment">${preview}<div class="imp-attachment-name"><b>${esc(a.name)}</b><div class="small muted">${a.size?fmtNum(Math.ceil(a.size/1024))+' KB':''}</div><button class="btn sm" onclick="openImprovementAttachment('${esc(a.file)}')">Buka</button></div>${canEditImprovement()?`<button class="btn sm bad" title="Lepas lampiran" onclick="removeImprovementAttachment('${esc(a.id)}')">✕</button>`:''}</div>`;
+    return `<div class="imp-attachment">${preview}<div class="imp-attachment-name"><b>${esc(a.name)}</b><div class="small muted">${a.size?fmtNum(Math.ceil(a.size/1024))+' KB':''}</div><button class="btn sm" onclick="openImprovementAttachment('${esc(a.file)}')">Buka</button></div>${editable?`<button class="btn sm bad" title="Lepas lampiran" onclick="removeImprovementAttachment('${esc(a.id)}')">✕</button>`:''}</div>`;
   }).join('')||'<div class="muted small">Belum ada lampiran.</div>';
 }
-function improvementLinksMarkup(){
-  return (IDRAFT.links||[]).map(link=>`<div class="imp-link"><b>${esc(link.title)}</b><span class="small muted" style="overflow-wrap:anywhere">${esc(link.url)}</span><button class="btn sm" onclick="openImprovementLink('${esc(link.id)}')">Buka / salin</button>${canEditImprovement()?`<button class="btn sm bad" onclick="removeImprovementLink('${esc(link.id)}')">Hapus</button>`:''}</div>`).join('')||'<div class="muted small">Belum ada link.</div>';
+function improvementLinksMarkup(readOnly){
+  const editable=!readOnly&&canEditImprovement();
+  return (IDRAFT.links||[]).map(link=>`<div class="imp-link"><b>${esc(link.title)}</b><span class="small muted" style="overflow-wrap:anywhere">${esc(link.url)}</span><button class="btn sm" onclick="openImprovementLink('${esc(link.id)}')">Buka / salin</button>${editable?`<button class="btn sm bad" onclick="removeImprovementLink('${esc(link.id)}')">Hapus</button>`:''}</div>`).join('')||'<div class="muted small">Belum ada link.</div>';
 }
 async function attachImprovementFiles(input){
   if(!canEditImprovement()||!IDRAFT)return;
@@ -1094,9 +1437,9 @@ async function attachImprovementFiles(input){
       toast('Lampiran tersimpan di server');
     }catch(e){toast('Gagal mengunggah lampiran: '+e.message);}
   }
-  input.value='';if(IDRAFT===target)drawImprovementModal();
+  input.value='';if(IDRAFT===target)refreshImpView();
 }
-function removeImprovementAttachment(id){if(!canEditImprovement()||!IDRAFT)return;IDRAFT.attachments=IDRAFT.attachments.filter(a=>a.id!==id);drawImprovementModal();}
+function removeImprovementAttachment(id){if(!canEditImprovement()||!IDRAFT)return;IDRAFT.attachments=IDRAFT.attachments.filter(a=>a.id!==id);refreshImpView();}
 function addImprovementLink(){
   if(!canEditImprovement()||!IDRAFT)return;
   const title=$('#imp_link_title').value.trim(),url=$('#imp_link_url').value.trim();
@@ -1104,9 +1447,9 @@ function addImprovementLink(){
   if(!title||!url){toast('Isi judul dan link terlebih dahulu.');return;}
   if(!web&&!network){toast('Gunakan link http/https atau path jaringan \\\\server\\folder.');return;}
   if(web){try{const parsed=new URL(url);if(!['http:','https:'].includes(parsed.protocol))throw new Error();}catch(e){toast('Link web tidak valid.');return;}}
-  IDRAFT.links.push({id:uid(),title:title,url:url});drawImprovementModal();
+  IDRAFT.links.push({id:uid(),title:title,url:url});refreshImpView();
 }
-function removeImprovementLink(id){if(!canEditImprovement()||!IDRAFT)return;IDRAFT.links=IDRAFT.links.filter(link=>link.id!==id);drawImprovementModal();}
+function removeImprovementLink(id){if(!canEditImprovement()||!IDRAFT)return;IDRAFT.links=IDRAFT.links.filter(link=>link.id!==id);refreshImpView();}
 async function openImprovementAttachment(file){window.open(apiURL('/api/files/'+encodeURIComponent(file)),'_blank','noopener');}
 async function openImprovementLink(id){
   const link=IDRAFT.links.find(item=>item.id===id);if(!link)return;
@@ -1116,33 +1459,214 @@ async function openImprovementLink(id){
 function setImprovementDecision(value){
   IDRAFT.decision=value;
   if(value!=='Suggestion Only'){IDRAFT.piSuggestion='';IDRAFT.piReason='';}
-  drawImprovementModal();
+  refreshImpView();
 }
-function drawImprovementModal(){
-  const x=IDRAFT,canEditRequest=canEditImprovement(),canReview=canReviewImprovement(),disabled=canEditRequest?'':'disabled';
-  const text=(label,key,full,editable)=>`<label class="${full?'full':''}">${label}<input value="${esc(x[key]||'')}" oninput="IDRAFT.${key}=this.value" ${editable===undefined?disabled:editable?'':'disabled'}></label>`;
-  const area=(label,key,rows,editable)=>`<label class="full">${label}<textarea rows="${rows}" oninput="IDRAFT.${key}=this.value" ${editable===undefined?disabled:editable?'':'disabled'}>${esc(x[key]||'')}</textarea></label>`;
+function rImpDetail(){
+  if(!IDRAFT){go('improvements');return;}
+  const x=IDRAFT,canReview=canReviewImprovement(),canEditReq=canSubmitImprovement()&&(canReview||x.submittedBy===ME)&&!x.projectId;
+  const proj=x.projectId?byId(x.projectId):null;
+  const stepIdx=x.projectId?4:(x.status==='Disetujui'||x.status==='Tidak Perlu Improvement')?3:(x.status==='Review PI'||x.status==='Menunggu Data')?2:1;
+  const stages=[
+    {n:1,title:'Diajukan Kontributor',sub:esc(x.submittedBy||'-')+' · '+esc(x.department||'-')},
+    {n:2,title:'Tinjauan Tim PI',sub:x.piOwner?'PIC: '+esc(x.piOwner):'Analisa kelayakan'},
+    {n:3,title:'Keputusan PI',sub:x.decision==='To Project'?'Disetujui ke Project':x.decision==='Suggestion Only'?'Saran Alternatif':'Menunggu keputusan'},
+    {n:4,title:'Tindak Lanjut Project',sub:proj?esc(proj.code)+' ('+proj.progress+'%)':'Belum dikonversi'}
+  ];
+  const stepper=`<div class="wiz-stepper">${stages.map(s=>{
+    const st=s.n<stepIdx?'done':s.n===stepIdx?(x.projectId||x.status==='Disetujui'?'done':'active'):'';
+    return `<div class="wiz-node ${st}" style="cursor:default"><div class="wiz-circle">${st==='done'?'✓':s.n}</div><div class="wiz-label">${s.title}<br><span style="font-weight:400;font-size:10px">${s.sub}</span></div></div>`;
+  }).join('')}</div>`;
+  const history=(x.feedbackLog||[]).slice().reverse().map(h=>`<div class="logi"><b>${esc(h.by||'-')}</b> <small>${fmtDT(h.at)}</small><div>Status: <b>${esc(h.status||'')}</b> · Keputusan: <b>${esc(h.decision||'-')}</b></div><div>${esc(h.feedback||h.suggestion||h.reason||h.action||'-')}</div></div>`).join('')||'<div class="muted small">Belum ada riwayat keputusan PI.</div>';
+  $('#main').innerHTML=`
+    <div class="wiz-wrap">
+      <div class="wiz-head">
+        <div>
+          <span class="mode-pill output">TAMPILAN OUTPUT &amp; STATUS STAGE</span>
+          <h2 style="margin-top:8px">${esc(x.title||'Detail Issue Improvement')}</h2>
+          <p>Departemen <b>${esc(x.department||'-')}</b> · Dilaporkan oleh <b>${esc(x.submittedBy||'-')}</b> pada ${fmtDT(x.submittedAt)}</p>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <span class="badge" style="background:${improvementStatusColor(x.status)}">${esc(x.status)}</span>
+          <button class="btn" onclick="go('${PREV_VIEW||'improvements'}')">← Kembali</button>
+          ${canEditReq?`<button class="btn" onclick="editImprovement('${x.id}')">Edit Laporan Input</button>`:''}
+          ${canReview?`<button class="btn pri" onclick="reviewImprovement('${x.id}')">Tinjau &amp; Keputusan PI</button>`:''}
+          ${canReview&&x.decision==='To Project'&&!x.projectId?`<button class="btn pri" onclick="promoteImprovement()">+ Konversi ke Project</button>`:''}
+        </div>
+      </div>
+      <div class="out-section">
+        <h4>Stage Proses Improvement</h4>
+        ${stepper}
+      </div>
+      ${proj?`<div class="banner ok" style="margin-bottom:14px"><span>Issue ini telah dikonversi menjadi Project <b>${esc(proj.code)} · ${esc(proj.name)}</b> (Status: ${esc(effStatus(proj))}, Progres: ${proj.progress}%)</span><button class="btn sm pri" onclick="viewP('${proj.id}')">Buka Output Project →</button></div>`:''}
+      <div class="out-grid">
+        <div class="out-kv"><small>Departemen</small><b>${esc(x.department||'-')}</b></div>
+        <div class="out-kv"><small>Pelapor</small><b>${esc(x.submittedBy||'-')}</b></div>
+        <div class="out-kv"><small>Jenis Improvement</small><b>${esc(improvementTypeLabel(x.type))}</b></div>
+        <div class="out-kv"><small>PIC Review PI</small><b>${esc(x.piOwner||'Belum ditentukan')}</b></div>
+        ${x.savingMp?`<div class="out-kv"><small>Target Saving Manpower</small><b>${esc(x.savingMp)}</b></div>`:''}
+        ${x.qualityMetric?`<div class="out-kv"><small>Metrik Kualitas</small><b>${esc(x.qualityMetric)}</b></div>`:''}
+      </div>
+      <div class="grid c2">
+        <div class="out-section">
+          <h4>1. Detail Masalah &amp; Konteks (Input Kontributor)</h4>
+          <div style="display:grid;gap:12px;font-size:13px">
+            <div><div class="muted small">Issue yang Terjadi</div><div style="margin-top:3px;white-space:pre-wrap">${esc(x.issue||'-')}</div></div>
+            <div><div class="muted small">Background / Kondisi Saat Ini</div><div style="margin-top:3px;white-space:pre-wrap">${esc(x.background||'-')}</div></div>
+            <div><div class="muted small">Purpose / Alasan Perlu Ditangani</div><div style="margin-top:3px;white-space:pre-wrap">${esc(x.purpose||'-')}</div></div>
+            <div><div class="muted small">Goals / Hasil yang Diharapkan</div><div style="margin-top:3px;white-space:pre-wrap">${esc(x.goals||'-')}</div></div>
+          </div>
+        </div>
+        <div class="out-section">
+          <h4>2. Hasil Analisa &amp; Keputusan Tim PI (Output Review)</h4>
+          <div style="display:grid;gap:12px;font-size:13px">
+            <div><div class="muted small">Status &amp; Keputusan</div><div style="margin-top:4px"><span class="badge" style="background:${improvementStatusColor(x.status)}">${esc(x.status)}</span> · <b>${x.decision==='To Project'?'Proses menjadi Project Improvement':x.decision==='Suggestion Only'?'Saran Alternatif (Tanpa Project)':'Belum Diputuskan'}</b></div></div>
+            <div><div class="muted small">Feedback Tim PI</div><div style="margin-top:3px;white-space:pre-wrap">${esc(x.piFeedback||'Belum ada feedback dari Tim PI.')}</div></div>
+            ${x.piAction?`<div><div class="muted small">Action Plan yang Disarankan</div><div style="margin-top:3px;white-space:pre-wrap">${esc(x.piAction)}</div></div>`:''}
+            ${x.piSuggestion?`<div><div class="muted small">Saran / Solusi Alternatif</div><div style="margin-top:3px;white-space:pre-wrap">${esc(x.piSuggestion)}</div></div>`:''}
+            ${x.piReason?`<div><div class="muted small">Alasan Tidak Dilanjutkan ke Project</div><div style="margin-top:3px;white-space:pre-wrap">${esc(x.piReason)}</div></div>`:''}
+          </div>
+        </div>
+      </div>
+      <div class="grid c2">
+        <div class="out-section">
+          <h4>Lampiran &amp; Referensi</h4>
+          <div class="imp-attachments" style="margin-bottom:12px">${improvementAttachmentMarkup(true)}</div>
+          <div>${improvementLinksMarkup(true)}</div>
+        </div>
+        <div class="out-section">
+          <h4>Riwayat Feedback &amp; Audit Review</h4>
+          ${history}
+        </div>
+      </div>
+    </div>`;
+}
+function setImpWizStep(n){
+  if(n>1&&(!IDRAFT.title.trim()||!IDRAFT.department.trim())){toast('Isi Judul issue dan Departemen terlebih dahulu pada Langkah 1.');return;}
+  if(n>2&&(!IDRAFT.issue.trim()||!IDRAFT.background.trim()||!IDRAFT.purpose.trim()||!IDRAFT.goals.trim())){toast('Lengkapi Issue, Background, Purpose, dan Goals pada Langkah 2.');return;}
+  IMP_WIZ_STEP=n;render();
+}
+function rImpForm(){
+  if(!IDRAFT){go('improvements');return;}
+  const x=IDRAFT;
+  const steps=[
+    {n:1,label:'Informasi Pelapor'},
+    {n:2,label:'Analisa Masalah & Goals'},
+    {n:3,label:'Lampiran & Kirim'}
+  ];
+  const stepper=`<div class="wiz-step-count">Langkah ${IMP_WIZ_STEP} dari ${steps.length}</div><div class="wiz-stepper">${steps.map(s=>{
+    const cls=s.n<IMP_WIZ_STEP?'done':s.n===IMP_WIZ_STEP?'active':'';
+    return `<div class="wiz-node ${cls}" onclick="setImpWizStep(${s.n})"><div class="wiz-circle">${s.n<IMP_WIZ_STEP?'✓':s.n}</div><div class="wiz-label">${s.label}</div></div>`;
+  }).join('')}</div>`;
+  const opts=(values,value)=>values.map(v=>`<option value="${v[0]}" ${value===v[0]?'selected':''}>${v[1]}</option>`).join('');
+  let body='';
+  if(IMP_WIZ_STEP===1){
+    body=`<div class="wiz-card"><h4>Langkah 1 · Identitas Issue &amp; Departemen Pelapor</h4><div class="fg">
+      <label class="full">Judul Issue Improvement *<input value="${esc(x.title||'')}" placeholder="Contoh: Otomasi penimbangan bahan kemas line 3" oninput="IDRAFT.title=this.value"></label>
+      <label>Departemen Pengaju *<input value="${esc(x.department||'')}" placeholder="Contoh: Production / QAC / Filling" oninput="IDRAFT.department=this.value"></label>
+      <label>Nama Pelapor<input value="${esc(x.submittedBy||ME)}" disabled></label>
+      <label>Jenis Improvement<select onchange="IDRAFT.type=this.value;render()">${opts([['saving_mp','Saving MP'],['quality','Quality'],['efficiency','Efisiensi proses'],['other','Lainnya']],x.type)}</select></label>
+      ${x.type==='saving_mp'?`<label>Estimasi Saving Manpower<input value="${esc(x.savingMp||'')}" placeholder="Contoh: 2 orang atau 45 menit/shift" oninput="IDRAFT.savingMp=this.value"></label>`:''}
+      ${x.type==='quality'?`<label>Dampak / Metrik Kualitas<input value="${esc(x.qualityMetric||'')}" placeholder="Contoh: Menurunkan defect rate dari 2% ke 0.3%" oninput="IDRAFT.qualityMetric=this.value"></label>`:''}
+    </div></div>`;
+  }else if(IMP_WIZ_STEP===2){
+    body=`<div class="wiz-card"><h4>Langkah 2 · Detail Masalah, Kondisi Saat Ini &amp; Target</h4><div class="fg">
+      <label class="full">Issue yang Terjadi *<textarea rows="3" placeholder="Jelaskan kendala utama yang terjadi di lapangan..." oninput="IDRAFT.issue=this.value">${esc(x.issue||'')}</textarea></label>
+      <label class="full">Background / Kondisi Saat Ini *<textarea rows="3" placeholder="Bagaimana proses berjalan saat ini dan seberapa sering masalah muncul?" oninput="IDRAFT.background=this.value">${esc(x.background||'')}</textarea></label>
+      <label class="full">Purpose / Alasan Perlu Ditangani *<textarea rows="2" placeholder="Mengapa masalah ini penting untuk segera diselesaikan?" oninput="IDRAFT.purpose=this.value">${esc(x.purpose||'')}</textarea></label>
+      <label class="full">Goals / Hasil Akhir yang Diharapkan *<textarea rows="2" placeholder="Output terukur yang diharapkan setelah improvement selesai..." oninput="IDRAFT.goals=this.value">${esc(x.goals||'')}</textarea></label>
+    </div></div>`;
+  }else{
+    body=`<div class="wiz-card"><h4>Langkah 3 · Lampiran Bukti &amp; Tinjau Pengajuan</h4>
+      <div class="fg">
+        <label class="full">Unggah Foto / Dokumen Pendukung<input type="file" accept="image/png,image/jpeg,image/gif,image/webp,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.csv,.txt" multiple onchange="attachImprovementFiles(this)"><small class="hint" style="text-align:left">Gambar, PDF, dokumen Office, CSV, atau TXT (Maks. 100 MB per file).</small></label>
+        <div class="full imp-attachments">${improvementAttachmentMarkup(false)}</div>
+        <label>Judul Link Referensi<input id="imp_link_title" placeholder="Contoh: Video kondisi line"></label>
+        <label>URL Web / Path Jaringan<input id="imp_link_url" placeholder="https://... atau \\\\server\\folder"></label>
+        <div class="full"><button class="btn sm" onclick="addImprovementLink()">+ Tambah Link</button></div>
+        <div class="full">${improvementLinksMarkup(false)}</div>
+      </div>
+      <div style="margin-top:18px;padding-top:14px;border-top:1px solid var(--line)">
+        <h4 style="margin-bottom:10px">Ringkasan Pengajuan</h4>
+        <div class="out-grid">
+          <div class="out-kv"><small>Judul Issue</small><b>${esc(x.title||'-')}</b></div>
+          <div class="out-kv"><small>Departemen</small><b>${esc(x.department||'-')}</b></div>
+          <div class="out-kv"><small>Jenis</small><b>${esc(improvementTypeLabel(x.type))}</b></div>
+          <div class="out-kv"><small>Lampiran</small><b>${(x.attachments||[]).length} file · ${(x.links||[]).length} link</b></div>
+        </div>
+      </div>
+    </div>`;
+  }
+  $('#main').innerHTML=`
+    <div class="wiz-wrap">
+      <div class="wiz-head">
+        <div>
+          <span class="mode-pill input">PROSES INPUT · PENGAJUAN ISSUE</span>
+          <h2 style="margin-top:8px">${IISNEW?'Catat Issue Improvement Baru':'Edit Pengajuan Improvement'}</h2>
+          <p>Isi tahapan pengajuan di bawah ini untuk dikirimkan ke antrean review Tim PI.</p>
+        </div>
+        <span class="badge" style="background:${improvementStatusColor(x.status||'Baru')}">${esc(x.status||'Draft')}</span>
+      </div>
+      ${stepper}
+      ${body}
+      <div class="wiz-foot">
+        <button class="btn" onclick="${IMP_WIZ_STEP>1?`setImpWizStep(${IMP_WIZ_STEP-1})`:`go('${PREV_VIEW||'improvements'}')`}">${IMP_WIZ_STEP>1?'← Langkah Sebelumnya':'Batal'}</button>
+        ${!IISNEW?`<button class="btn" onclick="viewImprovement('${x.id}')">Lihat Tampilan Output</button>`:''}
+        ${IMP_WIZ_STEP<3?`<button class="btn pri" onclick="setImpWizStep(${IMP_WIZ_STEP+1})">Lanjut ke Langkah ${IMP_WIZ_STEP+1} →</button>`:`<button class="btn pri" onclick="saveImprovement()">Ajukan untuk Review PI</button>`}
+      </div>
+    </div>`;
+}
+function rImpReviewForm(){
+  if(!IDRAFT||!canReviewImprovement()){go('improvements');return;}
+  const x=IDRAFT;
   const opts=(values,value)=>values.map(v=>`<option value="${v[0]}" ${value===v[0]?'selected':''}>${v[1]}</option>`).join('');
   const statusOptions=['Baru','Review PI','Menunggu Data','Disetujui','Tidak Perlu Improvement'];
-  const history=(x.feedbackLog||[]).slice().reverse().map(h=>`<div class="logi"><b>${esc(h.by||'-')}</b> <small>${fmtDT(h.at)}</small><div>${esc(h.status||'')}</div><div>${esc(h.feedback||h.suggestion||h.reason||h.action||'-')}</div></div>`).join('')||'<div class="muted small">Belum ada feedback PI.</div>';
-  const report=canReview&&!IISNEW?`<div class="sec">Laporan dari Kontributor</div><div class="full"><b>Judul issue</b><p>${esc(x.title||'-')}</p><b>Departemen / pelapor</b><p>${esc(x.department||'-')} · ${esc(x.submittedBy||'-')}</p><b>Jenis improvement</b><p>${esc(improvementTypeLabel(x.type))}</p><b>Issue yang terjadi</b><p>${esc(x.issue||'-')}</p><b>Background / kondisi saat ini</b><p>${esc(x.background||'-')}</p><b>Purpose</b><p>${esc(x.purpose||'-')}</p><b>Goals</b><p>${esc(x.goals||'-')}</p>${x.savingMp?`<b>Saving MP</b><p>${esc(x.savingMp)}</p>`:''}${x.qualityMetric?`<b>Metrik kualitas</b><p>${esc(x.qualityMetric)}</p>`:''}</div>`:`<div class="sec">Informasi pelapor</div>${text('Judul issue *','title')}${text('Departemen *','department')}
-    <label>Jenis improvement<select onchange="IDRAFT.type=this.value" ${disabled}>${opts([['saving_mp','Saving MP'],['quality','Quality'],['efficiency','Efisiensi proses'],['other','Lainnya']],x.type)}</select></label><label>Nama pelapor<input value="${esc(x.submittedBy||ME)}" disabled></label>
-    ${area('Issue yang terjadi *','issue',3)}${area('Background / kondisi saat ini *','background',3)}${area('Purpose / alasan perlu ditangani *','purpose',2)}${area('Goals / hasil yang diharapkan *','goals',2)}
-    ${x.type==='saving_mp'?text('Estimasi saving manpower (contoh: 2 orang atau 30 menit/hari)','savingMp',true):''}${x.type==='quality'?text('Dampak / metrik kualitas (opsional)','qualityMetric',true):''}`;
-  const review=canReview?`<div class="sec">Keputusan dan feedback PI</div><label>Keputusan<select onchange="setImprovementDecision(this.value)">${opts([['Pending','Belum diputuskan'],['To Project','Proses improvement'],['Suggestion Only','Tidak diproses']],x.decision)}</select></label><label>Status review<select onchange="IDRAFT.status=this.value">${opts(statusOptions.map(s=>[s,s]),x.status)}</select></label>
-    ${text('PIC review PI (opsional)','piOwner',false,true)}${area('Feedback PI','piFeedback',3,true)}${x.decision==='Suggestion Only'?area('Suggestion / alternatif solusi','piSuggestion',3,true)+area('Alasan tidak dilanjutkan sebagai improvement','piReason',2,true):''}${area('Action yang disarankan','piAction',2,true)}`:
-    `<div class="sec">Feedback PI</div><div class="full"><b>${esc(x.status||'Baru')}</b>${x.piFeedback?`<p>${esc(x.piFeedback)}</p>`:''}${x.piSuggestion?`<p><b>Saran:</b> ${esc(x.piSuggestion)}</p>`:''}${x.piAction?`<p><b>Action:</b> ${esc(x.piAction)}</p>`:''}${x.piReason?`<p><b>Alasan:</b> ${esc(x.piReason)}</p>`:''}</div>`;
-  const convert=canReview&&x.decision==='To Project'&&!x.projectId?'<button class="btn pri" onclick="promoteImprovement()">Lanjut ke Project</button>':'';
-  $('#modal2').innerHTML=`<div class="ov"><div class="dlg wide"><div class="dh"><h3>${IISNEW?'Catat issue improvement':esc(x.title||'Improvement')}</h3><button class="x" onclick="closeM2()">✕</button></div><div class="db"><div class="fg">
-    ${report}
-    <div class="sec">Lampiran dan referensi</div>${canEditRequest?'<label class="full">Tambah file<input type="file" accept="image/png,image/jpeg,image/gif,image/webp,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.csv,.txt" multiple onchange="attachImprovementFiles(this)"><small class="hint" style="text-align:left">Gambar, PDF, dokumen Office, CSV, atau TXT. Maksimal 100 MB per file.</small></label>':''}<div class="full imp-attachments">${improvementAttachmentMarkup()}</div>
-    ${canEditRequest?`<label>Judul link<input id="imp_link_title" placeholder="Contoh: Video kondisi line"></label><label>Link web / path jaringan<input id="imp_link_url" placeholder="https://... atau \\\\server\\folder"></label><button class="btn sm" onclick="addImprovementLink()">+ Tambah link</button>`:''}<div class="full">${improvementLinksMarkup()}</div>
-    ${review}
-    ${x.projectId?`<div class="banner info full">Sudah dilanjutkan ke project <b>${esc((byId(x.projectId)||{}).code||'')}</b> · ${(byId(x.projectId)||{}).name?esc((byId(x.projectId)||{}).name):''}</div>`:''}
-    <div class="sec">Riwayat feedback</div><div class="full">${history}</div>
-  </div></div><div class="df"><button class="btn l" onclick="closeM2()">Tutup</button>${convert}${canEditRequest||canReview?`<button class="btn pri" onclick="saveImprovement()">${canReview?'Simpan keputusan PI':'Simpan laporan'}</button>`:''}</div></div></div>`;
-  if(!canEditRequest&&!canReview)$('#modal2').querySelectorAll('input,select,textarea').forEach(el=>{el.disabled=true;});
+  $('#main').innerHTML=`
+    <div class="wiz-wrap">
+      <div class="wiz-head">
+        <div>
+          <span class="mode-pill input">PROSES INPUT · KEPUTUSAN TIM PI</span>
+          <h2 style="margin-top:8px">Tinjauan &amp; Keputusan PI · ${esc(x.title)}</h2>
+          <p>Tinjau laporan dari <b>${esc(x.submittedBy||'-')} (${esc(x.department||'-')})</b> dan tentukan tindak lanjut improvement.</p>
+        </div>
+        <span class="badge" style="background:${improvementStatusColor(x.status)}">${esc(x.status)}</span>
+      </div>
+      <div class="out-section">
+        <h4>Ringkasan Laporan Kontributor (Read-Only)</h4>
+        <div class="out-grid">
+          <div class="out-kv"><small>Departemen</small><b>${esc(x.department||'-')}</b></div>
+          <div class="out-kv"><small>Pelapor</small><b>${esc(x.submittedBy||'-')}</b></div>
+          <div class="out-kv"><small>Jenis Improvement</small><b>${esc(improvementTypeLabel(x.type))}</b></div>
+          <div class="out-kv"><small>Tanggal Lapor</small><b>${fmtDT(x.submittedAt)}</b></div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;font-size:13px">
+          <div><b class="muted small">Issue:</b><div style="margin-top:3px;white-space:pre-wrap">${esc(x.issue||'-')}</div></div>
+          <div><b class="muted small">Background:</b><div style="margin-top:3px;white-space:pre-wrap">${esc(x.background||'-')}</div></div>
+          <div><b class="muted small">Purpose:</b><div style="margin-top:3px;white-space:pre-wrap">${esc(x.purpose||'-')}</div></div>
+          <div><b class="muted small">Goals:</b><div style="margin-top:3px;white-space:pre-wrap">${esc(x.goals||'-')}</div></div>
+        </div>
+      </div>
+      <div class="wiz-card">
+        <h4>Form Keputusan &amp; Feedback Tim PI</h4>
+        <div class="fg">
+          <label>Keputusan Tindak Lanjut<select onchange="setImprovementDecision(this.value)">${opts([['Pending','Belum diputuskan'],['To Project','Proses menjadi Project Improvement'],['Suggestion Only','Tidak diproses (Berikan Saran Alternatif)']],x.decision)}</select></label>
+          <label>Status Review<select onchange="IDRAFT.status=this.value">${opts(statusOptions.map(s=>[s,s]),x.status)}</select></label>
+          <label class="full">PIC Review Tim PI<input value="${esc(x.piOwner||ME)}" placeholder="Nama PIC PI yang meninjau" oninput="IDRAFT.piOwner=this.value"></label>
+          <label class="full">Feedback Analisa Tim PI *<textarea rows="3" placeholder="Tuliskan hasil analisa kelayakan oleh Tim PI..." oninput="IDRAFT.piFeedback=this.value">${esc(x.piFeedback||'')}</textarea></label>
+          ${x.decision==='Suggestion Only'?`
+            <label class="full">Suggestion / Alternatif Solusi *<textarea rows="3" placeholder="Saran tindakan tanpa perlu membuka project baru..." oninput="IDRAFT.piSuggestion=this.value">${esc(x.piSuggestion||'')}</textarea></label>
+            <label class="full">Alasan Tidak Dilanjutkan sebagai Project *<textarea rows="2" placeholder="Alasan mengapa issue cukup diselesaikan dengan saran alternatif..." oninput="IDRAFT.piReason=this.value">${esc(x.piReason||'')}</textarea></label>
+          `:''}
+          <label class="full">Action Plan / Langkah Berikutnya<textarea rows="2" placeholder="Rencana tindak lanjut yang perlu dilakukan..." oninput="IDRAFT.piAction=this.value">${esc(x.piAction||'')}</textarea></label>
+        </div>
+      </div>
+      <div class="wiz-foot">
+        <button class="btn" onclick="viewImprovement('${x.id}')">Kembali ke Detail Output</button>
+        ${x.decision==='To Project'&&!x.projectId?`<button class="btn" style="border-color:var(--ok);color:var(--ok)" onclick="promoteImprovement()">Simpan &amp; Konversi ke Project Baru</button>`:''}
+        <button class="btn pri" onclick="saveImprovement()">Simpan Keputusan PI</button>
+      </div>
+    </div>`;
 }
+function drawImprovementModal(){refreshImpView();}
 async function saveImprovement(){
   const x=IDRAFT;if(!x)return;
   if(!canEditImprovement()&&!canReviewImprovement()){toast('Anda tidak memiliki akses untuk mengubah improvement ini.');return;}
@@ -1151,7 +1675,7 @@ async function saveImprovement(){
   if(x.status==='Tidak Perlu Improvement'&&!x.piReason.trim()){toast('Isi alasan tidak dilanjutkan sebagai improvement.');return;}
   const now=Math.max(Date.now(),(x.updatedAt||0)+1);x.updatedAt=now;x.updatedBy=ME;
   if(IISNEW){x.submittedBy=canReviewImprovement()?(x.submittedBy.trim()||ME):ME;x.submittedAt=now;}
-  if(canReviewImprovement()&&IBASE){
+  if(canReviewImprovement()&&IBASE&&VIEW==='imp_review_form'){
     ['title','department','submittedBy','submittedAt','type','issue','background','purpose','goals','savingMp','qualityMetric','attachments','links'].forEach(k=>{x[k]=IBASE[k];});
   }else if(!canReviewImprovement()){
     const protectedFields=['status','decision','piOwner','piFeedback','piSuggestion','piAction','piReason','feedbackLog','projectId'];
@@ -1161,47 +1685,269 @@ async function saveImprovement(){
   const changedReview=canReviewImprovement()&&(!IBASE||['status','decision','piOwner','piFeedback','piSuggestion','piAction','piReason'].some(k=>String(IBASE[k]||'')!==String(x[k]||'')));
   if(changedReview)x.feedbackLog=(x.feedbackLog||[]).concat([{by:ME,at:now,status:x.status,decision:x.decision,feedback:x.piFeedback,suggestion:x.piSuggestion,action:x.piAction,reason:x.piReason}]);
   const index=DB.improvements.findIndex(v=>v.id===x.id);if(index<0)DB.improvements.push(x);else DB.improvements[index]=x;
-  closeM2();await persist();render();toast('Improvement tersimpan');
+  closeM2();await persist();viewImprovement(x.id);toast('Improvement tersimpan');
 }
 async function promoteImprovement(){
   if(!canReviewImprovement()){toast('Akun ini tidak memiliki akses untuk meneruskan improvement ke project.');return;}
   const x=IDRAFT;if(!x||x.decision!=='To Project'){toast('Pilih keputusan Lanjut ke Project terlebih dahulu.');return;}
-  if(x.projectId){go('list');const p=byId(x.projectId);if(p)openP(p.id);return;}
+  if(x.projectId){const p=byId(x.projectId);if(p)viewP(p.id);return;}
   const category=DB.settings.categories.find(c=>c.name.toLowerCase()==='improvement')?.name||DB.settings.categories[0]?.name||'Improvement';
   const template=(DB.settings.templates||[]).find(t=>t.category===category)|| (DB.settings.templates||[]).find(t=>/improvement/i.test(t.name));
   const project=normP({id:uid(),code:nextCode(),name:x.title,category,status:'Not Started',priority:'Medium',pic:x.submittedBy||ME,area:x.department,start:fd(today()),end:fd(addDays(today(),60)),desc:'Issue: '+x.issue+'\n\nBackground: '+x.background+'\n\nPurpose: '+x.purpose+'\n\nGoals: '+x.goals+'\n\nPI feedback: '+(x.piFeedback||'-')+'\n\nPI action: '+(x.piAction||'-'),stages:template?buildStages(template.stages,fd(today())):[],updatedAt:Date.now(),updatedBy:ME,log:[{by:ME,t:Date.now(),items:['Project dibuat dari improvement '+x.id]}]});
   applyAuto(project);DB.projects.push(project);x.projectId=project.id;x.status='Disetujui';x.updatedAt=Math.max(Date.now(),(x.updatedAt||0)+1);x.updatedBy=ME;x.feedbackLog=(x.feedbackLog||[]).concat([{by:ME,at:x.updatedAt,status:x.status,decision:'To Project',feedback:x.piFeedback,suggestion:x.piSuggestion,action:x.piAction,reason:x.piReason}]);
   const improvementIndex=DB.improvements.findIndex(v=>v.id===x.id);if(improvementIndex>=0)DB.improvements[improvementIndex]=x;
-  closeM2();await persist();go('list');toast('Improvement dilanjutkan menjadi '+project.code);
+  closeM2();await persist();viewP(project.id);toast('Improvement dilanjutkan menjadi '+project.code);
 }
 function printSaved(pid,oid){const p=byId(pid),o=p&&p.pos.find(x=>x.id===oid);if(o)openDoc(poHTML(o,p,true));}
 
-/* ================= MODAL PROJECT ================= */
-function openP(id,tab){const p=byId(id);if(!p)return;PROJECT_READ_ONLY=!canModifyProj(p);draft=JSON.parse(JSON.stringify(p));baseAt=p.updatedAt;isNew=false;TAB=tab||'info';SBASE='';drawModal();}
-function viewP(id,tab){const p=byId(id);if(!p)return;PROJECT_READ_ONLY=true;draft=JSON.parse(JSON.stringify(p));baseAt=p.updatedAt;isNew=false;TAB=tab||'info';SBASE='';drawModal();}
-function newP(cat){if(!canEdit()){toast('Akses Viewer hanya dapat melihat data');return;}PROJECT_READ_ONLY=false;draft=normP({id:uid(),code:nextCode(),category:cat||DB.settings.categories[0].name,start:fd(today()),end:fd(addDays(today(),60)),pic:ME,createdBy:ME});baseAt=0;isNew=true;TAB='info';SBASE='';drawModal();}
-function closeModal(){draft=null;PROJECT_READ_ONLY=false;STAGE_DOC_ID='';STAGE_DOC_VIEW=null;$('#modal').innerHTML='';$('#modal2').innerHTML='';PD=null;}
-function closeM2(){$('#modal2').innerHTML='';STAGE_DOC_ID='';STAGE_DOC_VIEW=null;PD=null;IDRAFT=null;IBASE=null;IISNEW=false;}
-function drawModal(){
-  const canMod=canEdit()&&!PROJECT_READ_ONLY&&(isNew||canModifyProj(draft));
-  const canDel=!isNew&&canDeleteProj(draft);
-  const footer=canMod?`${canDel?'<button class="btn bad l" onclick="delP()">Hapus</button>':''}<button class="btn" onclick="closeModal()">Batal</button><button class="btn pri" onclick="saveProject()">Simpan</button>`:'<button class="btn" onclick="closeModal()">Tutup</button>';
-  $('#modal').innerHTML=`<div class="ov"><div class="dlg">
-    <div class="dh"><h3>${isNew?'Project Baru':esc(draft.code)+' · '+esc(draft.name)}</h3><button class="x" onclick="closeModal()">✕</button></div>
-    <div class="tabs" id="tabs"></div><div class="db" id="mbody"></div>
-    <div class="df">${footer}</div></div></div>`;
-  drawTab();
+/* ================= PROJECT: PEMISAHAN OUTPUT (MONITORING) & INPUT (WIZARD) ================= */
+function openP(id,tab){viewP(id,tab);}
+function viewP(id,tab){
+  const p=byId(id);if(!p)return;
+  if(!['project_detail','project_form'].includes(VIEW))PREV_VIEW=VIEW;
+  PROJECT_READ_ONLY=true;
+  draft=JSON.parse(JSON.stringify(p));
+  baseAt=p.updatedAt;isNew=false;
+  DETAIL_TAB=tab||'stages';
+  TAB=tab||'info';SBASE='';
+  VIEW='project_detail';
+  render();
 }
-function setTab(t){TAB=t;drawTab();}
-function drawTab(){
-  const tabs=[['info','Info Project'],['stage','Stage ('+draft.stages.length+')'],['budget','Quotation & PO ('+quotes(draft).length+'/'+draft.pos.length+')'],['ms','Milestone ('+draft.milestones.length+')'],['log','Riwayat']];
-  $('#tabs').innerHTML=tabs.map(t=>`<button class="${TAB===t[0]?'on':''}" onclick="setTab('${t[0]}')">${t[1]}</button>`).join('');
-  $('#mbody').innerHTML=({info:tInfo,stage:tStage,budget:tBudget,ms:tMs,log:tLog})[TAB]();
-  if(!canEdit()||PROJECT_READ_ONLY){
-    $('#mbody').querySelectorAll('input,select,textarea').forEach(el=>{el.disabled=true;});
-    $('#mbody').querySelectorAll('button').forEach(el=>{if(!/openQ|openDoc|printSaved|viewStageDocs/.test(el.getAttribute('onclick')||''))el.disabled=true;});
+function editP(id,step){
+  const p=byId(id);if(!p)return;
+  if(!canEdit()||!canModifyProj(p)){toast('Akses hanya baca untuk project ini. Menampilkan halaman output.');viewP(id);return;}
+  if(!['project_detail','project_form'].includes(VIEW))PREV_VIEW=VIEW;
+  PROJECT_READ_ONLY=false;
+  draft=JSON.parse(JSON.stringify(p));
+  baseAt=p.updatedAt;isNew=false;
+  WIZ_STEP=step||1;
+  TAB=(['info','stage','budget','ms','info'])[WIZ_STEP-1]||'info';
+  SBASE='';
+  VIEW='project_form';
+  render();
+}
+function newP(cat){
+  if(!canEdit()){toast('Akses Viewer hanya dapat melihat data');return;}
+  if(!['project_detail','project_form'].includes(VIEW))PREV_VIEW=VIEW;
+  PROJECT_READ_ONLY=false;
+  draft=normP({id:uid(),code:nextCode(),category:cat||DB.settings.categories[0].name,start:fd(today()),end:fd(addDays(today(),60)),pic:ME,createdBy:ME});
+  baseAt=0;isNew=true;
+  WIZ_STEP=1;TAB='info';SBASE='';
+  VIEW='project_form';
+  render();
+}
+function closeModal(){STAGE_DOC_ID='';STAGE_DOC_VIEW=null;$('#modal').innerHTML='';$('#modal2').innerHTML='';PD=null;}
+function closeM2(){$('#modal2').innerHTML='';STAGE_DOC_ID='';STAGE_DOC_VIEW=null;PD=null;}
+function setDetailTab(t){DETAIL_TAB=t;render();}
+function setWizStep(n){
+  WIZ_STEP=Math.max(1,Math.min(5,n));
+  TAB=(['info','stage','budget','ms','info'])[WIZ_STEP-1]||'info';
+  render();
+}
+function drawModal(){render();}
+function setTab(t){
+  TAB=t;
+  if(VIEW==='project_form'){
+    const map={info:1,stage:2,budget:3,ms:4,log:5};
+    WIZ_STEP=map[t]||WIZ_STEP;
   }
-  if(TAB==='budget')updB();
+  render();
+}
+function drawTab(){
+  if(VIEW==='project_form'||VIEW==='project_detail'){render();}
+}
+function rProjectDetail(){
+  if(!draft){go(PREV_VIEW||'list');return;}
+  const current=byId(draft.id);
+  if(current&&!isNew)draft=JSON.parse(JSON.stringify(current));
+  const p=draft,st=effStatus(p),cs=curStage(p),bs=budgetState(p),ub=useBud(),canMod=canEdit()&&canModifyProj(p);
+  const stgStepper=p.stages.length?`<div class="wiz-stepper">${p.stages.map((s,idx)=>{
+    const e=stEff(s),cls=e==='Completed'?'done':e==='Delayed'?'delayed':e==='On Progress'?'active':'';
+    const sub=e==='Completed'?(s.af?'Selesai '+fmtDate(s.af):'Selesai'):e==='Delayed'?'Terlambat +'+stDev(s)+' hr':(s.pf?'Target '+fmtDate(s.pf):e);
+    return `<div class="wiz-node ${cls}" style="cursor:default"><div class="wiz-circle">${e==='Completed'?'✓':e==='Delayed'?'!':(idx+1)}</div><div class="wiz-label">${esc(s.name||'Stage '+(idx+1))}<br><span style="font-weight:400;font-size:10px">${esc(sub)}</span></div></div>`;
+  }).join('')}</div>`:`<div class="empty" style="padding:18px">Belum ada tahapan (stage) yang didefinisikan pada project ini.${canMod?` <button class="btn sm pri" style="margin-left:8px" onclick="editP('${p.id}',2)">+ Susun Stage Sekarang</button>`:''}</div>`;
+
+  const stgRows=p.stages.map((s,i)=>{
+    const e=stEff(s),dv=stDev(s);
+    const dtxt=e==='Delayed'?`<span style="color:var(--bad);font-weight:700">Terlambat +${dv} hr</span>`:dv===null?'<span class="muted">-</span>':dv>0?`<span style="color:var(--bad);font-weight:700">+${dv} hr</span>`:dv<0?`<span style="color:var(--ok);font-weight:700">${dv} hr</span>`:'<span style="color:var(--ok)">Tepat waktu</span>';
+    const docCount=(s.attachments||[]).length+(s.docLinks||[]).length;
+    return `<tr>
+      <td class="muted">${i+1}</td>
+      <td><b>${esc(s.name||'-')}</b></td>
+      <td>${esc(s.pic||p.pic||'-')}</td>
+      <td>${fmtDate(s.ps)} → ${fmtDate(s.pf)}</td>
+      <td>${s.as||s.af?`${fmtDate(s.as)} → ${fmtDate(s.af)}`:'<span class="muted">Belum mulai</span>'}</td>
+      <td>${badge(e)}</td>
+      <td>${dtxt}</td>
+      <td>${esc(s.note||'-')}</td>
+      <td class="r">${docCount?`<button class="btn sm" onclick="viewStageDocs('${p.id}','${s.id}')">Lihat Bukti (${docCount})</button>`:'<span class="muted small">-</span>'}</td>
+    </tr>`;
+  }).join('');
+
+  const qRows=quotes(p).map(q=>{
+    const hasPO=(p.pos||[]).some(o=>o.qid===q.id);
+    return `<tr>
+      <td><b>${esc(q.vendor||'-')}</b></td>
+      <td>${esc(q.no||'-')}</td>
+      <td class="r"><b>${poMoney(q.amount,q.currency)}</b></td>
+      <td>${fmtDate(q.date)}</td>
+      <td>${fmtDate(q.valid)}</td>
+      <td><span class="badge" style="background:${QCOL[q.status]}">${esc(q.status)}</span>${hasPO?' <span class="tag" style="background:#3b82f6">PO</span>':''}</td>
+      <td>${esc(q.note||'-')}</td>
+      <td class="r">${(q.file||q.link)?`<button class="btn sm" onclick="openQ('${p.id}','${q.id}')">Buka File</button>`:'-'}</td>
+    </tr>`;
+  }).join('');
+
+  const poRows=(p.pos||[]).map(o=>`<tr>
+    <td><b>${esc(o.no)}</b></td>
+    <td>${fmtDate(o.date)}</td>
+    <td>${esc(o.vendor||'-')}</td>
+    <td>${esc(o.qno||'-')}</td>
+    <td class="r"><b>${poMoney(poTotals(o).total,o.currency)}</b></td>
+    <td class="r"><button class="btn sm" onclick="openDoc(poHTML(getPO('${o.id}'),draft,true))">Cetak / PDF / Word</button></td>
+  </tr>`).join('');
+
+  const msRows=(p.milestones||[]).map(m=>`<tr>
+    <td style="width:40px">${m.done?'<span class="tag" style="background:#10b981">✓</span>':'<span class="tag" style="background:#64748b">•</span>'}</td>
+    <td><b>${esc(m.name||'-')}</b></td>
+    <td>${fmtDate(m.date)}</td>
+    <td>${m.done?'<span style="color:var(--ok);font-weight:700">Tercapai</span>':'<span class="muted">Menunggu</span>'}</td>
+  </tr>`).join('');
+
+  $('#main').innerHTML=`
+    <div class="wiz-wrap">
+      <div class="wiz-head">
+        <div>
+          <span class="mode-pill output">TAMPILAN OUTPUT · PEMANTAUAN PROSES &amp; STAGE</span>
+          <h2 style="margin-top:8px">${esc(p.code)} · ${esc(p.name)}</h2>
+          <p>${chip(p.category)} · PIC: <b>${esc(p.pic||'-')}</b> · Area/Line: <b>${esc(p.area||'-')}</b> · Diperbarui ${p.updatedAt?fmtDT(p.updatedAt):'-'} oleh ${esc(p.updatedBy||'-')}</p>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          ${badge(st)}
+          <button class="btn" onclick="go('${PREV_VIEW||'list'}')">← Kembali</button>
+          ${canMod?`<button class="btn" onclick="editP('${p.id}',2)">Update Stage</button><button class="btn pri" onclick="editP('${p.id}',1)">Buka Jendela Input / Edit →</button>`:''}
+        </div>
+      </div>
+
+      <div class="out-grid">
+        <div class="out-kv"><small>Progres Keseluruhan</small><b>${p.progress}%</b><div style="margin-top:4px"><span class="pbar" style="width:100%;margin:0"><div style="width:${p.progress}%"></div></span></div></div>
+        <div class="out-kv"><small>Tahap / Stage Saat Ini</small><b>${cs?esc(cs.txt):'Belum ada stage'}</b><span class="small muted">${cs?`Selesai ${cs.done} dari ${cs.total} stage`:'-'}</span></div>
+        <div class="out-kv"><small>Jadwal Plan Project</small><b>${fmtDate(p.start)} → ${fmtDate(p.end)}</b><span class="small muted">Prioritas: ${esc(p.priority||'Medium')}</span></div>
+        <div class="out-kv"><small>Vendor &amp; PO</small><b>${esc(p.vendor||'Belum dipilih')}</b><span class="small muted">${p.pos.length?p.pos.map(o=>o.no).join(', '):(p.po||'Belum ada PO')}</span></div>
+        ${ub?`<div class="out-kv"><small>Budget vs Komitmen</small><b style="color:${bs.color}">${bs.c.amt?moneyC(bs.c.amt):'-'}</b><span class="small muted">Budget: ${p.budget?moneyC(p.budget):'-'} (${bs.label})</span></div>`:''}
+      </div>
+
+      <div class="out-section">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px;flex-wrap:wrap">
+          <h4 style="margin:0">Pipeline Stage &amp; Tahapan Proses (${p.stages.length} Stage)</h4>
+          ${canMod?`<button class="btn sm pri" onclick="editP('${p.id}',2)">Update Actual / Bukti Stage</button>`:''}
+        </div>
+        ${stgStepper}
+        ${p.stages.length?`<div class="tw" style="margin-top:12px;border:1px solid var(--line);border-radius:10px"><table><thead><tr><th>#</th><th>Nama Stage</th><th>PIC</th><th>Plan (Mulai → Selesai)</th><th>Actual (Mulai → Selesai)</th><th>Status Output</th><th>Deviasi</th><th>Catatan</th><th class="r">Bukti / Dokumen</th></tr></thead><tbody>${stgRows}</tbody></table></div>`:''}
+      </div>
+
+      ${p.desc?`<div class="out-section"><h4>Deskripsi &amp; Konteks Project</h4><div style="font-size:13px;white-space:pre-wrap;line-height:1.6">${esc(p.desc)}</div></div>`:''}
+
+      <div class="grid c2">
+        <div class="out-section">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+            <h4 style="margin:0">Output Quotation (${quotes(p).length})</h4>
+            ${canMod?`<button class="btn sm" onclick="editP('${p.id}',3)">Kelola Quotation</button>`:''}
+          </div>
+          <div class="tw"><table><thead><tr><th>Vendor</th><th>No.</th><th class="r">Harga</th><th>Diterima</th><th>Valid</th><th>Status</th><th>Catatan</th><th class="r">File</th></tr></thead><tbody>${qRows||'<tr><td colspan="8" class="empty">Belum ada data quotation.</td></tr>'}</tbody></table></div>
+        </div>
+        <div class="out-section">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+            <h4 style="margin:0">Output Purchase Order (${p.pos.length})</h4>
+            ${canMod?`<button class="btn sm" onclick="editP('${p.id}',3)">Kelola PO</button>`:''}
+          </div>
+          <div class="tw"><table><thead><tr><th>No. PO</th><th>Tanggal</th><th>Vendor</th><th>Ref. Quote</th><th class="r">Total</th><th class="r">Dokumen PO</th></tr></thead><tbody>${poRows||'<tr><td colspan="6" class="empty">Belum ada PO terbit.</td></tr>'}</tbody></table></div>
+        </div>
+      </div>
+
+      <div class="grid c2">
+        <div class="out-section">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+            <h4 style="margin:0">Output Milestone (${p.milestones.length})</h4>
+            ${canMod?`<button class="btn sm" onclick="editP('${p.id}',4)">Update Milestone</button>`:''}
+          </div>
+          <div class="tw"><table><thead><tr><th></th><th>Milestone</th><th>Target Tanggal</th><th>Status</th></tr></thead><tbody>${msRows||'<tr><td colspan="4" class="empty">Belum ada milestone.</td></tr>'}</tbody></table></div>
+        </div>
+        <div class="out-section">
+          <h4 style="margin-bottom:10px">Riwayat Perubahan (Audit Trail)</h4>
+          <div style="max-height:260px;overflow:auto">${tLog()}</div>
+        </div>
+      </div>
+    </div>`;
+}
+function rProjectForm(){
+  if(!draft){go(PREV_VIEW||'list');return;}
+  const d=draft,canDel=!isNew&&canDeleteProj(d);
+  const steps=[
+    {n:1,label:'Informasi Header'},
+    {n:2,label:'Rencana & Update Stage'},
+    {n:3,label:'Quotation & PO'},
+    {n:4,label:'Milestone'},
+    {n:5,label:'Tinjau & Simpan'}
+  ];
+  const stepper=`<div class="wiz-step-count">Langkah ${WIZ_STEP} dari ${steps.length}</div><div class="wiz-stepper">${steps.map(s=>{
+    const cls=s.n<WIZ_STEP?'done':s.n===WIZ_STEP?'active':'';
+    return `<div class="wiz-node ${cls}" onclick="setWizStep(${s.n})"><div class="wiz-circle">${s.n<WIZ_STEP?'✓':s.n}</div><div class="wiz-label">${s.label}</div></div>`;
+  }).join('')}</div>`;
+
+  let body='';
+  if(WIZ_STEP===1){
+    body=`<div class="wiz-card"><h4>Langkah 1 · Informasi Header Project</h4>${tInfo()}</div>`;
+  }else if(WIZ_STEP===2){
+    body=`<div class="wiz-card"><h4>Langkah 2 · Input Plan, Actual &amp; Dokumentasi Stage</h4>${tStage()}</div>`;
+  }else if(WIZ_STEP===3){
+    body=`<div class="wiz-card"><h4>Langkah 3 · Input Penawaran Vendor (Quotation) &amp; Pembuatan PO</h4>${tBudget()}</div>`;
+  }else if(WIZ_STEP===4){
+    body=`<div class="wiz-card"><h4>Langkah 4 · Target Milestone Project</h4>${tMs()}</div>`;
+  }else{
+    applyAuto(d);
+    const cs=curStage(d),lq=lowQ(d),sq=selQ(d);
+    body=`<div class="wiz-card">
+      <h4>Langkah 5 · Tinjau Ringkasan Input Sebelum Disimpan</h4>
+      <p class="muted small" style="margin-top:-6px;margin-bottom:14px">Pastikan seluruh data input di bawah ini sudah sesuai sebelum disimpan ke database tim.</p>
+      <div class="out-grid">
+        <div class="out-kv"><small>Kode &amp; Nama Project</small><b>${esc(d.code)} · ${esc(d.name||'(Nama belum diisi)')}</b><span class="small muted">${esc(d.category)} · Prioritas ${esc(d.priority)}</span></div>
+        <div class="out-kv"><small>PIC &amp; Area</small><b>${esc(d.pic||'-')}</b><span class="small muted">Area/Line: ${esc(d.area||'-')}</span></div>
+        <div class="out-kv"><small>Status &amp; Progres</small><b>${esc(effStatus(d))} (${d.progress}%)</b><span class="small muted">${cs?`Stage aktif: ${esc(cs.txt)}`:'Tanpa stage'}</span></div>
+        <div class="out-kv"><small>Periode Project</small><b>${fmtDate(d.start)} → ${fmtDate(d.end)}</b><span class="small muted">${d.stages.length} stage · ${d.milestones.length} milestone</span></div>
+        <div class="out-kv"><small>Quotation &amp; Vendor</small><b>${quotes(d).length} Quotation</b><span class="small muted">${sq?`Terpilih: ${esc(sq.vendor)} (${poMoney(sq.amount,sq.currency)})`:lq?`Terendah: ${esc(lq.vendor)}`:'Belum ada quotation'}</span></div>
+        <div class="out-kv"><small>Purchase Order</small><b>${d.pos.length} PO</b><span class="small muted">${d.pos.length?d.pos.map(o=>o.no).join(', '):(d.po||'-')}</span></div>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">
+        <button class="btn sm" onclick="setWizStep(1)">Edit Header</button>
+        <button class="btn sm" onclick="setWizStep(2)">Edit Stage (${d.stages.length})</button>
+        <button class="btn sm" onclick="setWizStep(3)">Edit Quotation &amp; PO (${quotes(d).length}/${d.pos.length})</button>
+        <button class="btn sm" onclick="setWizStep(4)">Edit Milestone (${d.milestones.length})</button>
+      </div>
+    </div>`;
+  }
+
+  $('#main').innerHTML=`
+    <div class="wiz-wrap">
+      <div class="wiz-head">
+        <div>
+          <span class="mode-pill input">PROSES INPUT · WIZARD KONFIGURASI &amp; UPDATE</span>
+          <h2 style="margin-top:8px">${isNew?'Buat Project Baru':esc(d.code)+' · '+esc(d.name||'Project')}</h2>
+          <p>${isNew?'Lengkapi tahapan input project baru di bawah ini.':'Perbarui proses project melalui langkah terstruktur di bawah ini.'}</p>
+        </div>
+        <span class="badge" style="background:${SCOL[effStatus(d)]||'#64748b'}">${isNew?'Draft Baru':esc(effStatus(d))}</span>
+      </div>
+      ${stepper}
+      <div id="mbody">${body}</div>
+      <div class="wiz-foot">
+        ${canDel?`<button class="btn bad l" onclick="delP()">Hapus Project</button>`:''}
+        <button class="btn" onclick="${WIZ_STEP>1?`setWizStep(${WIZ_STEP-1})`:(isNew?`go('${PREV_VIEW||'list'}')`:`viewP('${d.id}')`)}">${WIZ_STEP>1?'← Kembali':'Batal'}</button>
+        ${!isNew?`<button class="btn" onclick="viewP('${d.id}')">Lihat Detail Output</button>`:''}
+        ${WIZ_STEP<5?`<button class="btn" onclick="setWizStep(${WIZ_STEP+1})">Langkah Berikutnya →</button>`:''}
+        <button class="btn pri" onclick="saveProject()">${isNew?'Simpan Project Baru':'Simpan Perubahan'}</button>
+      </div>
+    </div>`;
+  if(WIZ_STEP===3)updB();
 }
 function setD(k,v){draft[k]=v;}
 const inp=(l,k,type,extra)=>`<label>${l}<input type="${type||'text'}" value="${esc(draft[k])}" oninput="setD('${k}',this.value)" ${extra||''}></label>`;
@@ -1348,11 +2094,11 @@ function diffLog(o,n){
 async function saveProject(){
   if(!canEdit()){toast('Akses Viewer hanya dapat melihat data');return;}
   const d=draft;
-  if(!d.name.trim()){toast('Nama project wajib diisi');return;}
+  if(!d.name.trim()){setWizStep(1);toast('Nama project wajib diisi');return;}
   applyAuto(d);
-  if(!d.start||!d.end){toast('Tanggal mulai dan target wajib diisi');return;}
-  if(d.end<d.start){toast('Target selesai tidak boleh sebelum tanggal mulai');return;}
-  const bad=d.stages.find(s=>!s.name.trim());if(bad){TAB='stage';drawTab();toast('Ada stage tanpa nama. Isi nama atau hapus stage tersebut.');return;}
+  if(!d.start||!d.end){setWizStep(1);toast('Tanggal mulai dan target wajib diisi');return;}
+  if(d.end<d.start){setWizStep(1);toast('Target selesai tidak boleh sebelum tanggal mulai');return;}
+  const bad=d.stages.find(s=>!s.name.trim());if(bad){setWizStep(2);toast('Ada stage tanpa nama. Isi nama atau hapus stage tersebut.');return;}
   const cur=byId(d.id);
   if(!isNew&&cur&&cur.updatedAt!==baseAt){
     if(!confirm('Project ini baru saja diubah oleh '+(cur.updatedBy||'pengguna lain')+' ('+fmtDT(cur.updatedAt)+'). Simpan dan timpa perubahan tersebut?'))return;
@@ -1367,7 +2113,7 @@ async function saveProject(){
   d.updatedAt=Math.max(Date.now(),(cur?cur.updatedAt:0)+1);d.updatedBy=ME||'-';
   if(cur)DB.projects[DB.projects.indexOf(cur)]=d;else DB.projects.push(d);
   if(!DB.settings.categories.some(c=>c.name===d.category))DB.settings.categories.push({name:d.category,color:PALETTE[DB.settings.categories.length%PALETTE.length]});
-  closeModal();await persist();render();
+  closeModal();await persist();viewP(d.id);
   const dp=dupPOs();
   toast(dp.length?'Tersimpan, tetapi ada nomor PO ganda: '+dp.join(', ')+'. Perbaiki nomor PO tersebut.':(renum?'Tersimpan. Nomor PO diganti karena sudah dipakai: '+renum:'Tersimpan'));
 }
@@ -1375,7 +2121,7 @@ async function delP(){
   if(!canEdit()){toast('Akses Viewer hanya dapat melihat data');return;}
   if(!confirm('Hapus project "'+draft.name+'"? Tindakan ini juga berlaku untuk seluruh tim.'))return;
   const id=draft.id,old=byId(id);DB.projects=DB.projects.filter(p=>p.id!==id);DB.deleted[id]=Math.max(Date.now(),(old?old.updatedAt:0)+1);
-  closeModal();await persist();render();toast('Project dihapus');
+  closeModal();draft=null;await persist();go(PREV_VIEW||'list');toast('Project dihapus');
 }
 
 /* ================= STAGE (tab di form project) ================= */
@@ -2013,7 +2759,9 @@ async function backupNow(){try{const r=await api('/api/backup',{method:'POST'});
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){if($('#modal2').innerHTML){closeM2();return;}if($('#modal').innerHTML&&USER)closeModal();}});
 window.addEventListener&&window.addEventListener('focus',()=>{if(USER)syncNow().then(ch=>{if(ch)render();});});
 async function boot(){
-  document.documentElement.dataset.theme=localStorage.getItem('pt_theme')||'light';
+  const savedTheme=localStorage.getItem('pt_theme')||'dark';
+  document.documentElement.dataset.theme=savedTheme;
+  if($('#theme-toggle'))$('#theme-toggle').textContent=savedTheme==='dark'?'☀️':'🌙';
   applyLanguage();
   renderSync();
   try{const m=await api('/api/me');await enter(m);}

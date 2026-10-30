@@ -20,8 +20,6 @@ echo   Target: https://github.com/ayuyozy-ai/Project-Tracking-PIE-Team.git
 echo ========================================================
 echo.
 
-"%GIT_EXE%" config credential.helper manager
-
 REM Cek apakah ada perubahan file baru yang belum di-commit
 "%GIT_EXE%" status -s
 echo.

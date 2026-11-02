@@ -1,0 +1,3143 @@
+'use strict';
+/* ================= util ================= */
+const $=s=>document.querySelector(s);
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+/* Helper functions for static/template delegated handlers (Step B) */
+function toggleSidebar(){ document.body.classList.toggle('sb-open'); }
+function setFq(v){ F.q=v; render(); }
+function setFcat(v){ F.cat=v; render(); }
+function setFstatus(v){ F.status=v; render(); }
+function setFpic(v){ F.pic=v; render(); }
+function setGgroup(v){ GGROUP=v; render(); }
+function setGcmp(v){ GCMP=v; render(); }
+function setImpq(v){ IMPQ=v; rImprovements(); }
+function setImpfilter(v){ IMPFILTER=v; rImprovements(); }
+function setIDraftField(k,v){ if(IDRAFT) IDRAFT[k]=v; }
+function setIDraftType(v){ if(IDRAFT){ IDRAFT.type=v; render(); } }
+function setPDField(k,v){ if(PD) PD[k]=v; }
+function setPDCurrency(v){ if(PD){ PD.currency=v; updPOT(); } }
+function setPDTax(v){ if(PD){ PD.tax=Number(v)||0; updPOT(); } }
+function setPDUseSig(v){ if(PD) PD.useSig=v; }
+function setPOSField(k,v){ if(POS) POS[k]=v; }
+function setPOSPattern(v){ if(POS){ POS.pattern=v; const el=$('#pnex'); if(el) el.textContent=nextPONo(v); } }
+function setPOSSigDefault(v){ if(POS) POS.sigDefault=v; }
+function setPOSSignField(i,k,v){ if(POS&&POS.sign&&POS.sign[i]) POS.sign[i][k]=v; }
+function clearPOSSignImg(i){ if(POS&&POS.sign&&POS.sign[i]) POS.sign[i].img=''; drawPOS(); }
+function clearPOSLogo(){ if(POS) POS.logo=''; drawPOS(); }
+function selectTpl(i){ TSEL=i; drawTpl(); }
+function tplSDays(i,v){ tplS(i,'days',v); drawTpl(); }
+function tplSPar(i,v){ tplS(i,'par',v); drawTpl(); }
+function setTPLField(k,v){ if(TPL&&TPL[TSEL]) TPL[TSEL][k]=v; }
+function setCDColor(i,v){ if(CD&&CD[i]) CD[i].color=v; }
+function setCDName(i,v){ if(CD&&CD[i]) CD[i].name=v; }
+function setDChange(k,v){ setD(k,v); if(k==='status') onStat(); }
+function setDescField(v){ setD('desc',v); }
+function setSBaseVal(v){ SBASE=v; }
+function printPDDoc(){ openDoc(poHTML(PD,draft,true)); }
+function printSamplePODoc(){ openDoc(poHTML(samplePO(POS),null,false,POS)); }
+function handleDocLinkKey(e){ if(e&&e.key==='Enter'){ if(e.preventDefault) e.preventDefault(); addStageDocLink(); } }
+function handleSetupKey(e){ if(e&&e.key==='Enter') doSetup(); }
+function handleLoginKey(e){ if(e&&e.key==='Enter') doLogin(); }
+
+/* Deskriptor event untuk atribut data-on-*: JSON ["namaFungsi", arg...] yang di-escape; dijalankan oleh ptDispatch (tanpa inline handler / eval). */
+const ea=d=>esc(JSON.stringify(d));
+function ptStop(e){ if(e&&e.stopPropagation) e.stopPropagation(); }
+function openStageDocsEdit(id){ PROJECT_READ_ONLY=false; openStageDocs(id); }
+function openPODoc(id, auto){ openDoc(poHTML(getPO(id), draft, auto)); }
+function draftFocusNum(k, el){ el.value=draft[k]||''; }
+function draftBlurNum(k, el){ el.value=draft[k]?fmtNum(draft[k]):''; }
+function qFocusAmount(id, el){ el.value=getQ(id).amount||''; }
+function qBlurAmount(id, el){ const a=getQ(id).amount; el.value=a?fmtNum(a):''; }
+
+function ptDispatch(e, evType){
+  let el = e.target;
+  const attr = 'data-on-' + evType;
+  while(el && el !== document && el !== window){
+    if(el.hasAttribute && el.hasAttribute(attr)){
+      const raw = el.getAttribute(attr);
+      let d;
+      try { d = JSON.parse(raw); } catch(err){ break; }
+      if(Array.isArray(d) && d.length > 0){
+        let fnName = d[0];
+        let stop = false;
+        if(typeof fnName === 'string' && fnName.startsWith('!')){
+          stop = true;
+          fnName = fnName.slice(1);
+        }
+        if(stop && e.stopPropagation) e.stopPropagation();
+        const fn = typeof window[fnName] === 'function' ? window[fnName] : (typeof globalThis[fnName] === 'function' ? globalThis[fnName] : null);
+        if(fn){
+          let args = d.slice(1).map(a => {
+            if(a === '@value') return el.value;
+            if(a === '@checked') return el.checked;
+            if(a === '@el') return el;
+            return a;
+          });
+          args = args.map(a => a === "@event" ? e : a); fn.apply(el, args);
+        }
+      }
+      break;
+    }
+    el = el.parentElement || el.parentNode;
+  }
+}
+const DAY=864e5;
+let APP_LANG=['id','en','ko'].includes(localStorage.getItem('pt_language'))?localStorage.getItem('pt_language'):'id';
+function today(){const d=new Date();d.setHours(0,0,0,0);return d;}
+function pd(s){if(!s)return null;const a=String(s).split('-').map(Number);return new Date(a[0],a[1]-1,a[2]);}
+function fd(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+function addDays(d,n){const x=new Date(d);x.setDate(x.getDate()+n);return x;}
+function diffDays(a,b){return Math.round((b-a)/DAY);}
+function fmtDate(s){const d=pd(s),locale={id:'id-ID',en:'en-US',ko:'ko-KR'}[APP_LANG];return d?d.toLocaleDateString(locale,{day:'2-digit',month:'short',year:'numeric'}):'-';}
+function fmtDT(ts){const locale={id:'id-ID',en:'en-US',ko:'ko-KR'}[APP_LANG];return new Date(ts).toLocaleString(locale,{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});}
+const SYMS={IDR:'Rp',USD:'US$',EUR:'€',JPY:'¥',SGD:'S$',KRW:'₩',CNY:'CN¥',THB:'฿',GBP:'£',AUD:'A$',MYR:'RM',INR:'₹'};
+const sym=()=>SYMS[DB.settings.currency]||DB.settings.currency;
+const loc=()=>APP_LANG==='ko'?'ko-KR':(DB.settings.currency==='IDR'&&APP_LANG==='id'?'id-ID':'en-US');
+const fmtNum=n=>Number(n||0).toLocaleString(loc());
+const money=n=>sym()+' '+fmtNum(n);
+function poMoney(n,currency){const code=currency||DB.settings.currency||'IDR';let value;try{value=Number(n||0).toLocaleString(code==='IDR'?'id-ID':'en-US');}catch(e){value=fmtNum(n);}return (SYMS[code]||code)+' '+value;}
+function moneyC(n){n=Number(n||0);let s;try{s=new Intl.NumberFormat(loc(),{notation:'compact',maximumFractionDigits:1}).format(n);}catch(e){s=fmtNum(n);}return sym()+' '+s;}
+function quoteMoneyC(n,currency){n=Number(n||0);const code=currency||DB.settings.currency||'IDR';let s;try{s=new Intl.NumberFormat(code==='IDR'&&APP_LANG==='id'?'id-ID':({en:'en-US',ko:'ko-KR'}[APP_LANG]||'en-US'),{notation:'compact',maximumFractionDigits:1}).format(n);}catch(e){s=fmtNum(n);}return (SYMS[code]||code)+' '+s;}
+const parseNum=s=>Number(String(s).replace(/[^\d]/g,''))||0;
+const csvCell=v=>'"'+String(v==null?'':v).replace(/"/g,'""')+'"';
+
+const LANG_TEXT={
+  'Dashboard':{en:'Dashboard',ko:'대시보드'},
+  'Gantt Chart':{en:'Gantt Chart',ko:'간트 차트'},
+  'Daftar Project':{en:'Project List',ko:'프로젝트 목록'},
+  'Quotation & PO':{en:'Quotations & POs',ko:'견적 및 발주서'},
+  'Pengaturan':{en:'Settings',ko:'설정'},
+  'Pengaturan Akun':{en:'Account Settings',ko:'계정 설정'},
+  'Keluar':{en:'Log out',ko:'로그아웃'},
+  'Toggle Menu':{en:'Toggle Menu',ko:'메뉴 열기/닫기'},
+  'Ubah Tema Terang / Gelap':{en:'Toggle Light / Dark Theme',ko:'라이트 / 다크 테마 전환'},
+  'Bahasa aplikasi':{en:'Application language',ko:'애플리케이션 언어'},
+  '+ Project':{en:'+ Project',ko:'+ 프로젝트'},
+  '+ Project Baru':{en:'+ New Project',ko:'+ 신규 프로젝트'},
+  'Cari project, vendor, PIC, No. PO, stage...':{en:'Search projects, vendors, owners, PO numbers, stages...',ko:'프로젝트, 공급업체, 담당자, 발주 번호, 단계 검색...'},
+  'Reset filter':{en:'Reset filters',ko:'필터 초기화'},
+  'Semua kategori':{en:'All categories',ko:'모든 분류'},
+  'Semua klasifikasi':{en:'All categories',ko:'모든 분류'},
+  'Semua status':{en:'All statuses',ko:'모든 상태'},
+  'Semua PIC':{en:'All owners',ko:'모든 담당자'},
+  'Total Project':{en:'Total Projects',ko:'전체 프로젝트'},
+  'Total Project Saya':{en:'My Total Projects',ko:'내 전체 프로젝트'},
+  'Sedang Berjalan':{en:'In Progress',ko:'진행 중'},
+  'Melewati jadwal target':{en:'Past target schedule',ko:'목표 일정 초과'},
+  'Selesai':{en:'Completed',ko:'완료'},
+  'Selesai:':{en:'End:',ko:'종료:'},
+  'Mulai:':{en:'Start:',ko:'시작:'},
+  'Completed 100%':{en:'Completed 100%',ko:'100% 완료'},
+  'Rata-rata progres':{en:'Average progress',ko:'평균 진행률'},
+  'Stage terlambat':{en:'Overdue stages',ko:'지연 단계'},
+  'Stage selesai':{en:'Stages completed',ko:'완료 단계'},
+  'Tahap:':{en:'Current stage:',ko:'현재 단계:'},
+  'selesai':{en:'completed',ko:'완료'},
+  'stage terlambat':{en:'overdue stage',ko:'지연 단계'},
+  'Quotation masuk':{en:'Quotations received',ko:'접수된 견적'},
+  'PO terbit':{en:'POs issued',ko:'발행된 발주서'},
+  'project belum ada quotation':{en:'projects have no quotations',ko:'개 프로젝트에 견적이 없습니다'},
+  'quotation terpilih belum di-PO':{en:'selected quotations have no PO yet',ko:'선정된 견적에 발주서가 없습니다'},
+  'Status Project':{en:'Project Status',ko:'프로젝트 상태'},
+  'Klasifikasi Project':{en:'Project Categories',ko:'프로젝트 분류'},
+  'Perlu Perhatian':{en:'Needs Attention',ko:'확인 필요'},
+  'Improvement masuk':{en:'Incoming Improvements',ko:'접수된 개선 제안'},
+  'baru':{en:'new',ko:'신규'},
+  'Harian':{en:'Daily',ko:'일간'},
+  'Mingguan':{en:'Weekly',ko:'주간'},
+  'Bulanan':{en:'Monthly',ko:'월간'},
+  'Prioritas Harian':{en:'Daily Priorities',ko:'오늘의 우선순위'},
+  'Prioritas Mingguan':{en:'Weekly Priorities',ko:'이번 주 우선순위'},
+  'Prioritas Bulanan':{en:'Monthly Priorities',ko:'이번 달 우선순위'},
+  'Tidak ada prioritas terjadwal pada periode ini.':{en:'No scheduled priorities for this period.',ko:'이 기간에 예정된 우선순위 항목이 없습니다.'},
+  'Hari ini':{en:'Today',ko:'오늘'},
+  'Minggu ini':{en:'This week',ko:'이번 주'},
+  'Bulan ini':{en:'This month',ko:'이번 달'},
+  'Sembunyikan daftar':{en:'Hide list',ko:'목록 숨기기'},
+  'Tampilkan daftar':{en:'Show list',ko:'목록 표시'},
+  'Target project':{en:'Project target',ko:'프로젝트 목표일'},
+  'BERISIKO':{en:'AT RISK',ko:'위험'},
+  'EXPIRED':{en:'EXPIRED',ko:'만료됨'},
+  'GANDA':{en:'DUPLICATE',ko:'중복'},
+  'Aman':{en:'Within budget',ko:'예산 이내'},
+  'Over budget':{en:'Over budget',ko:'예산 초과'},
+  'Sisa budget':{en:'Remaining budget',ko:'잔여 예산'},
+  'Status budget':{en:'Budget status',ko:'예산 상태'},
+  'Belum ada biaya':{en:'No cost recorded',ko:'비용 미입력'},
+  'Ada biaya (tanpa budget)':{en:'Cost recorded (no budget)',ko:'비용 입력됨 (예산 미설정)'},
+  'Aktual/PO':{en:'Actual/PO',ko:'실적/PO'},
+  'Quotation terpilih':{en:'Selected quotation',ko:'선정된 견적'},
+  'Quotation terendah':{en:'Lowest quotation',ko:'최저가 견적'},
+  'Jumlah quotation':{en:'Total quotations',ko:'견적 수'},
+  'Budget (opsional)':{en:'Budget (optional)',ko:'예산 (선택 사항)'},
+  'Nilai Aktual / PO':{en:'Actual / PO Value',ko:'실적 / 발주 금액'},
+  'Vendor Utama':{en:'Primary Vendor',ko:'주 공급업체'},
+  'Vendor utama':{en:'Primary vendor',ko:'주 공급업체'},
+  'vendor belum dipilih':{en:'no vendor selected',ko:'공급업체 미선정'},
+  'Belum dipilih':{en:'Not selected yet',ko:'미선정'},
+  'Belum ada PO':{en:'No PO yet',ko:'발주서 없음'},
+  'Belum adaPO':{en:'No PO yet',ko:'발주서 없음'},
+  'Belum ada PO terbit.':{en:'No POs issued yet.',ko:'발행된 발주서가 없습니다.'},
+  'No. PO (isi manual bila PO dibuat di luar aplikasi)':{en:'PO No. (enter manually if created outside the app)',ko:'발주 번호 (외부 발행 시 직접 입력)'},
+  'Harga Quotation':{en:'Quotation Price',ko:'견적 금액'},
+  'Link (SharePoint / URL / path jaringan)':{en:'Link (SharePoint / URL / network path)',ko:'링크 (SharePoint / URL / 네트워크 경로)'},
+  'https://... atau \\\\server\\folder\\file.pdf':{en:'https://... or \\\\server\\folder\\file.pdf',ko:'https://... 또는 \\\\server\\folder\\file.pdf'},
+  'Tidak ada file':{en:'No file attached',ko:'파일 없음'},
+  'File:':{en:'File:',ko:'파일:'},
+  'Hapus quotation':{en:'Delete quotation',ko:'견적 삭제'},
+  '✓ Pilih Quotation':{en:'✓ Select Quotation',ko:'✓ 견적 선정'},
+  '↺ Batalkan Terpilih':{en:'↺ Unselect Quotation',ko:'↺ 선정 취소'},
+  '↺ Batalkan':{en:'↺ Revert',ko:'↺ 취소'},
+  'Kembalikan status quotation ke semula':{en:'Revert quotation status to previous state',ko:'견적 상태를 이전 상태로 되돌리기'},
+  'Review':{en:'In Review',ko:'검토 중'},
+  'Ditolak':{en:'Rejected',ko:'반려됨'},
+  'Lihat selengkapnya':{en:'Show more',ko:'더 보기'},
+  'Mata uang berbeda, harga tidak dibandingkan':{en:'Different currencies; prices not compared',ko:'통화가 달라 가격을 비교하지 않음'},
+  'Kelola Quotation & PO':{en:'Manage Quotations & POs',ko:'견적 및 발주 관리'},
+  '+ Kelola Quotation':{en:'+ Manage Quotations',ko:'+ 견적 관리'},
+  'Kelola PO':{en:'Manage POs',ko:'발주서 관리'},
+  'Ref. Quote':{en:'Quote Ref.',ko:'견적 참조'},
+  'No.':{en:'No.',ko:'번호'},
+  'Berlaku':{en:'Valid until',ko:'유효 기간'},
+  'Buka File':{en:'Open File',ko:'파일 열기'},
+  'Improvement lintas departemen':{en:'Cross-department improvements',ko:'부서 간 개선 제안'},
+  'Usulan perbaikan lintas departemen, status tinjauan Tim PI, dan tindak lanjut project.':{en:'Cross-department improvement proposals, PI review status, and project follow-ups.',ko:'부서 간 개선 제안, PI팀 검토 현황 및 프로젝트 후속 조치.'},
+  'Catat masalah, konteks, tujuan, lalu tindak lanjut dan feedback PI.':{en:'Record the issue, context, goals, and PI follow-up.',ko:'문제, 배경, 목표 및 PI 후속 조치를 기록합니다.'},
+  '+ Catat issue':{en:'+ Submit issue',ko:'+ 이슈 등록'},
+  '+ Ajukan Improvement':{en:'+ Submit Improvement',ko:'+ 개선 과제 등록'},
+  'Cari issue, departemen, pelapor...':{en:'Search issues, departments, submitters...',ko:'이슈, 부서, 제출자 검색...'},
+  'Cari judul, departemen, pelapor...':{en:'Search title, department, submitter...',ko:'제목, 부서, 제출자 검색...'},
+  'Issue':{en:'Issue',ko:'이슈'},
+  'Baru':{en:'New',ko:'신규'},
+  'Review PI':{en:'PI Review',ko:'PI 검토'},
+  'Menunggu Data':{en:'Waiting for Information',ko:'정보 대기'},
+  'Disetujui':{en:'Approved',ko:'승인'},
+  'Tidak Perlu Improvement':{en:'No Improvement Needed',ko:'개선 불필요'},
+  'Menunggu tinjauan':{en:'Awaiting review',ko:'검토 대기 중'},
+  'Sedang ditinjau':{en:'Under review',ko:'검토 진행 중'},
+  'Lanjut ke project':{en:'Proceed to project',ko:'프로젝트로 진행'},
+  'Saran Alternatif':{en:'Alternative Suggestion',ko:'대안 제시'},
+  'Saran Alternatif (Tanpa Project)':{en:'Alternative Suggestion (No Project)',ko:'대안 제시 (프로젝트 미생성)'},
+  'Solusi langsung':{en:'Direct solution',ko:'직접 해결'},
+  'Tinjau PI':{en:'PI Review',ko:'PI 검토'},
+  'Belum ada usulan improvement.':{en:'No improvement proposals yet.',ko:'등록된 개선 제안이 없습니다.'},
+  'Antrean Perlu Ditinjau (Tim PI)':{en:'PI Review Queue (PI Team)',ko:'PI팀 검토 대기열'},
+  'Daftar pengajuan improvement dari kontributor yang memerlukan analisa, keputusan, atau konversi ke Project oleh Tim PI.':{en:'Contributor improvement proposals awaiting analysis, decision, or project conversion by the PI Team.',ko:'PI팀의 분석, 결정 또는 프로젝트 전환이 필요한 기여자 개선 제안 목록입니다.'},
+  'Issue Baru':{en:'New Issues',ko:'신규 이슈'},
+  'Belum direview':{en:'Not reviewed yet',ko:'미검토'},
+  'Dalam Review PI':{en:'In PI Review',ko:'PI 검토 중'},
+  'Perlu kelengkapan kontributor':{en:'Needs contributor details',ko:'추가 정보 필요'},
+  'Telah Diputuskan':{en:'Decided',ko:'결정 완료'},
+  'Disetujui / Saran alternatif':{en:'Approved / Alternative suggestion',ko:'승인 / 대안 제시'},
+  'Lihat Detail':{en:'View Details',ko:'상세 보기'},
+  'Buka Detail':{en:'Open Details',ko:'상세 열기'},
+  'Tinjau & Putuskan':{en:'Review & Decide',ko:'검토 및 결정'},
+  'Semua pengajuan improvement sudah ditinjau!':{en:'All improvement proposals have been reviewed!',ko:'모든 개선 제안 검토가 완료되었습니다!'},
+  'Saving MP':{en:'Manpower Savings',ko:'인력 절감'},
+  'Quality':{en:'Quality',ko:'품질 개선'},
+  'Efisiensi proses':{en:'Process Efficiency',ko:'공정 효율화'},
+  'Lainnya':{en:'Other',ko:'기타'},
+  'RINGKASAN & STATUS IMPROVEMENT':{en:'IMPROVEMENT SUMMARY & STATUS',ko:'개선 과제 요약 및 상태'},
+  'Departemen':{en:'Department',ko:'부서'},
+  'Pelapor':{en:'Submitter',ko:'제출자'},
+  'Jenis Improvement':{en:'Improvement Type',ko:'개선 유형'},
+  'Jenis':{en:'Type',ko:'유형'},
+  'PIC Review PI':{en:'PI Reviewer',ko:'PI 검토 담당자'},
+  'Belum ditentukan':{en:'Not assigned yet',ko:'미지정'},
+  'Target Saving Manpower':{en:'Target Manpower Savings',ko:'목표 인력 절감'},
+  'Metrik Kualitas':{en:'Quality Metric',ko:'품질 지표'},
+  'Edit Pengajuan':{en:'Edit Proposal',ko:'제안 수정'},
+  'Tinjau & Keputusan PI':{en:'PI Review & Decision',ko:'PI 검토 및 결정'},
+  'Konversi ke Project Baru':{en:'Convert to New Project',ko:'신규 프로젝트로 전환'},
+  'Simpan & Konversi ke Project Baru':{en:'Save & Convert to New Project',ko:'저장 및 신규 프로젝트로 전환'},
+  'Tahapan Proses Improvement':{en:'Improvement Process Stages',ko:'개선 프로세스 단계'},
+  'Diajukan Kontributor':{en:'Submitted by Contributor',ko:'기여자 제출 완료'},
+  'Tinjauan Tim PI':{en:'PI Team Review',ko:'PI팀 검토'},
+  'Analisa kelayakan':{en:'Feasibility analysis',ko:'타당성 분석'},
+  'Keputusan PI':{en:'PI Decision',ko:'PI 결정'},
+  'Disetujui ke Project':{en:'Approved for Project',ko:'프로젝트 전환 승인'},
+  'Menunggu keputusan':{en:'Awaiting decision',ko:'결정 대기 중'},
+  'Tindak Lanjut Project':{en:'Project Follow-up',ko:'프로젝트 후속 조치'},
+  'Belum dikonversi':{en:'Not converted yet',ko:'미전환'},
+  '1. Rincian Masalah & Tujuan':{en:'1. Issue Details & Objectives',ko:'1. 문제 상세 및 목표'},
+  'Kendala / Issue yang Terjadi':{en:'Issue / Problem Description',ko:'발생한 문제 / 이슈'},
+  'Kondisi Saat Ini (Background)':{en:'Current Condition (Background)',ko:'현재 상태 (배경)'},
+  'Alasan Perlu Ditangani (Purpose)':{en:'Reason for Action (Purpose)',ko:'추진 사유 (목적)'},
+  'Hasil yang Diharapkan (Goals)':{en:'Expected Outcome (Goals)',ko:'기대 효과 (목표)'},
+  '2. Hasil Tinjauan & Keputusan Tim PI':{en:'2. PI Team Review & Decision',ko:'2. PI팀 검토 결과 및 결정'},
+  'Status & Keputusan':{en:'Status & Decision',ko:'상태 및 결정'},
+  'Proses menjadi Project Improvement':{en:'Convert into Improvement Project',ko:'개선 프로젝트로 진행'},
+  'Belum Diputuskan':{en:'Undecided',ko:'미결정'},
+  'Feedback Tim PI':{en:'PI Team Feedback',ko:'PI팀 피드백'},
+  'Belum ada feedback dari Tim PI.':{en:'No feedback from the PI Team yet.',ko:'아직 PI팀 피드백이 없습니다.'},
+  'Action Plan yang Disarankan':{en:'Recommended Action Plan',ko:'권장 실행 계획'},
+  'Saran / Solusi Alternatif':{en:'Alternative Suggestion / Solution',ko:'대안 / 해결책'},
+  'Alasan Tidak Dilanjutkan ke Project':{en:'Reason Not Converted to Project',ko:'프로젝트 미전환 사유'},
+  'Lampiran & Referensi':{en:'Attachments & References',ko:'첨부 파일 및 참고 자료'},
+  'Riwayat Feedback & Audit Review':{en:'Feedback & Review History',ko:'피드백 및 검토 이력'},
+  'Belum ada riwayat keputusan PI.':{en:'No PI decision history yet.',ko:'PI 결정 이력이 없습니다.'},
+  'FORM PENGAJUAN IMPROVEMENT':{en:'IMPROVEMENT SUBMISSION FORM',ko:'개선 과제 제출 양식'},
+  'Ajukan Improvement Baru':{en:'Submit New Improvement',ko:'신규 개선 과제 제출'},
+  'Edit Usulan Improvement':{en:'Edit Improvement Proposal',ko:'개선 제안 수정'},
+  'Lengkapi 3 langkah singkat di bawah ini untuk mengirimkan usulan ke Tim PI.':{en:'Complete the 3 short steps below to submit your proposal to the PI Team.',ko:'아래 3단계를 작성하여 PI팀에 개선 제안을 제출하세요.'},
+  'Informasi Pelapor':{en:'Submitter Info',ko:'제출자 정보'},
+  'Analisa Masalah & Goals':{en:'Issue Analysis & Goals',ko:'문제 분석 및 목표'},
+  'Lampiran & Kirim':{en:'Attachments & Submit',ko:'첨부 및 제출'},
+  'Langkah 1 · Identitas Issue & Departemen Pelapor':{en:'Step 1 · Issue Identity & Submitting Department',ko:'1단계 · 이슈 정보 및 제출 부서'},
+  'Judul Issue Improvement *':{en:'Improvement Issue Title *',ko:'개선 이슈 제목 *'},
+  'Judul Issue':{en:'Issue Title',ko:'이슈 제목'},
+  'Departemen Pengaju *':{en:'Submitting Department *',ko:'제출 부서 *'},
+  'Nama Pelapor':{en:'Submitter Name',ko:'제출자 이름'},
+  'Estimasi Saving Manpower':{en:'Estimated Manpower Savings',ko:'예상 인력 절감'},
+  'Dampak / Metrik Kualitas':{en:'Quality Impact / Metric',ko:'품질 영향 / 지표'},
+  'Contoh: Otomasi penimbangan bahan kemas line 3':{en:'Example: Automated packaging weighing on Line 3',ko:'예: 3라인 포장재 자동 계량 시스템'},
+  'Contoh: Production / QAC / Filling':{en:'Example: Production / QAC / Filling',ko:'예: 생산 / QAC / 충진'},
+  'Contoh: 2 orang atau 45 menit/shift':{en:'Example: 2 operators or 45 mins/shift',ko:'예: 작업자 2명 또는 교대당 45분'},
+  'Contoh: Menurunkan defect rate dari 2% ke 0.3%':{en:'Example: Reduce defect rate from 2% to 0.3%',ko:'예: 불량률을 2%에서 0.3%로 감소'},
+  'Langkah 2 · Detail Masalah, Kondisi Saat Ini & Target':{en:'Step 2 · Issue Details, Current Condition & Target',ko:'2단계 · 문제 상세, 현재 상태 및 목표'},
+  'Issue yang Terjadi *':{en:'Issue Description *',ko:'발생한 문제 *'},
+  'Background / Kondisi Saat Ini *':{en:'Background / Current Condition *',ko:'배경 / 현재 상태 *'},
+  'Purpose / Alasan Perlu Ditangani *':{en:'Purpose / Reason for Action *',ko:'목적 / 추진 사유 *'},
+  'Goals / Hasil Akhir yang Diharapkan *':{en:'Goals / Expected Outcome *',ko:'목표 / 기대 결과 *'},
+  'Jelaskan kendala utama yang terjadi di lapangan...':{en:'Describe the main issue occurring in the field...',ko:'현장에서 발생하는 주요 문제를 설명하세요...'},
+  'Bagaimana proses berjalan saat ini dan seberapa sering masalah muncul?':{en:'How does the process currently work and how often does the issue occur?',ko:'현재 공정 상태와 문제 발생 빈도를 설명하세요.'},
+  'Mengapa masalah ini penting untuk segera diselesaikan?':{en:'Why is it important to resolve this issue promptly?',ko:'이 문제를 신속히 해결해야 하는 이유는 무엇입니까?'},
+  'Output terukur yang diharapkan setelah improvement selesai...':{en:'Measurable outcome expected after the improvement is completed...',ko:'개선 완료 후 기대되는 정량적 성과...'},
+  'Langkah 3 · Lampiran Bukti & Tinjau Pengajuan':{en:'Step 3 · Supporting Evidence & Review Submission',ko:'3단계 · 증빙 첨부 및 제출 내용 검토'},
+  'Unggah Foto / Dokumen Pendukung':{en:'Upload Supporting Photos / Documents',ko:'증빙 사진 / 문서 업로드'},
+  'Gambar, PDF, dokumen Office, CSV, atau TXT (Maks. 100 MB per file).':{en:'Images, PDF, Office documents, CSV, or TXT (Max. 100 MB per file).',ko:'이미지, PDF, Office 문서, CSV 또는 TXT (파일당 최대 100MB).'},
+  'Judul Link Referensi':{en:'Reference Link Title',ko:'참고 링크 제목'},
+  'URL Web / Path Jaringan':{en:'Web URL / Network Path',ko:'웹 URL / 네트워크 경로'},
+  '+ Tambah Link':{en:'+ Add Link',ko:'+ 링크 추가'},
+  'Ringkasan Pengajuan':{en:'Submission Summary',ko:'제출 요약'},
+  'Lampiran':{en:'Attachments',ko:'첨부 파일'},
+  'Kirim Usulan Improvement':{en:'Submit Improvement Proposal',ko:'개선 제안 제출'},
+  'TINJAUAN & KEPUTUSAN TIM PI':{en:'PI TEAM REVIEW & DECISION',ko:'PI팀 검토 및 결정'},
+  'Ringkasan Usulan Pelapor':{en:'Submitter Proposal Summary',ko:'제출자 제안 요약'},
+  'Tanggal Lapor':{en:'Submission Date',ko:'제출일'},
+  'Issue:':{en:'Issue:',ko:'이슈:'},
+  'Background:':{en:'Background:',ko:'배경:'},
+  'Purpose:':{en:'Purpose:',ko:'목적:'},
+  'Goals:':{en:'Goals:',ko:'목표:'},
+  'Form Keputusan & Feedback Tim PI':{en:'PI Team Decision & Feedback Form',ko:'PI팀 결정 및 피드백 양식'},
+  'Keputusan Tindak Lanjut':{en:'Follow-up Decision',ko:'후속 조치 결정'},
+  'Tidak diproses (Berikan Saran Alternatif)':{en:'Do Not Convert (Provide Alternative Suggestion)',ko:'프로젝트 미진행 (대안 제시)'},
+  'Status Review':{en:'Review Status',ko:'검토 상태'},
+  'PIC Review Tim PI':{en:'PI Team Reviewer',ko:'PI팀 검토 담당자'},
+  'Nama PIC PI yang meninjau':{en:'Name of reviewing PI PIC',ko:'검토 담당 PI 이름'},
+  'Feedback Analisa Tim PI *':{en:'PI Team Feasibility Feedback *',ko:'PI팀 타당성 분석 피드백 *'},
+  'Tuliskan hasil analisa kelayakan oleh Tim PI...':{en:'Write the feasibility analysis results from the PI Team...',ko:'PI팀의 타당성 분석 결과를 작성하세요...'},
+  'Suggestion / Alternatif Solusi *':{en:'Suggestion / Alternative Solution *',ko:'제안 / 대안 솔루션 *'},
+  'Saran tindakan tanpa perlu membuka project baru...':{en:'Suggested action without opening a new project...',ko:'신규 프로젝트 없이 해결할 수 있는 권장 조치...'},
+  'Alasan Tidak Dilanjutkan sebagai Project *':{en:'Reason Not Continued as Project *',ko:'프로젝트로 진행하지 않는 사유 *'},
+  'Alasan mengapa issue cukup diselesaikan dengan saran alternatif...':{en:'Reason why the issue can be resolved with an alternative suggestion...',ko:'대안 조치로 해결 가능한 사유를 입력하세요...'},
+  'Action Plan / Langkah Berikutnya':{en:'Action Plan / Next Steps',ko:'실행 계획 / 다음 단계'},
+  'Rencana tindak lanjut yang perlu dilakukan...':{en:'Follow-up action plan required...',ko:'필요한 후속 실행 계획...'},
+  'Kembali ke Detail Output':{en:'Back to Details',ko:'상세 화면으로 돌아가기'},
+  'Simpan Keputusan PI':{en:'Save PI Decision',ko:'PI 결정 저장'},
+  'Laporan dari Kontributor':{en:'Contributor Submission',ko:'기여자 제출 내용'},
+  'Judul issue':{en:'Issue Title',ko:'이슈 제목'},
+  'Departemen / pelapor':{en:'Department / Submitter',ko:'부서 / 제출자'},
+  'Jenis improvement':{en:'Improvement Type',ko:'개선 유형'},
+  'Issue yang terjadi':{en:'Issue Description',ko:'발생한 이슈'},
+  'Background / kondisi saat ini':{en:'Background / Current State',ko:'배경 / 현재 상태'},
+  'Purpose':{en:'Purpose',ko:'목적'},
+  'Goals':{en:'Goals',ko:'목표'},
+  'Metrik kualitas':{en:'Quality Metric',ko:'품질 지표'},
+  'Keputusan dan feedback PI':{en:'PI Decision and Feedback',ko:'PI 결정 및 피드백'},
+  'Belum diputuskan':{en:'Undecided',ko:'미결정'},
+  'Proses improvement':{en:'Proceed with Improvement',ko:'개선 진행'},
+  'Tidak diproses':{en:'Do Not Proceed',ko:'진행하지 않음'},
+  'Status review':{en:'Review Status',ko:'검토 상태'},
+  'PIC review PI (opsional)':{en:'PI Reviewer (optional)',ko:'PI 검토 담당자 (선택)'},
+  'Feedback PI':{en:'PI Feedback',ko:'PI 피드백'},
+  'Suggestion / alternatif solusi':{en:'Suggestion / Alternative Solution',ko:'제안 / 대안'},
+  'Action yang disarankan':{en:'Recommended Action',ko:'권장 조치'},
+  'Alasan tidak dilanjutkan sebagai improvement':{en:'Reason for Not Proceeding',ko:'미진행 사유'},
+  'Simpan keputusan PI':{en:'Save PI Decision',ko:'PI 결정 저장'},
+  'Simpan laporan':{en:'Save Submission',ko:'제출 내용 저장'},
+  'Lampiran dan referensi':{en:'Attachments and References',ko:'첨부 파일 및 참고 자료'},
+  'Belum ada lampiran.':{en:'No attachments.',ko:'첨부 파일이 없습니다.'},
+  'Link dokumentasi':{en:'Documentation links',ko:'문서 링크'},
+  'Nama link (opsional)':{en:'Link name (optional)',ko:'링크 이름 (선택 사항)'},
+  'Tempel link OneDrive / SharePoint':{en:'Paste OneDrive / SharePoint link',ko:'OneDrive / SharePoint 링크 붙여넣기'},
+  '+ Tambah link':{en:'+ Add link',ko:'+ 링크 추가'},
+  'URL harus menggunakan http atau https.':{en:'URL must use http or https.',ko:'URL은 http 또는 https를 사용해야 합니다.'},
+  'Belum ada link.':{en:'No links.',ko:'링크가 없습니다.'},
+  'Buka / salin':{en:'Open / copy',ko:'열기 / 복사'},
+  'Tambah file':{en:'Add file',ko:'파일 추가'},
+  'Gambar, PDF, dokumen Office, CSV, atau TXT. Maksimal 100 MB per file.':{en:'Images, PDF, Office documents, CSV, or TXT. Maximum 100 MB per file.',ko:'이미지, PDF, Office 문서, CSV 또는 TXT. 파일당 최대 100MB.'},
+  'Foto, video, dan dokumen · Maksimal 100 MB per file':{en:'Photos, videos, and documents · Max 100 MB per file',ko:'사진, 동영상 및 문서 · 파일당 최대 100MB'},
+  'Belum ada dokumentasi untuk stage ini.':{en:'No documentation for this stage yet.',ko:'이 단계에 등록된 문서가 없습니다.'},
+  'Simpan project terlebih dahulu sebelum mengunggah dokumentasi.':{en:'Save the project first before uploading documentation.',ko:'문서를 업로드하기 전에 프로젝트를 먼저 저장하세요.'},
+  'Contoh: Report FAT':{en:'Example: FAT Report',ko:'예: FAT 보고서'},
+  'Judul link':{en:'Link title',ko:'링크 제목'},
+  'Link web / path jaringan':{en:'Web link / network path',ko:'웹 링크 / 네트워크 경로'},
+  'Contoh: Video kondisi line':{en:'Example: Line condition video',ko:'예: 라인 상태 동영상'},
+  'https://... atau \\\\server\\folder':{en:'https://... or \\\\server\\folder',ko:'https://... 또는 \\\\server\\folder'},
+  'Estimasi saving manpower (contoh: 2 orang atau 30 menit/hari)':{en:'Estimated manpower savings (e.g. 2 people or 30 minutes/day)',ko:'예상 인력 절감 (예: 2명 또는 하루 30분)'},
+  'Dampak / metrik kualitas (opsional)':{en:'Quality impact / metric (optional)',ko:'품질 영향 / 지표 (선택)'},
+  'Lanjut ke Project':{en:'Continue to Project',ko:'프로젝트로 진행'},
+  'Sudah dilanjutkan ke project':{en:'Already converted to project',ko:'이미 프로젝트로 전환됨'},
+  'Pengingat Tenggat':{en:'Deadline Reminders',ko:'마감 알림'},
+  'Tidak ada tenggat dalam 7 hari ke depan.':{en:'No deadlines in the next 7 days.',ko:'앞으로 7일 내 마감이 없습니다.'},
+  'Papan Progres':{en:'Progress Board',ko:'진행 현황판'},
+  'kotak kecil = tahap project (abu belum mulai, biru berjalan, hijau selesai, merah terlambat, kuning tertahan)':{en:'small blocks show project stages (gray not started, blue in progress, green completed, red overdue, yellow on hold)',ko:'작은 블록은 프로젝트 단계를 표시합니다 (회색 시작 전, 파랑 진행 중, 초록 완료, 빨강 지연, 노랑 보류)'},
+  '· kotak kecil = tahap project (abu belum mulai, biru berjalan, hijau selesai, merah terlambat, kuning tertahan)':{en:'· small blocks show project stages (gray not started, blue in progress, green completed, red overdue, yellow on hold)',ko:'· 작은 블록은 프로젝트 단계를 표시합니다 (회색 시작 전, 파랑 진행 중, 초록 완료, 빨강 지연, 노랑 보류)'},
+  'Tidak ada project.':{en:'No projects.',ko:'프로젝트가 없습니다.'},
+  'Tidak ada yang perlu perhatian.':{en:'Nothing needs attention.',ko:'확인이 필요한 항목이 없습니다.'},
+  'Tidak ada':{en:'None',ko:'없음'},
+  'On Progress':{en:'In Progress',ko:'진행 중'},
+  'Completed':{en:'Completed',ko:'완료'},
+  'Delayed':{en:'Delayed',ko:'지연'},
+  'On Hold':{en:'On Hold',ko:'보류'},
+  'Not Started':{en:'Not Started',ko:'시작 전'},
+  'Minggu':{en:'Week',ko:'주'},
+  'Bulan':{en:'Month',ko:'월'},
+  'Kuartal':{en:'Quarter',ko:'분기'},
+  'Kelompokkan per klasifikasi':{en:'Group by category',ko:'분류별 그룹화'},
+  'Plan vs Actual':{en:'Plan vs Actual',ko:'계획 대비 실적'},
+  'Plan':{en:'Plan',ko:'계획'},
+  'Actual':{en:'Actual',ko:'실적'},
+  'Buka semua stage':{en:'Expand all stages',ko:'모든 단계 펼치기'},
+  'Buka / tutup stage':{en:'Expand / collapse stages',ko:'단계 펼치기 / 접기'},
+  'Lihat dokumentasi stage':{en:'View stage documentation',ko:'단계 문서 보기'},
+  'Tutup semua':{en:'Collapse all',ko:'모두 접기'},
+  'Ke hari ini':{en:'Go to today',ko:'오늘로 이동'},
+  'Project / Stage':{en:'Project / Stage',ko:'프로젝트 / 단계'},
+  'Project yang menjadi tanggung jawab Anda. Klik baris project untuk melihat detail atau langsung memperbarui progres task.':{en:'Projects assigned to you. Click any project row to view details or directly update task progress.',ko:'귀하가 담당하는 프로젝트입니다. 행을 클릭하여 상세 정보를 보거나 작업 진행률을 즉시 업데이트하세요.'},
+  'Klik baris project untuk membuka ringkasan & progres task, atau klik "Edit" untuk mengubah pengaturan project.':{en:'Click any project row to open the summary & task progress, or click "Edit" to modify project settings.',ko:'프로젝트 행을 클릭하여 요약 및 작업 진행률을 열거나 "수정"을 눌러 설정을 변경하세요.'},
+  'Tidak ada project. Klik "+ Project Baru" untuk menambah.':{en:'No projects yet. Click "+ New Project" to add one.',ko:'프로젝트가 없습니다. "+ 신규 프로젝트"를 눌러 추가하세요.'},
+  'Area belum diisi':{en:'Area not set',ko:'구역 미입력'},
+  'Belum ada task':{en:'No tasks yet',ko:'작업 없음'},
+  'Tahap Saat Ini':{en:'Current Stage',ko:'현재 단계'},
+  'Target Selesai':{en:'Target Date',ko:'완료 목표일'},
+  'Aksi':{en:'Actions',ko:'작업'},
+  'Edit':{en:'Edit',ko:'수정'},
+  'RINGKASAN & PROGRES PROJECT':{en:'PROJECT SUMMARY & PROGRESS',ko:'프로젝트 요약 및 진행률'},
+  '← Kembali':{en:'← Back',ko:'← 뒤로'},
+  '← Sebelumnya':{en:'← Previous',ko:'← 이전'},
+  'Berikutnya →':{en:'Next →',ko:'다음 →'},
+  'Kembali ke Detail':{en:'Back to Details',ko:'상세 화면으로'},
+  'Edit Pengaturan Project':{en:'Edit Project Settings',ko:'프로젝트 설정 수정'},
+  'Total Progres':{en:'Total Progress',ko:'전체 진행률'},
+  'Jadwal Project':{en:'Project Schedule',ko:'프로젝트 일정'},
+  'Vendor & PO':{en:'Vendor & PO',ko:'공급업체 및 발주서'},
+  'Budget vs Komitmen':{en:'Budget vs Committed',ko:'예산 대비 약정액'},
+  'Budget vs Komitmen per Project':{en:'Budget vs Committed per Project',ko:'프로젝트별 예산 대비 약정액'},
+  '· hanya untuk project yang punya budget':{en:'· only for projects with a budget set',ko:'· 예산이 설정된 프로젝트만 표시'},
+  'Alur Tahapan Task':{en:'Task Stage Pipeline',ko:'작업 단계 파이프라인'},
+  'Belum ada tahapan / task pada project ini.':{en:'No stages / tasks in this project yet.',ko:'이 프로젝트에 등록된 작업 단계가 없습니다.'},
+  '+ Tambah Task / Muat Template':{en:'+ Add Task / Load Template',ko:'+ 작업 추가 / 템플릿 불러오기'},
+  'Catatan & Riwayat':{en:'Notes & History',ko:'메모 및 이력'},
+  'Geser slider atau klik tombol % untuk memperbarui progres setiap task secara langsung (tersimpan otomatis).':{en:'Drag the slider or click the % buttons to update each task progress directly (auto-saved).',ko:'슬라이더를 움직이거나 % 버튼을 클릭하여 각 작업 진행률을 바로 업데이트하세요 (자동 저장).'},
+  'Rincian jadwal rencana dan progres setiap task.':{en:'Planned schedule details and progress for each task.',ko:'각 작업의 계획 일정 및 진행률 상세 내역입니다.'},
+  'Atur Jadwal / Tambah Task':{en:'Manage Schedule / Add Tasks',ko:'일정 관리 / 작업 추가'},
+  'Belum ada tahapan task.':{en:'No task stages yet.',ko:'등록된 작업 단계가 없습니다.'},
+  'Task / Tahapan':{en:'Task / Stage',ko:'작업 / 단계'},
+  'Task / Tahap':{en:'Task / Stage',ko:'작업 / 단계'},
+  'Rencana (Plan)':{en:'Planned',ko:'계획 (Plan)'},
+  'Progres Task':{en:'Task Progress',ko:'작업 진행률'},
+  'Status & Deviasi':{en:'Status & Deviation',ko:'상태 및 편차'},
+  'Realisasi (Actual)':{en:'Actual',ko:'실적 (Actual)'},
+  'Dokumentasi':{en:'Documentation',ko:'문서'},
+  '✓ Selesai':{en:'✓ Done',ko:'✓ 완료'},
+  'Tepat waktu':{en:'On time',ko:'정시 완료'},
+  'Tepat':{en:'On time',ko:'정시'},
+  'Belum mulai':{en:'Not started',ko:'시작 전'},
+  '+ Bukti':{en:'+ Proof',ko:'+ 증빙'},
+  'Tulis catatan task...':{en:'Write task notes...',ko:'작업 메모 입력...'},
+  '+ Tambah / Edit Milestone':{en:'+ Add / Edit Milestones',ko:'+ 마일스톤 추가 / 수정'},
+  'Nama Milestone':{en:'Milestone Name',ko:'마일스톤 이름'},
+  'Target Tanggal':{en:'Target Date',ko:'목표 날짜'},
+  'Tercapai':{en:'Achieved',ko:'달성됨'},
+  'Menunggu':{en:'Pending',ko:'대기 중'},
+  'Belum ada milestone.':{en:'No milestones yet.',ko:'등록된 마일스톤이 없습니다.'},
+  'Belum ada milestone (contoh: PO terbit, FAT, instalasi, SAT).':{en:'No milestones yet (e.g. PO issued, FAT, installation, SAT).',ko:'마일스톤이 없습니다 (예: PO 발행, FAT, 설치, SAT).'},
+  'Deskripsi & Catatan Project':{en:'Project Description & Notes',ko:'프로젝트 설명 및 메모'},
+  'Edit Info':{en:'Edit Info',ko:'정보 수정'},
+  'Belum ada deskripsi atau catatan tambahan.':{en:'No description or additional notes yet.',ko:'추가 설명이나 메모가 없습니다.'},
+  'Riwayat Perubahan':{en:'Change History',ko:'변경 이력'},
+  'Project dibuat':{en:'Project created',ko:'프로젝트 생성됨'},
+  'PENGATURAN & UPDATE PROJECT':{en:'PROJECT SETTINGS & UPDATE',ko:'프로젝트 설정 및 업데이트'},
+  'Buat Project Baru':{en:'Create New Project',ko:'신규 프로젝트 생성'},
+  'Isi informasi utama dan tahapan project baru di bawah ini.':{en:'Fill in the main information and stages for the new project below.',ko:'아래에 신규 프로젝트의 기본 정보와 단계를 입력하세요.'},
+  'Klik lingkaran langkah di bawah untuk berpindah bagian, lalu klik Simpan.':{en:'Click the step circles below to switch sections, then click Save.',ko:'아래 단계 원을 클릭하여 섹션을 이동한 후 저장을 클릭하세요.'},
+  'Langkah 1 · Informasi Utama Project':{en:'Step 1 · Main Project Information',ko:'1단계 · 프로젝트 기본 정보'},
+  'Langkah 2 · Susun Jadwal & Progres Task (Stage)':{en:'Step 2 · Schedule & Task Progress (Stages)',ko:'2단계 · 작업 일정 및 진행률 (단계)'},
+  'Langkah 3 · Penawaran Vendor (Quotation) & PO':{en:'Step 3 · Vendor Quotations & POs',ko:'3단계 · 공급업체 견적 및 발주서'},
+  'Langkah 4 · Target Milestone Project':{en:'Step 4 · Project Milestone Targets',ko:'4단계 · 프로젝트 마일스톤 목표'},
+  'Langkah 5 · Periksa Ringkasan Sebelum Disimpan':{en:'Step 5 · Review Summary Before Saving',ko:'5단계 · 저장 전 요약 확인'},
+  'Pastikan seluruh data di bawah ini sudah sesuai sebelum disimpan.':{en:'Please verify that all information below is accurate before saving.',ko:'저장하기 전에 아래 모든 정보가 정확한지 확인하세요.'},
+  'Kode & Nama Project':{en:'Project Code & Name',ko:'프로젝트 코드 및 이름'},
+  '(Nama belum diisi)':{en:'(Name not entered)',ko:'(이름 미입력)'},
+  'PIC & Area':{en:'Owner & Area',ko:'담당자 및 구역'},
+  'Status & Progres':{en:'Status & Progress',ko:'상태 및 진행률'},
+  'Tanpa tahapan':{en:'No stages',ko:'단계 없음'},
+  'Periode Project':{en:'Project Period',ko:'프로젝트 기간'},
+  'Quotation & Vendor':{en:'Quotations & Vendor',ko:'견적 및 공급업체'},
+  'Ubah Info Utama':{en:'Edit Main Info',ko:'기본 정보 수정'},
+  'Hapus Project':{en:'Delete Project',ko:'프로젝트 삭제'},
+  'Simpan Perubahan':{en:'Save Changes',ko:'변경사항 저장'},
+  'Kode Project':{en:'Project Code',ko:'프로젝트 코드'},
+  'PIC Utama':{en:'Primary Owner (PIC)',ko:'주 담당자 (PIC)'},
+  'Progres Keseluruhan (%)':{en:'Overall Progress (%)',ko:'전체 진행률 (%)'},
+  'Atur Progres Task':{en:'Manage Task Progress',ko:'작업 진행률 관리'},
+  'Isi Progres per Task →':{en:'Update Task Progress →',ko:'작업별 진행률 입력 →'},
+  'Deskripsi / Catatan Project':{en:'Project Description / Notes',ko:'프로젝트 설명 / 메모'},
+  'Belum ada PO. Ubah status quotation menjadi Terpilih, lalu klik Buat PO pada quotation tersebut.':{en:'No POs yet. Set a quotation status to Selected, then click Create PO on that quotation.',ko:'발주서가 없습니다. 견적 상태를 선정됨으로 변경한 후 발주서 만들기를 클릭하세요.'},
+  'PO dibuat dari quotation berstatus Terpilih: klik "Kelola Quotation & PO" pada project, lalu klik Buat PO.':{en:'POs are created from Selected quotations: click "Manage Quotations & POs" on a project, then click Create PO.',ko:'발주서는 선정된 견적에서 생성됩니다. 프로젝트에서 "견적 및 발주 관리"를 클릭한 후 발주서 만들기를 누르세요.'},
+  'Muat Template':{en:'Load Template',ko:'템플릿 불러오기'},
+  '+ Sisipkan dari Template':{en:'+ Append from Template',ko:'+ 템플릿에서 추가'},
+  'Susun Ulang Jadwal':{en:'Reflow Schedule',ko:'일정 자동 재정렬'},
+  'Simpan Jadi Template':{en:'Save as Template',ko:'템플릿으로 저장'},
+  'Kelola Template':{en:'Manage Templates',ko:'템플릿 관리'},
+  'Ganti daftar task dengan template yang dipilih':{en:'Replace task list with the selected template',ko:'선택한 템플릿으로 작업 목록 교체'},
+  'Tambahkan tahapan dari template ke daftar task saat ini tanpa menghapus yang sudah ada':{en:'Append stages from template to the current task list without removing existing tasks',ko:'기존 작업을 유지하면서 선택한 템플릿의 단계를 뒤에 추가'},
+  'Hitung ulang tanggal Plan Mulai & Selesai berurutan/paralel dari tanggal Mulai plan':{en:'Recalculate sequential/parallel Plan Start & End dates from the Plan Start date',ko:'계획 시작일 기준으로 순차/병렬 계획 시작 및 종료일 자동 재계산'},
+  'Simpan susunan task project ini sebagai template baru untuk Anda / PIC':{en:'Save this project task structure as a new reusable template for you / PIC',ko:'현재 프로젝트 작업 구성을 나 / 담당자용 새 템플릿으로 저장'},
+  'Buat atau ubah daftar template stage':{en:'Create or edit stage templates',ko:'단계 템플릿 생성 또는 수정'},
+  '+ Tambah Task Manual':{en:'+ Add Manual Task',ko:'+ 작업 수동 추가'},
+  '+ Tambah Task':{en:'+ Add Task',ko:'+ 작업 추가'},
+  'Hari':{en:'Days',ko:'일수'},
+  'Deviasi':{en:'Deviation',ko:'편차'},
+  'Bukti & Urutan':{en:'Proof & Order',ko:'증빙 및 순서'},
+  'Paralel':{en:'Parallel',ko:'병렬'},
+  'Nama task / tahap':{en:'Task / stage name',ko:'작업 / 단계 이름'},
+  'catatan':{en:'notes',ko:'메모'},
+  'Jalan bersamaan (paralel) dengan task sebelumnya saat jadwal disusun ulang':{en:'Run in parallel with the previous task when the schedule is reflowed',ko:'일정 재정렬 시 이전 작업과 병렬(동시)로 진행'},
+  'Tandai 100% Selesai':{en:'Mark 100% Completed',ko:'100% 완료로 표시'},
+  'Fleksibel per Project / PIC:':{en:'Flexible per Project / Owner:',ko:'프로젝트 / 담당자별 맞춤 설정:'},
+  'Anda bebas menambah, menghapus, mengubah urutan (▲/▼), atau memodifikasi tahapan sesuai kebutuhan project ini, lalu klik':{en:'You can freely add, remove, reorder (▲/▼), or customize stages for this project, then click',ko:'이 프로젝트에 맞게 단계를 자유롭게 추가, 삭제, 순서 변경(▲/▼) 또는 수정한 후'},
+  'bila ingin menjadikannya template andalan Anda berikutnya.':{en:'if you want to save it as your go-to template for future projects.',ko:'버튼을 눌러 향후 프로젝트를 위한 나만의 템플릿으로 저장할 수 있습니다.'},
+  'Kelola Template Stage (Fleksibel per PIC / Kategori)':{en:'Manage Stage Templates (Flexible per Owner / Category)',ko:'단계 템플릿 관리 (담당자 / 분류별 맞춤)'},
+  '+ Buat Template Saya':{en:'+ Create My Template',ko:'+ 내 템플릿 만들기'},
+  'Nama Template':{en:'Template Name',ko:'템플릿 이름'},
+  'Contoh: Standar Mesin Filling':{en:'Example: Filling Machine Standard',ko:'예: 충진 설비 표준 템플릿'},
+  'PIC / Pemilik Template':{en:'Template Owner (PIC)',ko:'템플릿 소유자 (PIC)'},
+  'Kosongkan = Umum (Semua PIC)':{en:'Leave blank = General (All Owners)',ko:'비워둠 = 공통 (모든 담당자)'},
+  'Isi nama Anda/PIC agar otomatis diprioritaskan pada project milik PIC tersebut':{en:'Enter your/PIC name so this template is prioritized for that owner\'s projects',ko:'담당자 이름을 입력하면 해당 담당자의 프로젝트에서 이 템플릿이 우선 선택됩니다'},
+  'Klasifikasi Tujuan':{en:'Target Category',ko:'대상 분류'},
+  'Nama Task / Stage':{en:'Task / Stage Name',ko:'작업 / 단계 이름'},
+  'Nama tahap...':{en:'Stage name...',ko:'단계 이름...'},
+  'PIC Default':{en:'Default Owner',ko:'기본 담당자'},
+  'Mengikuti PIC project':{en:'Follows project owner',ko:'프로젝트 담당자 따름'},
+  'dgn sebelumnya':{en:'with previous',ko:'이전 단계와 병렬'},
+  'Setiap PIC bebas membuat atau menduplikasi template sesuai alur kerja masing-masing. Jika kolom':{en:'Every owner can freely create or duplicate templates for their workflow. If',ko:'각 담당자는 업무 흐름에 맞게 템플릿을 생성하거나 복제할 수 있습니다.'},
+  'dikosongkan, maka saat template dimuat ke project, task akan otomatis menggunakan nama PIC project tersebut.':{en:'is left blank, tasks will automatically use the project owner\'s name when loaded.',ko:'칸을 비워두면 템플릿을 불러올 때 프로젝트 담당자 이름이 자동 적용됩니다.'},
+  'Duplikat & Sesuaikan untuk Saya':{en:'Duplicate & Customize for Me',ko:'복제하여 내 템플릿으로 맞춤 설정'},
+  'Hapus Template Ini':{en:'Delete This Template',ko:'이 템플릿 삭제'},
+  'Simpan Semua Template':{en:'Save All Templates',ko:'모든 템플릿 저장'},
+  '+ Milestone':{en:'+ Milestone',ko:'+ 마일스톤'},
+  'Nama milestone':{en:'Milestone name',ko:'마일스톤 이름'},
+  'Kode':{en:'Code',ko:'코드'},
+  'Project':{en:'Project',ko:'프로젝트'},
+  'project':{en:'project',ko:'프로젝트'},
+  'Klasifikasi':{en:'Category',ko:'분류'},
+  'Prioritas':{en:'Priority',ko:'우선순위'},
+  'Status':{en:'Status',ko:'상태'},
+  'Progres':{en:'Progress',ko:'진행률'},
+  'Tahap saat ini':{en:'Current stage',ko:'현재 단계'},
+  'Mulai':{en:'Start',ko:'시작'},
+  'Target':{en:'Target',ko:'목표일'},
+  'Vendor':{en:'Vendor',ko:'공급업체'},
+  'Budget':{en:'Budget',ko:'예산'},
+  'Komitmen':{en:'Committed',ko:'약정 금액'},
+  'Quotation':{en:'Quotation',ko:'견적'},
+  'quotation':{en:'quotation',ko:'견적'},
+  'PO':{en:'PO',ko:'발주서'},
+  'Total':{en:'Total',ko:'합계'},
+  'Nilai Terpilih':{en:'Selected Value',ko:'선정 금액'},
+  'Nilai PO':{en:'PO Value',ko:'발주 금액'},
+  'Terpilih':{en:'Selected',ko:'선정됨'},
+  'Buat PO':{en:'Create PO',ko:'발주서 만들기'},
+  'Tidak ada project. Klik "+ Project" untuk menambah.':{en:'No projects. Select "+ Project" to add one.',ko:'프로젝트가 없습니다. "+ 프로젝트"를 눌러 추가하세요.'},
+  'Semua Quotation':{en:'All Quotations',ko:'전체 견적'},
+  'Purchase Order':{en:'Purchase Orders',ko:'구매 발주서'},
+  'Ringkasan Vendor':{en:'Vendor Summary',ko:'공급업체 요약'},
+  'Tanggal':{en:'Date',ko:'날짜'},
+  'Tanggal PO':{en:'PO Date',ko:'발주 날짜'},
+  'Mata uang PO':{en:'PO Currency',ko:'발주 통화'},
+  'Ref. No. Quotation':{en:'Quotation Ref. No.',ko:'견적 참조 번호'},
+  'No. Quotation':{en:'Quotation No.',ko:'견적 번호'},
+  'Harga':{en:'Price',ko:'가격'},
+  'Diterima':{en:'Received',ko:'접수됨'},
+  'Berlaku s/d':{en:'Valid until',ko:'유효 기간'},
+  'File':{en:'File',ko:'파일'},
+  'No. PO':{en:'PO No.',ko:'발주 번호'},
+  'Dibuat oleh':{en:'Created by',ko:'작성자'},
+  'Info Project':{en:'Project Info',ko:'프로젝트 정보'},
+  'Stage':{en:'Stages',ko:'단계'},
+  'Milestone':{en:'Milestones',ko:'마일스톤'},
+  'Riwayat':{en:'History',ko:'이력'},
+  'Nama Project *':{en:'Project Name *',ko:'프로젝트 이름 *'},
+  'Area / Line':{en:'Area / Line',ko:'구역 / 라인'},
+  'Tanggal Mulai *':{en:'Start Date *',ko:'시작일 *'},
+  'Target Selesai *':{en:'Target Completion *',ko:'완료 목표일 *'},
+  'Progres (%)':{en:'Progress (%)',ko:'진행률 (%)'},
+  'Deskripsi / catatan':{en:'Description / notes',ko:'설명 / 메모'},
+  'Hapus':{en:'Delete',ko:'삭제'},
+  'Batal':{en:'Cancel',ko:'취소'},
+  'Simpan':{en:'Save',ko:'저장'},
+  'Simpan Project':{en:'Save Project',ko:'프로젝트 저장'},
+  'Simpan PO':{en:'Save PO',ko:'발주서 저장'},
+  'Template':{en:'Template',ko:'템플릿'},
+  'Mulai plan':{en:'Plan start',ko:'계획 시작일'},
+  'Muat template':{en:'Load template',ko:'템플릿 불러오기'},
+  'Susun ulang plan berurutan':{en:'Reorder plan sequentially',ko:'계획 순서 재정렬'},
+  'Simpan sebagai template':{en:'Save as template',ko:'템플릿으로 저장'},
+  'Quotation yang diterima':{en:'Received Quotations',ko:'접수된 견적'},
+  '+ Tambah Quotation':{en:'+ Add Quotation',ko:'+ 견적 추가'},
+  'Tanggal diterima':{en:'Received date',ko:'접수일'},
+  'Berlaku sampai':{en:'Valid until',ko:'유효 기간'},
+  'Catatan (lead time, termin pembayaran, garansi, dll.)':{en:'Notes (lead time, payment terms, warranty, etc.)',ko:'메모 (납기, 결제 조건, 보증 등)'},
+  'Tambah pengguna':{en:'Add user',ko:'사용자 추가'},
+  'Kelola pengguna':{en:'Manage users',ko:'사용자 관리'},
+  'PIN awal':{en:'Initial PIN',ko:'초기 PIN'},
+  'Kontributor':{en:'Contributor',ko:'기여자'},
+  'Kontributor (akses terbatas)':{en:'Contributor (limited access)',ko:'기여자 (제한된 권한)'},
+  'Masuk sebagai Kontributor':{en:'Sign in as Contributor',ko:'기여자로 로그인'},
+  'Belum ada akun Kontributor. Minta admin membuat akun melalui Pengaturan > Kelola pengguna.':{en:'No Contributor accounts yet. Ask an admin to create one in Settings > Manage users.',ko:'기여자 계정이 없습니다. 관리자에게 설정 > 사용자 관리에서 계정 생성을 요청하세요.'},
+  'Beri tahu PIN awal ke yang bersangkutan; mereka bisa menggantinya di Pengaturan > Ganti PIN saya.':{en:'Share the initial PIN with the user; they can change it in Settings > Change my PIN.',ko:'초기 PIN을 해당 사용자에게 안내하세요. 설정 > 내 PIN 변경에서 변경할 수 있습니다.'},
+  'Ganti PIN':{en:'Change PIN',ko:'PIN 변경'},
+  'PIN lama':{en:'Current PIN',ko:'현재 PIN'},
+  'PIN baru (minimal 10 karakter)':{en:'New PIN (at least 10 characters)',ko:'새 PIN (10자 이상)'},
+  'PIN baru ()':{en:'New PIN (at least 6 characters)',ko:'새 PIN (6자 이상)'},
+  'Ulangi PIN baru':{en:'Confirm new PIN',ko:'새 PIN 확인'},
+  'Masuk':{en:'Log in',ko:'로그인'},
+  'Masuk untuk melanjutkan.':{en:'Sign in to continue.',ko:'계속하려면 로그인하세요.'},
+  'Akses edit':{en:'Edit access',ko:'편집 권한'},
+  'Viewer':{en:'Viewer',ko:'뷰어'},
+  'Viewer (lihat saja)':{en:'Viewer (read only)',ko:'뷰어 (보기 전용)'},
+  'Akses Viewer hanya dapat melihat data':{en:'Viewer access is read-only.',ko:'뷰어 권한은 읽기 전용입니다.'},
+  'Masuk sebagai Viewer':{en:'Sign in as Viewer',ko:'뷰어로 로그인'},
+  'Belum ada akun Viewer. Minta admin membuat akun Viewer melalui Pengaturan > Kelola pengguna.':{en:'No Viewer accounts yet. Ask an admin to create one in Settings > Manage users.',ko:'뷰어 계정이 없습니다. 관리자에게 설정 > 사용자 관리에서 계정 생성을 요청하세요.'},
+  'Project operations':{en:'Project operations',ko:'프로젝트 운영'},
+  'Buat admin':{en:'Create admin',ko:'관리자 만들기'},
+  'Nama admin':{en:'Admin name',ko:'관리자 이름'},
+  'Nama':{en:'Name',ko:'이름'},
+  'Ulangi PIN':{en:'Confirm PIN',ko:'PIN 확인'},
+  'Tidak ada quotation.':{en:'No quotations.',ko:'견적이 없습니다.'},
+  'Belum ada quotation. Klik "+ Tambah Quotation".':{en:'No quotations yet. Select "+ Add Quotation".',ko:'견적이 없습니다. "+ 견적 추가"를 누르세요.'},
+  'Belum ada PO.':{en:'No POs yet.',ko:'발주서가 없습니다.'},
+  'PO dibuat dari quotation berstatus Terpilih: buka project, tab Quotation & PO, klik Buat PO.':{en:'Create a PO from a selected quotation: open a project, go to Quotations & POs, and select Create PO.',ko:'선정된 견적에서 발주서를 만들 수 있습니다. 프로젝트를 열고 견적 및 발주서 탭에서 발주서 만들기를 선택하세요.'},
+  'Belum ada milestone':{en:'No milestones yet',ko:'마일스톤이 없습니다'},
+  'Belum ada riwayat perubahan.':{en:'No change history.',ko:'변경 이력이 없습니다.'},
+  'Nama pengguna':{en:'User name',ko:'사용자 이름'},
+  'Pengguna':{en:'User',ko:'사용자'},
+  'Admin':{en:'Admin',ko:'관리자'},
+  'Semua project':{en:'All projects',ko:'모든 프로젝트'},
+  'Tidak ada data budget.':{en:'No budget data.',ko:'예산 데이터가 없습니다.'},
+  'Belum ada data quotation.':{en:'No quotation data.',ko:'견적 데이터가 없습니다.'},
+  'Reset PIN':{en:'Reset PIN',ko:'PIN 재설정'},
+  'Tambah':{en:'Add',ko:'추가'},
+  'Tutup':{en:'Close',ko:'닫기'},
+  'Beranda':{en:'Home',ko:'홈'},
+  'Akun':{en:'Account',ko:'계정'},
+  'Masuk sebagai':{en:'Logged in as',ko:'로그인 사용자'},
+  'Nama ini dicatat di riwayat perubahan.':{en:'This name is recorded in the change history.',ko:'이 이름은 변경 이력에 기록됩니다.'},
+  'Ganti PIN saya':{en:'Change my PIN',ko:'내 PIN 변경'},
+  'Backup sekarang':{en:'Back up now',ko:'지금 백업'},
+  'Aplikasi':{en:'Application',ko:'애플리케이션'},
+  'Nama aplikasi (tampil di header dan tab browser)':{en:'Application name (shown in the header and browser tab)',ko:'애플리케이션 이름 (헤더와 브라우저 탭에 표시)'},
+  'Stage & PO':{en:'Stages & POs',ko:'단계 및 발주서'},
+  'Template Stage & PO':{en:'Stage & PO Templates',ko:'단계 및 발주서 템플릿'},
+  'Template & nomor PO':{en:'PO template & numbering',ko:'발주서 템플릿 및 번호'},
+  'Template PO, kategori, dan pengaturan sistem dikelola oleh admin.':{en:'PO templates, categories, and system settings are managed by admins.',ko:'발주서 템플릿, 분류 및 시스템 설정은 관리자가 관리합니다.'},
+  'Fitur':{en:'Features',ko:'기능'},
+  'Pakai kolom budget (opsional, tidak tampil di Dashboard)':{en:'Enable budget fields (optional; hidden from Dashboard)',ko:'예산 필드 사용 (선택 사항, 대시보드에 숨김)'},
+  'Progres project dihitung otomatis dari stage yang selesai':{en:'Calculate project progress from completed stages',ko:'완료된 단계로 프로젝트 진행률 자동 계산'},
+  'Tanggal mulai dan target project mengikuti plan stage':{en:'Use stage plans for project start and target dates',ko:'단계 계획에 따라 프로젝트 시작일과 목표일 설정'},
+  'Mata uang':{en:'Currency',ko:'통화'},
+  'Klasifikasi / kategori project':{en:'Project categories',ko:'프로젝트 분류'},
+  '+ Kategori':{en:'+ Category',ko:'+ 분류 추가'},
+  'Tampilan':{en:'Appearance',ko:'화면 설정'},
+  'Terang':{en:'Light',ko:'라이트'},
+  'Gelap':{en:'Dark',ko:'다크'},
+  'Ekspor':{en:'Export',ko:'내보내기'},
+  'Ekspor / Impor':{en:'Export / Import',ko:'내보내기 / 가져오기'},
+  'Impor':{en:'Import',ko:'가져오기'},
+  'Project (CSV)':{en:'Projects (CSV)',ko:'프로젝트 (CSV)'},
+  'Stage Plan vs Actual (CSV)':{en:'Stage Plan vs Actual (CSV)',ko:'단계 계획 및 실적 (CSV)'},
+  'Quotation (CSV)':{en:'Quotations (CSV)',ko:'견적 (CSV)'},
+  'PO (CSV)':{en:'POs (CSV)',ko:'발주서 (CSV)'},
+  'Backup (JSON)':{en:'Backup (JSON)',ko:'백업 (JSON)'},
+  'Impor JSON':{en:'Import JSON',ko:'JSON 가져오기'},
+  'Template stage':{en:'Stage template',ko:'단계 템플릿'},
+  'Tambah stage':{en:'Add stage',ko:'단계 추가'},
+  'Hapus stage':{en:'Delete stage',ko:'단계 삭제'},
+  'Nama stage':{en:'Stage name',ko:'단계 이름'},
+  'Plan Mulai':{en:'Plan Start',ko:'계획 시작'},
+  'Plan Selesai':{en:'Plan End',ko:'계획 종료'},
+  'Actual Mulai':{en:'Actual Start',ko:'실제 시작'},
+  'Actual Selesai':{en:'Actual End',ko:'실제 종료'},
+  'Catatan':{en:'Notes',ko:'메모'},
+  'PIC':{en:'Owner',ko:'담당자'},
+  'Kepada (TO) - vendor, isi manual':{en:'To (vendor; enter manually)',ko:'수신 (공급업체, 직접 입력)'},
+  'Kirim ke (SHIP TO)':{en:'Ship to',ko:'배송지'},
+  'Dokumen':{en:'Document',ko:'문서'},
+  'Perihal / project':{en:'Subject / project',ko:'제목 / 프로젝트'},
+  'Nama vendor':{en:'Vendor name',ko:'공급업체 이름'},
+  'Attn / kontak vendor':{en:'Attention / vendor contact',ko:'담당자 / 공급업체 연락처'},
+  'Telp vendor':{en:'Vendor phone',ko:'공급업체 전화번호'},
+  'E-mail vendor':{en:'Vendor email',ko:'공급업체 이메일'},
+  'Alamat vendor':{en:'Vendor address',ko:'공급업체 주소'},
+  'Telp':{en:'Phone',ko:'전화'},
+  'Attn':{en:'Attention',ko:'담당자'},
+  'Alamat pengiriman':{en:'Shipping address',ko:'배송 주소'},
+  'Item':{en:'Items',ko:'품목'},
+  '+ Baris':{en:'+ Row',ko:'+ 행 추가'},
+  'PPN (%)':{en:'Tax (%)',ko:'세금 (%)'},
+  'Ketentuan':{en:'Terms',ko:'조건'},
+  'Payment (termin pembayaran)':{en:'Payment terms',ko:'결제 조건'},
+  'Lead Time':{en:'Lead time',ko:'납기'},
+  'Delivery Place (lokasi pengiriman)':{en:'Delivery location',ko:'배송 장소'},
+  'Catatan tambahan (opsional)':{en:'Additional notes (optional)',ko:'추가 메모 (선택 사항)'},
+  'Deskripsi':{en:'Description',ko:'설명'},
+  'Qty':{en:'Qty',ko:'수량'},
+  'Satuan':{en:'Unit',ko:'단위'},
+  'Due Date':{en:'Due Date',ko:'납기일'},
+  'Harga satuan':{en:'Unit price',ko:'단가'},
+  'Subtotal':{en:'Subtotal',ko:'소계'},
+  'Total PO':{en:'PO Total',ko:'발주서 합계'},
+  'Buat Purchase Order':{en:'Create Purchase Order',ko:'구매 발주서 만들기'},
+  'Cetak / PDF':{en:'Print / PDF',ko:'인쇄 / PDF'},
+  'Unduh Word':{en:'Download Word',ko:'Word 다운로드'},
+  'Pratinjau':{en:'Preview',ko:'미리보기'},
+  'Buka':{en:'Open',ko:'열기'},
+  'Lepas':{en:'Remove',ko:'제거'},
+  'Lepas file':{en:'Remove file',ko:'파일 제거'},
+  'Kop dokumen':{en:'Document Header',ko:'문서 머리글'},
+  'Nama perusahaan':{en:'Company name',ko:'회사명'},
+  'Kode dokumen (pojok kanan atas)':{en:'Document code (top-right corner)',ko:'문서 코드 (우측 상단)'},
+  'Judul dokumen':{en:'Document title',ko:'문서 제목'},
+  'Alamat perusahaan':{en:'Company address',ko:'회사 주소'},
+  'Telp / Fax / Website':{en:'Phone / Fax / Website',ko:'전화 / 팩스 / 웹사이트'},
+  'Logo perusahaan:':{en:'Company logo:',ko:'회사 로고:'},
+  'Belum ada gambar':{en:'No image uploaded',ko:'이미지 없음'},
+  'Unggah logo':{en:'Upload logo',ko:'로고 업로드'},
+  'PNG atau JPG. Gambar otomatis diperkecil. Logo dengan latar transparan (PNG) paling bagus.':{en:'PNG or JPG. Automatically resized. Transparent PNG works best.',ko:'PNG 또는 JPG. 자동 크기 조정됨. 투명 배경(PNG) 권장.'},
+  'Nomor, tanggal, bahasa':{en:'Numbering, Date & Language',ko:'번호, 날짜 및 언어'},
+  'Format nomor PO':{en:'PO number format',ko:'발주 번호 형식'},
+  'Format tanggal':{en:'Date format',ko:'날짜 형식'},
+  'Bahasa label PO':{en:'PO label language',ko:'발주서 라벨 언어'},
+  'PPN / Tax default (%)':{en:'Default Tax / VAT (%)',ko:'기본 세율 (%)'},
+  'Ship To standar':{en:'Default Ship To',ko:'기본 배송지 (Ship To)'},
+  'Ketentuan standar':{en:'Default Terms',ko:'기본 조건'},
+  'Payment (termin pembayaran) standar':{en:'Default payment terms',ko:'기본 결제 조건'},
+  'Lead Time standar':{en:'Default lead time',ko:'기본 납기'},
+  'Delivery Place standar':{en:'Default delivery location',ko:'기본 배송 장소'},
+  'Daftar dokumen penagihan':{en:'Billing document checklist',ko:'청구 시 첨부 서류 목록'},
+  'Baris pertama menjadi judul (tebal dan bergaris bawah), baris berikutnya berupa daftar.':{en:'First line becomes the bold underlined heading; subsequent lines form the list.',ko:'첫 줄은 굵고 밑줄 친 제목이 되며, 다음 줄부터 목록으로 표시됩니다.'},
+  'Pernyataan standar (anti-suap, whistleblower, dan sejenisnya)':{en:'Standard compliance notice (anti-bribery, whistleblower, etc.)',ko:'표준 준법 문구 (부패 방지, 내부 고발자 보호 등)'},
+  'Tampil di tengah dengan huruf tebal. Pisahkan paragraf dengan satu baris kosong. Kosongkan kalau tidak diperlukan.':{en:'Centered in bold. Separate paragraphs with a blank line. Leave empty if not needed.',ko:'가운데 굵은 글씨로 표시됩니다. 빈 줄로 문단을 구분하며, 필요 없으면 비워두세요.'},
+  'Catatan kaki standar (opsional)':{en:'Default footer note (optional)',ko:'기본 바닥글 메모 (선택 사항)'},
+  'Tanda tangan':{en:'Signatures',ko:'서명란'},
+  'Cetak tanda tangan digital secara default pada PO baru (matikan untuk tanda tangan basah)':{en:'Print digital signatures by default on new POs (uncheck for wet signatures)',ko:'신규 발주서에 기본적으로 전자 서명 인쇄 (수기 서명 시 해제)'},
+  'Cetak tanda tangan digital pada PO ini (kalau tidak dicentang, kolom dikosongkan untuk tanda tangan basah)':{en:'Print digital signature on this PO (leave unchecked for wet signature)',ko:'이 발주서에 전자 서명 인쇄 (해제 시 수기 서명용 공란 유지)'},
+  'Belum ada gambar tanda tangan digital. Unggah di Pengaturan > Template & nomor PO.':{en:'No digital signature image uploaded yet. Upload in Settings > PO template & numbering.',ko:'전자 서명 이미지가 없습니다. 설정 > 발주서 템플릿 및 번호에서 업로드하세요.'},
+  'Kop surat, logo, nomor, tanda tangan, dan teks standar PO diatur di Pengaturan > Template & nomor PO. PO baru tersimpan untuk seluruh tim setelah Anda klik Simpan PO.':{en:'Letterhead, logo, numbering, signatures, and standard PO text are configured in Settings > PO template & numbering. New POs are saved for the team once you click Save PO.',ko:'머리글, 로고, 번호, 서명 및 기본 문구는 설정 > 발주서 템플릿 및 번호에서 관리합니다. 발주서 저장을 누르면 전체 팀에 공유됩니다.'},
+  'Kosongkan "Judul" kalau kolom itu tidak dipakai. Gambar tanda tangan hanya tercetak kalau opsi digital dicentang di PO yang bersangkutan. Latar putih pada gambar tanda tangan dihapus otomatis.':{en:'Leave "Title" blank if unused. Signature images print only when digital signature is enabled on the PO. White backgrounds are removed automatically.',ko:'사용하지 않는 서명란은 "제목"을 비워두세요. 전자 서명 옵션이 체크된 경우에만 인쇄되며 흰색 배경은 자동 제거됩니다.'},
+  'Jabatan':{en:'Job Title',ko:'직책'},
+  'Unggah TTD digital':{en:'Upload digital signature',ko:'전자 서명 업로드'},
+  'PIN (minimal 10 karakter)':{en:'PIN (at least 10 characters)',ko:'PIN (10자 이상)'},
+  'PIN baru':{en:'New PIN',ko:'새 PIN'},
+  'Hanya admin':{en:'Admins only',ko:'관리자 전용'},
+  'Terendah':{en:'Lowest',ko:'최저가'},
+  'TERENDAH':{en:'LOWEST',ko:'최저가'},
+  'Terlambat':{en:'Overdue',ko:'지연'},
+  'Berisiko':{en:'At risk',ko:'위험'},
+  'Deadline':{en:'Deadline',ko:'마감일'},
+  'Target hari ini':{en:'Due today',ko:'오늘 마감'},
+  'hari lagi':{en:'days left',ko:'일 남음'},
+  'hari lewat target':{en:'days overdue',ko:'일 지남'},
+  'Belum masuk':{en:'Not logged in',ko:'로그인되지 않음'},
+  'Terhubung':{en:'Connected',ko:'연결됨'},
+  'online':{en:'online',ko:'온라인'},
+  'sinkron':{en:'synced',ko:'동기화'},
+  'Belum tersimpan':{en:'Not saved',ko:'저장되지 않음'},
+  'klik untuk coba lagi':{en:'click to retry',ko:'눌러서 다시 시도'},
+  'Klik untuk memuat ulang data sekarang':{en:'Click to reload data now',ko:'눌러서 데이터를 새로고침'},
+  'Data dimuat ulang':{en:'Data reloaded',ko:'데이터를 새로고침했습니다'},
+  'Gagal sinkron':{en:'Sync failed',ko:'동기화 실패'},
+  'Tidak ada project untuk ditampilkan.':{en:'No projects to display.',ko:'표시할 프로젝트가 없습니다.'},
+  'Belum ada project. Klik "+ Project" untuk memulai.':{en:'No projects yet. Select "+ Project" to get started.',ko:'프로젝트가 없습니다. "+ 프로젝트"를 눌러 시작하세요.'},
+  'Belum ada data budget.':{en:'No budget data yet.',ko:'예산 데이터가 없습니다.'},
+  'Belum ada quotation.':{en:'No quotations yet.',ko:'견적이 없습니다.'},
+  'Ringkasan':{en:'Overview',ko:'요약'},
+  'Pekerjaan Saya':{en:'My Work',ko:'내 작업'},
+  'Project Baru':{en:'New Project',ko:'신규 프로젝트'},
+  'Daftar Improvement':{en:'Improvement List',ko:'개선 과제 목록'},
+  'Tinjauan PI':{en:'PI Review',ko:'PI 검토'},
+  'Ajukan Improvement':{en:'Submit Improvement',ko:'개선 과제 등록'},
+  'Pengadaan & Laporan':{en:'Procurement & Reports',ko:'조달 및 보고서'},
+  'Master & Sistem':{en:'Master & System',ko:'마스터 및 시스템'},
+  'Template Stage':{en:'Stage Templates',ko:'단계 템플릿'},
+  'Template & Nomor PO':{en:'PO Template & Numbering',ko:'PO 템플릿 및 번호'},
+  'Pengaturan & Ekspor':{en:'Settings & Export',ko:'설정 및 내보내기'},
+  'Info Utama':{en:'Main Info',ko:'기본 정보'},
+  'Tahapan & Task':{en:'Stages & Tasks',ko:'단계 및 작업'},
+  'Tahapan & Progres Task':{en:'Task Stages & Progress',ko:'단계 및 진행률'},
+  'Tinjau & Simpan':{en:'Review & Save',ko:'검토 및 저장'},
+  'Tinjau & Kirim':{en:'Review & Submit',ko:'검토 및 제출'},
+  'Identifikasi Masalah':{en:'Issue Identification',ko:'문제 식별'},
+  'Tujuan & Lampiran':{en:'Goals & Attachments',ko:'목표 및 첨부파일'},
+  'Kembali':{en:'Back',ko:'이전'},
+  'Berikutnya':{en:'Next',ko:'다음'},
+  'Detail':{en:'Details',ko:'상세 보기'},
+  'Edit Form':{en:'Edit Form',ko:'양식 수정'},
+  'Update Task':{en:'Update Tasks',ko:'작업 업데이트'},
+  'Kode: {NNN} nomor urut, {YYYY} tahun 4 digit, {YY} tahun 2 digit, {MM} bulan angka, {RM} bulan Romawi. Contoh: {NNN}/PO/PI/{RM}/{YYYY}. Nomor berikutnya:':{en:'Tokens: {NNN} sequence number, {YYYY} 4-digit year, {YY} 2-digit year, {MM} numeric month, {RM} Roman month. Example: {NNN}/PO/PI/{RM}/{YYYY}. Next number:',ko:'코드: {NNN} 일련번호, {YYYY} 4자리 연도, {YY} 2자리 연도, {MM} 숫자 월, {RM} 로마 숫자 월. 예: {NNN}/PO/PI/{RM}/{YYYY}. 다음 번호:'},
+  '. Nomor urut mulai lagi dari 001 bila kode bulan atau tahun berubah.':{en:'. Sequence resets to 001 when the month or year token changes.',ko:'. 월 또는 연도 코드가 바뀌면 일련번호가 001부터 다시 시작됩니다.'}
+};
+function trExact(s){
+  if(APP_LANG==='id')return s;
+  const entry=LANG_TEXT[s];
+  return entry?(entry[APP_LANG]||s):null;
+}
+function translatedText(value){
+  if(APP_LANG==='id'||!value)return value;
+  const trimmed=value.trim();
+  if(!trimmed)return value;
+  const exact=trExact(trimmed);
+  if(exact!==null)return value.replace(trimmed,exact);
+
+  const L=(en,ko)=>APP_LANG==='en'?en:ko;
+  let m;
+  if((m=trimmed.match(/^Perlu Perhatian \((\d+)\)$/)))return value.replace(trimmed,L(`Needs Attention (${m[1]})`,`확인 필요 (${m[1]})`));
+  if((m=trimmed.match(/^Pekerjaan Saya \((.+)\)$/)))return value.replace(trimmed,L(`My Work (${m[1]})`,`내 작업 (${m[1]})`));
+  if((m=trimmed.match(/^Belum ada project untuk (.+)\. Klik "\+ Project Baru" untuk menambahkan\.$/)))return value.replace(trimmed,L(`No projects for ${m[1]} yet. Click "+ New Project" to add one.`,`${m[1]}님의 프로젝트가 없습니다. "+ 신규 프로젝트"를 눌러 추가하세요.`));
+  if((m=trimmed.match(/^(\d+) dari (\d+) (project|issue|usulan)$/)))return value.replace(trimmed,L(`${m[1]} of ${m[2]} ${m[3]==='project'?'projects':'proposals'}`,`${m[1]} / ${m[2]}개 ${m[3]==='project'?'프로젝트':'제안'}`));
+  if((m=trimmed.match(/^(\d+) project$/)))return value.replace(trimmed,L(`${m[1]} projects`,`${m[1]}개 프로젝트`));
+  if((m=trimmed.match(/^(\d+) improvement$/)))return value.replace(trimmed,L(`${m[1]} improvements`,`${m[1]}개 개선 과제`));
+  if((m=trimmed.match(/^Total \((\d+) project\)$/)))return value.replace(trimmed,L(`Total (${m[1]} projects)`,`합계 (${m[1]}개 프로젝트)`));
+  if((m=trimmed.match(/^(\d+) baru$/)))return value.replace(trimmed,L(`${m[1]} new`,`신규 ${m[1]}건`));
+  if((m=trimmed.match(/^(\d+) project belum ada quotation$/)))return value.replace(trimmed,L(`${m[1]} projects have no quotations`,`견적이 없는 프로젝트 ${m[1]}개`));
+  if((m=trimmed.match(/^(\d+) quotation terpilih belum di-PO$/)))return value.replace(trimmed,L(`${m[1]} selected quotations have no PO yet`,`발주서가 없는 선정 견적 ${m[1]}개`));
+  if((m=trimmed.match(/^(?:Template stage|Kelola Template Stage) \((\d+)\)$/i)))return value.replace(trimmed,L(`Manage Stage Templates (${m[1]})`,`단계 템플릿 관리 (${m[1]})`));
+  if((m=trimmed.match(/^(\d+) hari lagi$/)))return value.replace(trimmed,L(`${m[1]} days left`,`${m[1]}일 남음`));
+  if((m=trimmed.match(/^(\d+) hari$/)))return value.replace(trimmed,L(`${m[1]} days`,`${m[1]}일`));
+  if((m=trimmed.match(/^([+-]?\d+) hr$/)))return value.replace(trimmed,L(`${m[1]}d`,`${m[1]}일`));
+  if((m=trimmed.match(/^Telat \+(\d+) hr(?: \((\d+)%\))?$/)))return value.replace(trimmed,m[2]?L(`Overdue +${m[1]}d (${m[2]}%)`,`+${m[1]}일 지연 (${m[2]}%)`):L(`Overdue +${m[1]}d`,`+${m[1]}일 지연`));
+  if((m=trimmed.match(/^Terlambat \+(\d+)h$/)))return value.replace(trimmed,L(`Overdue +${m[1]}d`,`+${m[1]}일 지연`));
+  if((m=trimmed.match(/^Terlambat (\d+) hari$/)))return value.replace(trimmed,L(`${m[1]} days overdue`,`${m[1]}일 지연`));
+  if((m=trimmed.match(/^Terlambat: (.+)$/)))return value.replace(trimmed,L(`Overdue: ${m[1].replace(/\+(\d+) hr/g,'+$1d')}`,`지연: ${m[1].replace(/\+(\d+) hr/g,'+$1일')}`));
+  if((m=trimmed.match(/^Lewat plan mulai: (.+)$/)))return value.replace(trimmed,L(`Past planned start: ${m[1]}`,`계획 시작일 경과: ${m[1]}`));
+  if((m=trimmed.match(/^Progres (\d+)% vs rencana (\d+)%$/)))return value.replace(trimmed,L(`Progress ${m[1]}% vs planned ${m[2]}%`,`진행률 ${m[1]}% vs 계획 ${m[2]}%`));
+  if((m=trimmed.match(/^Rencana (\d+)%$/)))return value.replace(trimmed,L(`Planned ${m[1]}%`,`계획 ${m[1]}%`));
+  if((m=trimmed.match(/^(\d+) hari lewat target · progres (\d+)%$/)))return value.replace(trimmed,L(`${m[1]} days overdue · progress ${m[2]}%`,`목표일 ${m[1]}일 경과 · 진행률 ${m[2]}%`));
+  if((m=trimmed.match(/^(\d+) hari lagi · progres (\d+)%$/)))return value.replace(trimmed,L(`${m[1]} days left · progress ${m[2]}%`,`${m[1]}일 남음 · 진행률 ${m[2]}%`));
+  if((m=trimmed.match(/^Quotation (.+) berlaku (\d+) hari lagi$/)))return value.replace(trimmed,L(`Quotation ${m[1]} expires in ${m[2]} days`,`${m[1]} 견적 유효기간 ${m[2]}일 남음`));
+  if((m=trimmed.match(/^Quotation (.+) terpilih, PO belum dibuat$/)))return value.replace(trimmed,L(`Quotation ${m[1]} selected, PO not created yet`,`${m[1]} 견적 선정됨, 발주서 미작성`));
+  if((m=trimmed.match(/^Langkah (\d+) dari (\d+)$/)))return value.replace(trimmed,L(`Step ${m[1]} of ${m[2]}`,`${m[1]}/${m[2]} 단계`));
+  if((m=trimmed.match(/^Edit Project · (.+)$/)))return value.replace(trimmed,L(`Edit Project · ${m[1]}`,`프로젝트 수정 · ${m[1]}`));
+  if((m=trimmed.match(/^\((\d+)\/(\d+) selesai\)(.*)$/)))return value.replace(trimmed,L(`(${m[1]}/${m[2]} completed)${m[3]}`,`(${m[1]}/${m[2]} 완료)${m[3]}`));
+  if((m=trimmed.match(/^(\d+)\/(\d+) selesai$/)))return value.replace(trimmed,L(`${m[1]}/${m[2]} completed`,`${m[1]}/${m[2]} 완료`));
+  if((m=trimmed.match(/^\((\d+)\/(\d+) task\)$/)))return value.replace(trimmed,L(`(${m[1]}/${m[2]} tasks)`,`(${m[1]}/${m[2]} 작업)`));
+  if((m=trimmed.match(/^Selesai (\d+) dari (\d+) task$/)))return value.replace(trimmed,L(`Completed ${m[1]} of ${m[2]} tasks`,`총 ${m[2]}개 중 ${m[1]}개 작업 완료`));
+  if((m=trimmed.match(/^Selesai (\d{2} .+ \d{4})$/)))return value.replace(trimmed,L(`Completed ${m[1]}`,`${m[1]} 완료`));
+  if((m=trimmed.match(/^Target (\d{2} .+ \d{4})$/)))return value.replace(trimmed,L(`Target ${m[1]}`,`목표 ${m[1]}`));
+  if((m=trimmed.match(/^100% Selesai$/)))return value.replace(trimmed,L(`100% Completed`,`100% 완료`));
+  if((m=trimmed.match(/^(\d+)% berjalan$/)))return value.replace(trimmed,L(`${m[1]}% in progress`,`${m[1]}% 진행 중`));
+  if((m=trimmed.match(/^(\d+) stage terlambat$/)))return value.replace(trimmed,L(`${m[1]} overdue stages`,`지연 단계 ${m[1]}개`));
+  if((m=trimmed.match(/^(\d+) telat$/)))return value.replace(trimmed,L(`${m[1]} overdue`,`${m[1]} 지연`));
+  if((m=trimmed.match(/^(\d+) · terendah (.+)$/)))return value.replace(trimmed,L(`${m[1]} · lowest ${m[2]}`,`${m[1]}건 · 최저 ${m[2]}`));
+  if((m=trimmed.match(/^· (\d+) quotation$/)))return value.replace(trimmed,L(`· ${m[1]} quotations`,`· 견적 ${m[1]}건`));
+  if((m=trimmed.match(/^· Terendah: (.+)$/)))return value.replace(trimmed,L(`· Lowest: ${m[1]}`,`· 최저가: ${m[1]}`));
+  if((m=trimmed.match(/^Semua Quotation \((\d+)\)$/)))return value.replace(trimmed,L(`All Quotations (${m[1]})`,`전체 견적 (${m[1]})`));
+  if((m=trimmed.match(/^Quotation Vendor \((\d+)\)$/)))return value.replace(trimmed,L(`Vendor Quotations (${m[1]})`,`공급업체 견적 (${m[1]})`));
+  if((m=trimmed.match(/^Purchase Order \((\d+)\)$/)))return value.replace(trimmed,L(`Purchase Orders (${m[1]})`,`구매 발주서 (${m[1]})`));
+  if((m=trimmed.match(/^Purchase Order (.+)$/)))return value.replace(trimmed,L(`Purchase Order ${m[1]}`,`구매 발주서 ${m[1]}`));
+  if((m=trimmed.match(/^Lihat PO (.+)$/)))return value.replace(trimmed,L(`View PO ${m[1]}`,`발주서 보기 ${m[1]}`));
+  if((m=trimmed.match(/^Kembalikan status quotation ke (.+)$/)))return value.replace(trimmed,L(`Revert quotation status to ${trExact(m[1])||m[1]}`,`견적 상태를 ${trExact(m[1])||m[1]}(으)로 되돌리기`));
+  if((m=trimmed.match(/^Target Milestone \((\d+)\)$/)))return value.replace(trimmed,L(`Target Milestones (${m[1]})`,`마일스톤 목표 (${m[1]})`));
+  if((m=trimmed.match(/^Milestone \((\d+)\)$/)))return value.replace(trimmed,L(`Milestones (${m[1]})`,`마일스톤 (${m[1]})`));
+  if((m=trimmed.match(/^Quotation & PO \((\d+)\/(\d+)\)$/)))return value.replace(trimmed,L(`Quotations & POs (${m[1]}/${m[2]})`,`견적 및 발주서 (${m[1]}/${m[2]})`));
+  if((m=trimmed.match(/^Tahapan & Progres Task \((\d+)\)$/)))return value.replace(trimmed,L(`Task Stages & Progress (${m[1]})`,`작업 단계 및 진행률 (${m[1]})`));
+  if((m=trimmed.match(/^Daftar Tahapan & Progres Task \((\d+)\)$/)))return value.replace(trimmed,L(`Task Stages & Progress List (${m[1]})`,`작업 단계 및 진행률 목록 (${m[1]})`));
+  if((m=trimmed.match(/^Daftar Task \/ Stage \((\d+)\)$/)))return value.replace(trimmed,L(`Task / Stage List (${m[1]})`,`작업 / 단계 목록 (${m[1]})`));
+  if((m=trimmed.match(/^· estimasi durasi sekitar (\d+) hari$/)))return value.replace(trimmed,L(`· estimated duration ~${m[1]} days`,`· 예상 소요 기간 약 ${m[1]}일`));
+  if((m=trimmed.match(/^· selesai (\d+), saat ini: (.+) · Total (\d+)%$/)))return value.replace(trimmed,L(`· completed ${m[1]}, current: ${m[2]} · Total ${m[3]}%`,`· 완료 ${m[1]}, 현재: ${m[2]} · 전체 ${m[3]}%`));
+  if((m=trimmed.match(/^(\d+) task\/tahapan$/)))return value.replace(trimmed,L(`${m[1]} tasks/stages`,`${m[1]}개 작업/단계`));
+  if((m=trimmed.match(/^Project ini memiliki$/)))return value.replace(trimmed,L(`This project has`,`이 프로젝트에는`));
+  if((m=trimmed.match(/^\. Tanggal mulai & target mengikuti jadwal task\. Total progres dihitung otomatis dari progres tiap task\.$/)))return value.replace(trimmed,L(`. Start & target dates follow the task schedule. Total progress is calculated automatically from each task.`,`이 있습니다. 시작일 및 목표일은 작업 일정을 따르며, 전체 진행률은 각 작업 진행률에서 자동 계산됩니다.`));
+  if((m=trimmed.match(/^\(otomatis dari (\d+) task — klik langkah 2 untuk mengubah progres per task\)$/)))return value.replace(trimmed,L(`(auto-calculated from ${m[1]} tasks — click Step 2 to update task progress)`,`(${m[1]}개 작업 기준 자동 계산 — 작업별 진행률 변경은 2단계 클릭)`));
+  if((m=trimmed.match(/^(.+) \((\d+) task\) · Umum$/)))return value.replace(trimmed,L(`${m[1]} (${m[2]} tasks) · General`,`${m[1]} (${m[2]}개 작업) · 공통`));
+  if((m=trimmed.match(/^(.+) \((\d+) task\) · PIC: (.+)$/)))return value.replace(trimmed,L(`${m[1]} (${m[2]} tasks) · Owner: ${m[3]}`,`${m[1]} (${m[2]}개 작업) · 담당자: ${m[3]}`));
+  if((m=trimmed.match(/^Umum \(Semua PIC\)(.*)$/)))return value.replace(trimmed,L(`General (All Owners)${m[1]}`,`공통 (모든 담당자)${m[1]}`));
+  if((m=trimmed.match(/^📎 Bukti \((\d+)\)$/)))return value.replace(trimmed,L(`📎 Proof (${m[1]})`,`📎 증빙 (${m[1]})`));
+  if((m=trimmed.match(/^📎 Lihat \((\d+)\)$/)))return value.replace(trimmed,L(`📎 View (${m[1]})`,`📎 보기 (${m[1]})`));
+  if((m=trimmed.match(/^Bukti \((\d+)\)$/)))return value.replace(trimmed,L(`Proof (${m[1]})`,`증빙 (${m[1]})`));
+  if((m=trimmed.match(/^Dokumentasi · (.+)$/)))return value.replace(trimmed,L(`Documentation · ${m[1]}`,`문서 · ${m[1]}`));
+  if((m=trimmed.match(/^Dokumentasi stage \((\d+)\)$/)))return value.replace(trimmed,L(`Stage documentation (${m[1]})`,`단계 문서 (${m[1]})`));
+  if((m=trimmed.match(/^Ubah Task \((\d+)\)$/)))return value.replace(trimmed,L(`Edit Tasks (${m[1]})`,`작업 수정 (${m[1]})`));
+  if((m=trimmed.match(/^Ubah Quotation & PO \((\d+)\/(\d+)\)$/)))return value.replace(trimmed,L(`Edit Quotations & POs (${m[1]}/${m[2]})`,`견적 및 발주 수정 (${m[1]}/${m[2]})`));
+  if((m=trimmed.match(/^Ubah Milestone \((\d+)\)$/)))return value.replace(trimmed,L(`Edit Milestones (${m[1]})`,`마일스톤 수정 (${m[1]})`));
+  if((m=trimmed.match(/^Tahap aktif: (.+)$/)))return value.replace(trimmed,L(`Active stage: ${m[1]}`,`진행 단계: ${m[1]}`));
+  if((m=trimmed.match(/^(\d+) task · (\d+) milestone$/)))return value.replace(trimmed,L(`${m[1]} tasks · ${m[2]} milestones`,`작업 ${m[1]}개 · 마일스톤 ${m[2]}개`));
+  if((m=trimmed.match(/^(\d+) Quotation$/)))return value.replace(trimmed,L(`${m[1]} Quotations`,`견적 ${m[1]}건`));
+  if((m=trimmed.match(/^Terpilih: (.+)$/)))return value.replace(trimmed,L(`Selected: ${m[1]}`,`선정됨: ${m[1]}`));
+  if((m=trimmed.match(/^Terendah: (.+)$/)))return value.replace(trimmed,L(`Lowest: ${m[1]}`,`최저가: ${m[1]}`));
+  if((m=trimmed.match(/^Prioritas: (.+)$/)))return value.replace(trimmed,L(`Priority: ${m[1]}`,`우선순위: ${m[1]}`));
+  if((m=trimmed.match(/^(.+) · Prioritas (.+)$/)))return value.replace(trimmed,L(`${m[1]} · Priority ${m[2]}`,`${m[1]} · 우선순위 ${m[2]}`));
+  if((m=trimmed.match(/^Budget: (.+) \((.+)\)$/)))return value.replace(trimmed,L(`Budget: ${m[1]} (${trExact(m[2])||m[2]})`,`예산: ${m[1]} (${trExact(m[2])||m[2]})`));
+  if((m=trimmed.match(/^PIC: (.+)$/)))return value.replace(trimmed,L(`Owner: ${m[1]}`,`담당자: ${m[1]}`));
+  if((m=trimmed.match(/^· Diperbarui (.+) oleh (.+)$/)))return value.replace(trimmed,L(`· Updated ${m[1]} by ${m[2]}`,`· ${m[2]}님이 ${m[1]}에 수정`));
+  if((m=trimmed.match(/^Lihat Semua Issue \((\d+)\)$/)))return value.replace(trimmed,L(`View All Issues (${m[1]})`,`전체 이슈 보기 (${m[1]})`));
+  if((m=trimmed.match(/^Menunggu Keputusan PI \((\d+)\)$/)))return value.replace(trimmed,L(`Awaiting PI Decision (${m[1]})`,`PI 결정 대기 (${m[1]})`));
+  if((m=trimmed.match(/^Evaluasi Improvement · (.+)$/)))return value.replace(trimmed,L(`Evaluate Improvement · ${m[1]}`,`개선 과제 평가 · ${m[1]}`));
+  if((m=trimmed.match(/^Tinjau laporan dari$/)))return value.replace(trimmed,L(`Review the submission from`,`제출된 보고서 검토:`));
+  if((m=trimmed.match(/^dan tentukan tindak lanjut\.$/)))return value.replace(trimmed,L(`and determine the follow-up action.`,`후속 조치를 결정하세요.`));
+  if((m=trimmed.match(/^· Dilaporkan oleh$/)))return value.replace(trimmed,L(`· Submitted by`,`· 제출자:`));
+  if((m=trimmed.match(/^pada (.+)$/)))return value.replace(trimmed,L(`on ${m[1]}`,`(${m[1]})`));
+  if((m=trimmed.match(/^(\d+) file · (\d+) link$/)))return value.replace(trimmed,L(`${m[1]} files · ${m[2]} links`,`파일 ${m[1]}개 · 링크 ${m[2]}개`));
+  if((m=trimmed.match(/^Judul (\d+)$/)))return value.replace(trimmed,L(`Title ${m[1]}`,`서명란 제목 ${m[1]}`));
+  if((m=trimmed.match(/^PIN (?:baru )?\(minimal (\d+) karakter\)$/)))return value.replace(trimmed,L(`New PIN (at least ${m[1]} characters)`,`새 PIN (최소 ${m[1]}자 이상)`));
+  if((m=trimmed.match(/^\((admin|viewer|kontributor|pengguna)\)\. Nama ini dicatat di riwayat perubahan\.$/))){
+    const roleMap={admin:L('admin','관리자'),viewer:L('viewer','뷰어'),kontributor:L('contributor','기여자'),pengguna:L('user','사용자')};
+    return value.replace(trimmed,L(`(${roleMap[m[1]]}). This name is recorded in the change history.`,`(${roleMap[m[1]]}). 이 이름은 변경 이력에 기록됩니다.`));
+  }
+  if((m=trimmed.match(/^(Kode|Project|Klasifikasi|PIC|Status|Progres|Tahap saat ini|Mulai|Target|Vendor|Budget|Komitmen|Quotation|PO) ([▲▼])$/))){
+    const col=trExact(m[1])||m[1];
+    return value.replace(trimmed,`${col} ${m[2]}`);
+  }
+  if((m=trimmed.match(/^• (.+)$/))){
+    const inner=translatedText(m[1]);
+    return value.replace(trimmed,`• ${inner}`);
+  }
+  if(trimmed.includes(' · ')){
+    const parts=trimmed.split(' · ');
+    const mapped=parts.map(p=>{
+      const t=p.trim();
+      const ex=trExact(t);
+      if(ex!==null)return ex;
+      if(/^Pelapor: (.+)$/.test(t)){const n=t.slice(9);return L(`Submitter: ${n}`,`제출자: ${n}`);}
+      if(/^PIC: (.+)$/.test(t)){const n=t.slice(5);return L(`Owner: ${n}`,`담당자: ${n}`);}
+      if(/^Tahap:$/.test(t))return L('Current stage:','현재 단계:');
+      return translatedText(t);
+    });
+    return value.replace(trimmed,mapped.join(' · '));
+  }
+  return value;
+}
+let APPLYING_LANG=false;
+function applyLanguage(){
+  APPLYING_LANG=true;
+  try{
+    if(document.documentElement.lang!==APP_LANG)document.documentElement.lang=APP_LANG;
+    const selector=$('#app-language'),authSelector=$('#auth-language');
+    if(selector&&selector.value!==APP_LANG)selector.value=APP_LANG;
+    if(authSelector&&authSelector.value!==APP_LANG)authSelector.value=APP_LANG;
+    document.querySelectorAll('.lang-pills button').forEach(btn=>btn.classList.toggle('on',btn.dataset.lang===APP_LANG));
+    const walker=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT);
+    let node;
+    while((node=walker.nextNode())){
+      if(node.parentElement&&node.parentElement.closest('script,style,textarea,[data-no-translate]'))continue;
+      if(node.__orig===undefined||node.nodeValue!==node.__lastOut){
+        node.__orig=node.nodeValue;
+      }
+      const next=APP_LANG==='id'?node.__orig:translatedText(node.__orig);
+      node.__lastOut=next;
+      if(next!==node.nodeValue)node.nodeValue=next;
+    }
+    document.querySelectorAll('[placeholder],[title],[aria-label]').forEach(el=>{
+      if(!el.__origAttr)el.__origAttr={};
+      if(!el.__lastAttr)el.__lastAttr={};
+      ['placeholder','title','aria-label'].forEach(attr=>{
+        if(el.hasAttribute(attr)){
+          const cur=el.getAttribute(attr);
+          if(el.__origAttr[attr]===undefined||cur!==el.__lastAttr[attr]){
+            el.__origAttr[attr]=cur;
+          }
+          const next=APP_LANG==='id'?el.__origAttr[attr]:translatedText(el.__origAttr[attr]);
+          el.__lastAttr[attr]=next;
+          if(next!==cur)el.setAttribute(attr,next);
+        }
+      });
+    });
+  }finally{
+    APPLYING_LANG=false;
+  }
+}
+function setLanguage(language){
+  if(!['id','en','ko'].includes(language))return;
+  APP_LANG=language;localStorage.setItem('pt_language',language);
+  const authSelector=$('#auth-language');if(authSelector)authSelector.value=language;
+  render();applyLanguage();
+}
+function toggleTheme(){
+  const cur=document.documentElement.dataset.theme==='dark'?'light':'dark';
+  document.documentElement.dataset.theme=cur;
+  localStorage.setItem('pt_theme',cur);
+  const btn=$('#theme-toggle');if(btn)btn.textContent=cur==='dark'?'☀':'☾';
+}
+let LANGUAGE_UPDATE_QUEUED=false;
+new MutationObserver(()=>{
+  if(APPLYING_LANG||LANGUAGE_UPDATE_QUEUED)return;
+  LANGUAGE_UPDATE_QUEUED=true;
+  requestAnimationFrame(()=>{
+    LANGUAGE_UPDATE_QUEUED=false;
+    applyLanguage();
+  });
+}).observe(document.body,{childList:true,subtree:true,characterData:true});
+
+/* ================= konstanta ================= */
+const STATUS_INPUT=['Not Started','On Progress','On Hold','Completed'];
+const ST_ORDER=['On Progress','Delayed','On Hold','Not Started','Completed'];
+const ST_COLOR={'Not Started':'#94a3b8','On Progress':'#3b82f6','Completed':'#10b981','On Hold':'#f59e0b','Delayed':'#ef4444'};
+const QSTAT=['Diterima','Review','Terpilih','Ditolak'];
+const QCOL={'Diterima':'#64748b','Review':'#f59e0b','Terpilih':'#10b981','Ditolak':'#ef4444'};
+const FILE_MAX=100*1024*1024;
+
+const STG_ST=['Not Started','On Progress','On Hold','Completed'];
+const ROMAN=['I','II','III','IV','V','VI','VII','VIII','IX','X','XI','XII'];
+const MN={en:{s:['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],f:['January','February','March','April','May','June','July','August','September','October','November','December']},id:{s:['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'],f:['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember']}};
+const POL={en:{to:'TO',ship:'SHIP TO',po:'PO. Number',date:'PO. Date',ref:'Ref. Quotation',proj:'Project',tel:'Telp',attn:'Attn',email:'E-mail',no:'No.',desc:'DESCRIPTION',qty:'QTY',unit:'Unit',due:'Due Date',price:'Unit Price',total:'Total',sub:'SUB TOTAL',tax:'Tax',grand:'GRAND TOTAL',pay:'Payment',lead:'Lead Time',deliv:'Delivery Place'},
+ id:{to:'KEPADA',ship:'KIRIM KE',po:'No. PO',date:'Tanggal PO',ref:'Ref. Quotation',proj:'Project',tel:'Telp',attn:'Up.',email:'E-mail',no:'No.',desc:'DESKRIPSI',qty:'QTY',unit:'Satuan',due:'Tgl. Kirim',price:'Harga Satuan',total:'Jumlah',sub:'SUB TOTAL',tax:'PPN',grand:'GRAND TOTAL',pay:'Pembayaran',lead:'Lead Time',deliv:'Lokasi Pengiriman'}};
+function poDate(iso,fmt,lang){const d=pd(iso);if(!d)return '';const dd=String(d.getDate()).padStart(2,'0'),mi=d.getMonth(),Y=d.getFullYear(),M=MN[lang==='id'?'id':'en'];
+  if(fmt==='dd/mm/yyyy')return dd+'/'+String(mi+1).padStart(2,'0')+'/'+Y;
+  if(fmt==='dd Mmmm yyyy')return dd+' '+M.f[mi]+' '+Y;
+  if(fmt==='dd Mmm yyyy')return dd+' '+M.s[mi]+' '+Y;
+  return dd+'-'+M.s[mi]+'-'+String(Y).slice(2);}
+
+
+/* ================= state ================= */
+let DB=normDB({}),ME='',USER=null;
+let VIEW='dash',PREV_VIEW='dash',F={cat:'',status:'',pic:'',q:''},SORT={k:'end',d:1},RPERIOD='day',PRIORITY_COLLAPSED=false;
+let GS='month',GGROUP=true,GJUMP=true;
+let REV=-1,KNOWN={},KNOWNI={},KDEL={},KSET=-1,SSE=null,ONLINE=[],SYNCERR=null,lastSync=null,PUSHING=false,AGAIN=false,RETRY=null,SKEW=0;
+let draft=null,baseAt=0,isNew=false,TAB='info',WIZ_STEP=1,DETAIL_TAB='overview',CD=[],IDRAFT=null,IBASE=null,IISNEW=false,IMP_WIZ_STEP=1,IMPFILTER='all',IMPQ='',PROJECT_READ_ONLY=false;
+
+/* ================= data ================= */
+function buildStages(defs,base){
+  let cur=pd(base)||today(),prevS=cur;const out=[];
+  defs.forEach(def=>{
+    const days=Math.max(1,Number(def.days)||1);
+    const ps=(def.par&&out.length)?prevS:cur;
+    const pf=addDays(ps,days-1);
+    out.push({id:uid(),name:def.name,pic:def.pic||'',ps:fd(ps),pf:fd(pf),as:'',af:'',status:'Not Started',prog:0,note:'',par:!!def.par});
+    prevS=ps;const nx=addDays(pf,1);if(nx>cur)cur=nx;
+  });
+  return out;
+}
+
+const byId=id=>DB.projects.find(p=>p.id===id);
+const getProj=id=>id==='draft'?draft:byId(id);
+const catColor=n=>{const c=DB.settings.categories.find(x=>x.name===n);return (c&&/^#[0-9a-fA-F]{3,8}$/.test(c.color||''))?c.color:'#64748b';};
+function nextCode(){let m=0;DB.projects.forEach(p=>{const x=/(\d+)$/.exec(p.code||'');if(x)m=Math.max(m,+x[1]);});return 'PRJ-'+String(m+1).padStart(3,'0');}
+
+/* ================= logika bisnis ================= */
+function effStatus(p){
+  if(p.status==='Completed'||p.progress>=100)return 'Completed';
+  if(p.status==='On Hold')return 'On Hold';
+  const e=pd(p.end);if(e&&e<today())return 'Delayed';
+  return p.status;
+}
+function planned(p){const s=pd(p.start),e=pd(p.end);if(!s||!e)return 0;const t=today();if(t<=s)return 0;if(t>=e)return 100;return Math.round(diffDays(s,t)/Math.max(1,diffDays(s,e))*100);}
+const atRisk=p=>effStatus(p)==='On Progress'&&planned(p)-p.progress>=15;
+const quotes=p=>p.quotations||[];
+const selQ=p=>quotes(p).find(q=>q.status==='Terpilih');
+function lowQ(p){const a=quotes(p).filter(q=>q.status!=='Ditolak'&&q.amount>0);if(new Set(a.map(q=>q.currency||DB.settings.currency||'IDR')).size>1)return null;return a.length?a.reduce((m,q)=>q.amount<m.amount?q:m):null;}
+function committed(p){if(p.actual>0)return p.actual;const s=selQ(p);return s&&s.amount>0&&(s.currency||DB.settings.currency||'IDR')===(DB.settings.currency||'IDR')?s.amount:0;}
+function costBasis(p){
+  if(p.actual>0)return {amt:p.actual,src:'Aktual / PO'};
+  const s=selQ(p);if(s&&s.amount>0)return {amt:s.amount,src:'Quotation terpilih',currency:s.currency||DB.settings.currency||'IDR'};
+  const l=lowQ(p);if(l)return {amt:l.amount,src:'Estimasi (quotation terendah)',currency:l.currency||DB.settings.currency||'IDR'};
+  return {amt:0,src:''};
+}
+function budgetState(p){
+  const b=p.budget||0,c=costBasis(p);
+  if(!b)return {key:'nobudget',label:'Tanpa budget',color:'#94a3b8',c:c};
+  if(c.currency&&(c.currency!==(DB.settings.currency||'IDR')))return {key:'currency',label:'Mata uang berbeda',color:'#94a3b8',c:{amt:0,src:c.src}};
+  if(!c.amt)return {key:'noval',label:'Belum ada nilai',color:'#94a3b8',c:c};
+  const r=c.amt/b;
+  if(r>1)return {key:'over',label:'Over Budget',color:'#ef4444',c:c};
+  if(r>=0.9)return {key:'near',label:'Mendekati budget',color:'#f59e0b',c:c};
+  return {key:'safe',label:'Aman',color:'#10b981',c:c};
+}
+
+/* ---- stage ---- */
+const useBud=()=>!!(DB&&DB.settings&&DB.settings.useBudget);
+function gset(k){return (DB&&DB.settings&&DB.settings[k]!==undefined)?DB.settings[k]:true;}
+function stProg(s){
+  if(s.af||s.status==='Completed')return 100;
+  if(s.status==='Not Started'&&!s.as&&!(Number(s.prog)>0))return 0;
+  const p=Number(s.prog);
+  if(!isNaN(p)&&p>0)return Math.max(0,Math.min(100,Math.round(p)));
+  return (s.as||s.status==='On Progress')?50:0;
+}
+function stEff(s){
+  if(s.af||s.status==='Completed'||Number(s.prog)>=100)return 'Completed';
+  if(s.status==='On Hold')return 'On Hold';
+  const pf=pd(s.pf);if(pf&&pf<today())return 'Delayed';
+  if(s.as||s.status==='On Progress'||Number(s.prog)>0)return 'On Progress';
+  return 'Not Started';
+}
+function stLateStart(s){const e=stEff(s),ps=pd(s.ps);return e==='Not Started'&&ps&&ps<today();}
+function stDev(s){const pf=pd(s.pf);if(!pf)return null;if(s.af)return diffDays(pf,pd(s.af));if(pf<today()&&stEff(s)!=='On Hold')return diffDays(pf,today());return null;}
+function stageDays(s){return (s.ps&&s.pf)?Math.max(1,diffDays(pd(s.ps),pd(s.pf))+1):1;}
+function stageCalc(p){
+  const st=p.stages||[];if(!st.length)return null;
+  let tot=0,done=0;st.forEach(s=>{const w=stageDays(s);tot+=w;done+=w*(stProg(s)/100);});
+  return tot?Math.round(done/tot*100):0;
+}
+function applyAuto(p){
+  const st=p.stages||[];if(!st.length)return;
+  if(gset('autoDates')){
+    let mn='',mx='';st.forEach(s=>{if(s.ps&&(!mn||s.ps<mn))mn=s.ps;if(s.pf&&(!mx||s.pf>mx))mx=s.pf;});
+    if(mn)p.start=mn;if(mx)p.end=mx;
+  }
+  if(gset('autoProgress')){
+    const v=stageCalc(p);p.progress=v;
+    if(v>=100)p.status='Completed';
+    else{
+      if(p.status==='Completed')p.status='On Progress';
+      if(p.status==='Not Started'&&(v>0||st.some(s=>s.as||s.af)))p.status='On Progress';
+    }
+  }
+}
+function curStage(p){
+  const st=p.stages||[];if(!st.length)return null;
+  const done=st.filter(s=>stEff(s)==='Completed').length;
+  if(done===st.length)return {txt:'Semua tahap selesai',done:done,total:st.length,list:[]};
+  let list=st.filter(s=>{const e=stEff(s);return e==='On Progress'||e==='Delayed'||e==='On Hold';});
+  if(!list.length)list=[st.find(s=>stEff(s)==='Not Started')];
+  return {txt:list.map(s=>s.name).join(' + '),done:done,total:st.length,list:list};
+}
+function stageStrip(p){
+  const st=p.stages||[];if(!st.length)return '';
+  return '<div class="strip">'+st.map(s=>{const e=stEff(s);return `<i style="background:${e==='Not Started'?'var(--line)':ST_COLOR[e]}" title="${esc(s.name+' · '+e)}"></i>`;}).join('')+'</div>';
+}
+/* ---- PO ---- */
+function poTotals(po){const sub=(po.items||[]).reduce((a,i)=>a+(Number(i.qty)||0)*(Number(i.price)||0),0);const tax=Math.round(sub*(Number(po.tax)||0)/100);return {sub:sub,tax:tax,total:sub+tax};}
+function allPOs(){const out=[];DB.projects.forEach(p=>{if(draft&&draft.id===p.id)return;(p.pos||[]).forEach(o=>out.push(o));});if(draft)(draft.pos||[]).forEach(o=>out.push(o));return out;}
+function nextPONo(patOv){
+  let pat=(patOv||DB.settings.po.pattern||'{NNN}/PO/{RM}/{YYYY}');if(pat.indexOf('{NNN}')<0)pat+='/{NNN}';
+  const n=new Date(),Y=String(n.getFullYear()),M=String(n.getMonth()+1).padStart(2,'0');
+  const base=pat.replace(/\{YYYY\}/g,Y).replace(/\{YY\}/g,Y.slice(2)).replace(/\{MM\}/g,M).replace(/\{RM\}/g,ROMAN[n.getMonth()]);
+  const i=base.indexOf('{NNN}'),pre=base.slice(0,i),post=base.slice(i+5);
+  const rx=s=>s.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+  const re=new RegExp('^'+rx(pre)+'(\\d+)'+rx(post)+'$');
+  let mx=0;allPOs().forEach(o=>{const m=re.exec(o.no||'');if(m)mx=Math.max(mx,parseInt(m[1],10));});
+  return pre+String(mx+1).padStart(3,'0')+post;
+}
+function dupPOs(){const c={};DB.projects.forEach(p=>(p.pos||[]).forEach(o=>{c[o.no]=(c[o.no]||0)+1;}));return Object.keys(c).filter(k=>c[k]>1);}
+function poHTML(po,proj,auto,Sx){
+  const S=Sx||DB.settings.po,T=poTotals(po),lang=S.lang==='id'?'id':'en',Lb=POL[lang];
+  const nf=n=>Number(n||0).toLocaleString(lang==='en'?'en-US':'id-ID');
+  const currency=po.currency||DB.settings.currency||'IDR',cur=esc(currency);
+  const g=k=>po[k]!==undefined?po[k]:S[k];
+  const br=t=>esc(t).replace(/\n/g,'<br>');
+  const kv=(l,v)=>v?`<tr><td class="k">${l}</td><td class="s">:</td><td>${br(v)}</td></tr>`:'';
+  const isImg=x=>/^data:image\//.test(x||'');
+  const logo=isImg(S.logo)?`<img class="logo" src="${S.logo}">`:'';
+  const rows=(po.items||[]).map((i,n)=>`<tr><td class="c">${n+1}</td><td>${br(i.desc)}</td><td class="c">${esc(i.qty)}</td><td class="c">${esc(i.unit)}</td><td class="c">${i.due?esc(poDate(i.due,S.dateFmt,lang)):''}</td><td class="r">${nf(i.price)}</td><td class="r">${nf((Number(i.qty)||0)*(Number(i.price)||0))}</td></tr>`).join('');
+  const tr=(lb,v,c)=>`<tr class="${c||''}"><td colspan="5" class="nb"></td><td class="lb">${lb}</td><td class="r">${nf(v)}</td></tr>`;
+  const info=[[Lb.pay,g('terms')],[Lb.lead,g('leadTime')],[Lb.deliv,g('delivery')]].filter(x=>x[1]).map(x=>`<tr><td class="ik">${x[0]}</td><td class="s">:</td><td>${br(x[1])}</td></tr>`).join('');
+  const bl=String(S.billing||'').split('\n');
+  const billing=S.billing&&S.billing.trim()?`<div class="bill"><b><u>${esc(bl[0])}</u></b><br>${bl.slice(1).map(esc).join('<br>')}</div>`:'';
+  const notice=String(S.notice||'').split(/\n\s*\n/).filter(x=>x.trim()).map(p=>`<p>${br(p.trim())}</p>`).join('');
+  const useSig=!!g('useSig');
+  const sg=(S.sign||[]).filter(x=>x&&x.label).map(x=>`<td class="sg"><div>${esc(x.label)}</div><div class="sgi">${useSig&&isImg(x.img)?`<img src="${x.img}">`:''}</div><div class="sgl">${esc(x.name||'')}&nbsp;</div><div>${esc(x.title||'')}</div></td>`).join('');
+  return `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${esc(po.no)}</title><style>
+  body{font:12px/1.4 Cambria,Georgia,'Times New Roman',serif;color:#000;margin:0;padding:22px 30px}
+  table{border-collapse:collapse;width:100%}td,th{vertical-align:top}
+  .code{text-align:right;font-size:10px;margin-bottom:6px}
+  .logo{display:block;max-height:72px;max-width:240px;object-fit:contain;margin-bottom:4px}.cn{font-weight:700;font-size:11px}.ca{font-size:10px;line-height:1.35}
+  .ttl{font-size:17px;font-weight:700;text-decoration:underline;margin:8px 0 8px}
+  .po-meta{margin-top:24px}
+  .kv td{padding:2px 3px}.kv .k{width:90px}.s{width:10px}
+  .bx{margin-top:8px;border:1px solid #000}.bx>tbody>tr>td{width:50%;padding:5px 8px;border-right:1px solid #000;font-size:11px}.bx>tbody>tr>td:last-child{border-right:0}
+  .bx .kv td{padding:1px 3px;font-size:11px}.bx .kv .k{width:46px}
+  .frame{margin-top:8px;border:1px solid #000;min-height:430px}
+  .it{border-bottom:1px solid #000}.it th{border:1px solid #000;border-top:0;padding:4px 5px;font-size:11px;text-align:center}.it th:first-child{border-left:0}.it th:last-child{border-right:0}
+  .it td{padding:4px 5px;font-size:11px}.it tbody td{border-left:1px solid #000;border-right:1px solid #000;border-bottom:1px solid #000}.it tbody td.nb{border:0}.it tbody td:first-child{border-left:0}.it tbody td:last-child{border-right:0}
+  .c{text-align:center}.r{text-align:right}.lb{white-space:nowrap}.g td{font-weight:700}
+  .info{margin:14px 12px 10px}.info td{padding:2px 3px;font-size:11px;font-weight:700}.info .ik{width:110px}
+  .bill{margin:14px 12px 0;font-size:11px;line-height:1.5}
+  .nt{margin:12px 12px 0;font-size:11px;white-space:pre-line}
+  .notice{margin:14px 14px 0;text-align:center;font-weight:700;font-size:11px}.notice p{margin:0 0 10px}
+  .sgs{width:auto;margin:18px 30px 14px auto}.sg{width:190px;text-align:center;font-size:11px}.sgi{height:62px;text-align:center}.sgi img{max-height:60px;max-width:170px}.sgl{border-top:1px solid #000;font-weight:700;margin-top:2px}
+  @media print{body{padding:0}@page{size:A4;margin:12mm}}</style></head><body>
+  <table><tr><td style="width:46%">${logo}<div class="cn">${esc(S.company)}</div><div class="ca">${br(S.address)}${S.contact?'<br>'+br(S.contact):''}</div></td>
+  <td><div class="code">${esc(S.docCode||'')}</div><div class="ttl">${esc(S.title)}</div>
+  <table class="kv po-meta">${kv(Lb.po,po.no)}${kv(Lb.date,poDate(po.date,S.dateFmt,lang))}</table></td></tr></table>
+  <table class="bx"><tr><td><b>${Lb.to}</b><br><b>${esc(po.vendor)}</b><br>${br(po.addr)}<table class="kv">${kv(Lb.tel,po.tel)}${kv(Lb.attn,po.attn)}${kv(Lb.email,po.email)}</table></td>
+  <td><b>${Lb.ship}</b><br><b>${esc(g('shipName'))}</b><br>${br(g('shipAddr'))}<table class="kv">${kv(Lb.tel,g('shipTel'))}${kv(Lb.attn,g('shipAttn'))}</table></td></tr></table>
+  <div class="frame">
+  <table class="it"><thead><tr><th style="width:30px">${Lb.no}</th><th>${Lb.desc}</th><th style="width:40px">${Lb.qty}</th><th style="width:44px">${Lb.unit}</th><th style="width:70px">${Lb.due}</th><th style="width:92px">${Lb.price}<br>${cur}</th><th style="width:100px">${Lb.total}<br>${cur}</th></tr></thead>
+  <tbody>${rows}${tr(Lb.sub,T.sub)}${Number(po.tax)?tr(Lb.tax+' '+esc(po.tax)+'%',T.tax):''}${tr(Lb.grand,T.total,'g')}</tbody></table>
+  ${info?`<table class="info">${info}</table>`:''}${po.note?`<div class="nt">${esc(po.note)}</div>`:''}${billing}${notice?`<div class="notice">${notice}</div>`:''}
+  ${sg?`<table class="sgs"><tr>${sg}</tr></table>`:''}</div>
+  ${auto?'<scr'+'ipt>window.onload=function(){setTimeout(function(){window.print()},300)}</scr'+'ipt>':''}</body></html>`;
+}
+
+function getL(ignoreStatus){
+  const q=F.q.toLowerCase();
+  return DB.projects.filter(p=>{
+    if(F.cat&&p.category!==F.cat)return false;
+    if(!ignoreStatus&&F.status&&effStatus(p)!==F.status)return false;
+    if(F.pic&&p.pic!==F.pic)return false;
+    if(q){const hay=[p.code,p.name,p.pic,p.vendor,p.po,p.area].concat(quotes(p).map(x=>x.vendor+' '+x.no)).concat((p.pos||[]).map(o=>o.no+' '+o.vendor)).concat((p.stages||[]).map(s=>s.name)).join(' ').toLowerCase();if(hay.indexOf(q)<0)return false;}
+    return true;
+  });
+}
+
+/* ================= UI umum ================= */
+function toast(m){const t=$('#toast');t.textContent=m;t.style.display='block';clearTimeout(toast._t);toast._t=setTimeout(()=>{t.style.display='none';},3500);}
+function badge(st){return `<span class="badge" style="background:${ST_COLOR[st]}">${esc(st)}</span>`;}
+function chip(c){return `<span class="chip" style="background:${catColor(c)}">${esc(c)}</span>`;}
+function go(v){
+  if(['dash','gantt','my_projects','list','budget','improvements','imp_review'].includes(VIEW))PREV_VIEW=VIEW;
+  VIEW=v;
+  if(v==='gantt')GJUMP=true;
+  document.body.classList.remove('sb-open');
+  render();
+}
+function setStatus(s){F.status=(!s||F.status===s)?'':s;render();}
+function setCat(c){F.cat=F.cat===c?'':c;render();}
+function resetF(){F={cat:'',status:'',pic:'',q:''};const qEl=$('#q');if(qEl)qEl.value='';render();}
+function renderFilters(){
+  const pics=[...new Set(DB.projects.map(p=>p.pic).filter(Boolean))].sort();
+  const o=(arr,cur,all)=>`<option value="">${all}</option>`+arr.map(x=>`<option value="${esc(x)}" ${x===cur?'selected':''}>${esc(x)}</option>`).join('');
+  $('#fsel').innerHTML=`<select data-on-change="[&quot;setFcat&quot;,&quot;@value&quot;]">${o(DB.settings.categories.map(c=>c.name),F.cat,'Semua kategori')}</select> <select data-on-change="[&quot;setFstatus&quot;,&quot;@value&quot;]">${o(ST_ORDER,F.status,'Semua status')}</select> <select data-on-change="[&quot;setFpic&quot;,&quot;@value&quot;]">${o(pics,F.pic,'Semua PIC')}</select>`;
+  const vs=new Set();DB.projects.forEach(p=>{if(p.vendor)vs.add(p.vendor);quotes(p).forEach(q=>q.vendor&&vs.add(q.vendor));});
+  $('#vlist').innerHTML=[...vs].sort().map(v=>`<option value="${esc(v)}">`).join('');
+}
+function isMyProject(p){
+  const me=(ME||'').trim().toLowerCase();
+  if(!me||!p)return false;
+  return ((p.pic||'').trim().toLowerCase()===me)||((p.createdBy||'').trim().toLowerCase()===me)||(p.stages||[]).some(s=>((s&&s.pic)||'').trim().toLowerCase()===me);
+}
+function myProjectsList(){
+  return DB.projects.filter(p=>isMyProject(p));
+}
+function updateBreadcrumb(){
+  const el=$('#breadcrumb');if(!el)return;
+  const map={
+    dash:['Ringkasan','Dashboard'],
+    gantt:['Ringkasan','Gantt Chart'],
+    my_projects:['Project','Pekerjaan Saya'],
+    list:['Project','Daftar Project'],
+    project_detail:['Project','Daftar Project',draft?(draft.code+' · '+draft.name):'Detail Project'],
+    project_form:['Project',isNew?'Project Baru':('Edit Project · '+(draft?draft.code:'')),`Langkah ${WIZ_STEP} dari 5`],
+    budget:['Pengadaan & Laporan','Quotation & PO'],
+    improvements:['Improvement','Daftar Improvement'],
+    imp_review:['Improvement','Tinjauan PI'],
+    imp_detail:['Improvement','Daftar Improvement',IDRAFT?(IDRAFT.title||'Detail Improvement'):'Detail Improvement'],
+    imp_form:['Improvement',IISNEW?'Ajukan Improvement':'Edit Improvement',`Langkah ${IMP_WIZ_STEP} dari 3`],
+    imp_review_form:['Improvement','Tinjauan PI','Keputusan & Feedback PI']
+  };
+  const parts=map[VIEW]||['Ringkasan','Dashboard'];
+  el.innerHTML=parts.map((p,i)=>i===parts.length-1?`<b>${esc(p)}</b>`:`<span>${esc(p)}</span><span class="sep">›</span>`).join('');
+}
+function render(){
+  renderFilters();renderSync();
+  const roleLabel=isAdmin()?'Administrator · PIE':isViewer()?'Viewer (Read-Only)':isContributor()?'Kontributor Dept':'Project Engineer · PIE';
+  $('#who').textContent=ME||'Pengguna';
+  const wr=$('#who-role');if(wr)wr.textContent=roleLabel;
+  const av=$('#user-avatar');if(av)av.textContent=(ME||'U').trim().charAt(0).toUpperCase();
+  $('#appname').textContent=appName();document.title=appName();
+  const myCnt=$('#sb-my-cnt');if(myCnt)myCnt.textContent=myProjectsList().filter(p=>effStatus(p)!=='Completed').length;
+  const impRevCnt=(DB.improvements||[]).filter(x=>['Baru','Review PI','Menunggu Data'].includes(x.status)).length;
+  const sbImpCnt=$('#sb-imp-cnt');if(sbImpCnt)sbImpCnt.textContent=impRevCnt;
+  const sbNewProj=$('#sb-new-proj');if(sbNewProj)sbNewProj.hidden=!canEdit();
+  const sbImpRev=$('#sb-imp-rev');if(sbImpRev)sbImpRev.hidden=!canReviewImprovement();
+  const sbNewImp=$('#sb-new-imp');if(sbNewImp)sbNewImp.hidden=!canSubmitImprovement();
+  const sbTpl=$('#sb-tpl');if(sbTpl)sbTpl.hidden=!canEdit();
+  ['sb-pos','sb-usr'].forEach(id=>{const b=$('#'+id);if(b)b.hidden=!isAdmin();});
+  document.querySelectorAll('#nav .sb-item[data-v]').forEach(b=>b.classList.toggle('on',b.dataset.v===VIEW||(VIEW==='project_detail'&&b.dataset.v==='list')||(VIEW==='imp_detail'&&b.dataset.v==='improvements')||(VIEW==='imp_review_form'&&b.dataset.v==='imp_review')));
+  const createButton=$('#new-project-button');if(createButton)createButton.hidden=!canEdit()||['project_form','imp_form','imp_review_form'].includes(VIEW);
+  const showFilters=['dash','gantt','list','budget'].includes(VIEW);
+  const filters=$('.filters');if(filters)filters.hidden=!showFilters;
+  $('#cnt').textContent=['improvements','imp_review'].includes(VIEW)?DB.improvements.length+' improvement':getL(false).length+' dari '+DB.projects.length+' project';
+  updateBreadcrumb();
+  const views={dash:rDash,gantt:rGantt,my_projects:rMyProjects,list:rList,project_detail:rProjectDetail,project_form:rProjectForm,budget:rBudget,improvements:rImprovements,imp_review:rImpReviewQueue,imp_detail:rImpDetail,imp_form:rImpForm,imp_review_form:rImpReviewForm};
+  (views[VIEW]||rDash)();
+  applyLanguage();
+}
+
+/* ================= donut ================= */
+function donut(data,onclick,centerTxt){
+  const tot=data.reduce((a,d)=>a+d.v,0),R=50,C=2*Math.PI*R;let off=0;
+  const segs=tot?data.filter(d=>d.v>0).map(d=>{const len=d.v/tot*C;const s=`<circle cx="70" cy="70" r="${R}" fill="none" stroke="${d.c}" stroke-width="20" stroke-dasharray="${len} ${C-len}" stroke-dashoffset="${-off}" transform="rotate(-90 70 70)"></circle>`;off+=len;return s;}).join(''):`<circle cx="70" cy="70" r="${R}" fill="none" stroke="var(--line)" stroke-width="20"></circle>`;
+  const leg=data.map(d=>`<div data-on-click="${ea([onclick,d.l])}"><i style="background:${d.c}"></i>${esc(d.l)}<b>${d.v}</b></div>`).join('');
+  return `<div class="donut"><svg viewBox="0 0 140 140">${segs}<text x="70" y="68" text-anchor="middle" font-size="26" font-weight="700" fill="var(--text)">${tot}</text><text x="70" y="86" text-anchor="middle" font-size="10" fill="var(--muted)">${centerTxt}</text></svg><div class="leg">${leg}</div></div>`;
+}
+
+/* ================= DASHBOARD ================= */
+function attention(L){
+  const t=today(),out=[];
+  L.forEach(p=>{
+    const st=effStatus(p);if(st==='Completed')return;
+    const e=pd(p.end),dl=e?diffDays(t,e):null;
+    if(st==='Delayed')out.push({p:p,sev:1,tag:'Terlambat',c:'#ef4444',txt:(e?Math.max(0,-dl)+' hari lewat target':'Ditandai terlambat')+' · progres '+p.progress+'%'});
+    else if(atRisk(p))out.push({p:p,sev:2,tag:'Berisiko',c:'#f97316',txt:'Progres '+p.progress+'% vs rencana '+planned(p)+'%'});
+    else if(st==='On Hold')out.push({p:p,sev:4,tag:'On Hold',c:'#f59e0b',txt:p.desc?p.desc:'Project ditunda'});
+    else if(dl!==null&&dl>=0&&dl<=14)out.push({p:p,sev:5,tag:'Deadline',c:'#3b82f6',txt:dl+' hari lagi · progres '+p.progress+'%'});
+    const ds=p.stages.filter(s=>stEff(s)==='Delayed');
+    if(ds.length)out.push({p:p,sev:1.5,tag:'Stage',c:'#ef4444',txt:'Terlambat: '+ds.slice(0,3).map(s=>s.name+' (+'+stDev(s)+' hr)').join(', ')+(ds.length>3?' ...':'')});
+    const ls=p.stages.filter(stLateStart);
+    if(ls.length)out.push({p:p,sev:3,tag:'Belum mulai',c:'#f97316',txt:'Lewat plan mulai: '+ls.slice(0,3).map(s=>s.name).join(', ')+(ls.length>3?' ...':'')});
+    if(useBud()){const bs=budgetState(p);if(bs.key==='over')out.push({p:p,sev:2,tag:'Over Budget',c:'#ef4444',txt:'+'+moneyC(bs.c.amt-p.budget)+' dari budget ('+bs.c.src.toLowerCase()+')'});}
+    if(!selQ(p)){quotes(p).forEach(q=>{if(q.status!=='Ditolak'&&q.valid){const d=diffDays(t,pd(q.valid));if(d>=0&&d<=7)out.push({p:p,sev:3,tag:'Quotation',c:'#a855f7',txt:'Quotation '+q.vendor+' berlaku '+d+' hari lagi'});}});}
+    if(selQ(p)&&!p.pos.length)out.push({p:p,sev:4,tag:'PO',c:'#a855f7',txt:'Quotation '+selQ(p).vendor+' terpilih, PO belum dibuat'});
+  });
+  return out.sort((a,b)=>a.sev-b.sev);
+}
+function priorityReminders(projects){
+  const start=today(),end=RPERIOD==='day'?start:RPERIOD==='week'?addDays(start,6):new Date(start.getFullYear(),start.getMonth()+1,0);
+  const out=[];projects.forEach(p=>{
+    if(effStatus(p)==='On Hold')return;
+    const add=(date,label,tab,done)=>{if(!date||done)return;const d=pd(date);if(!d||d>end)return;out.push({p,date,label,tab,days:diffDays(start,d)});};
+    if(effStatus(p)!=='Completed')add(p.end,'Target project','info',false);
+    (p.stages||[]).forEach(s=>{const status=stEff(s);if(status!=='On Hold')add(s.pf,'Stage: '+s.name,'stage',status==='Completed');});
+    (p.milestones||[]).forEach(m=>add(m.date,'Milestone: '+m.name,'ms',m.done));
+  });
+  return out.sort((a,b)=>a.date.localeCompare(b.date)||(a.p.name||'').localeCompare(b.p.name||''));
+}
+function setReminderPeriod(period){RPERIOD=period;rDash();applyLanguage();}
+function togglePriorityReminders(){PRIORITY_COLLAPSED=!PRIORITY_COLLAPSED;rDash();applyLanguage();}
+function rDash(){
+  const all=getL(true),L=getL(false);
+  const reminders=priorityReminders(L);
+  const cnt=s=>all.filter(p=>effStatus(p)===s).length;
+  const avg=all.length?Math.round(all.reduce((a,p)=>a+p.progress,0)/all.length):0;
+  const kp=(s,lbl)=>`<div class="kpi ${F.status===s&&s?'on':''}" data-on-click="${ea(["setStatus",s])}"><i style="background:${ST_COLOR[s]||'var(--pri)'}"></i><b>${s?cnt(s):all.length}</b><span>${lbl}</span></div>`;
+  const dashboardImprovements=(DB.improvements||[]).filter(x=>canReviewImprovement()||x.submittedBy===ME);
+  const newImprovements=dashboardImprovements.filter(x=>x.status==='Baru').length;
+  const nQ=L.reduce((a,p)=>a+quotes(p).length,0),nPO=L.reduce((a,p)=>a+p.pos.length,0);
+  const waitQ=L.filter(p=>{const s=effStatus(p);return s!=='Completed'&&s!=='On Hold'&&s!=='Not Started'&&!quotes(p).length&&!p.pos.length;}).length;
+  const waitPO=L.filter(p=>selQ(p)&&!p.pos.length&&effStatus(p)!=='Completed').length;
+  let ban='';
+  if(Math.abs(SKEW)>120000)ban+=`<div class="banner warn"><span><b>Jam komputer Anda berbeda sekitar ${Math.round(Math.abs(SKEW)/60000)} menit dari server.</b> Perubahan terbaru ditentukan dari jam komputer, jadi sinkronkan jam Windows Anda agar data tidak saling menimpa.</span></div>`;
+  const stData=ST_ORDER.map(s=>({l:s,v:L.filter(p=>effStatus(p)===s).length,c:ST_COLOR[s]}));
+  const catData=DB.settings.categories.map(c=>({l:c.name,v:L.filter(p=>p.category===c.name).length,c:c.color}));
+  const att=attention(L);
+  const periodNames={day:'Harian',week:'Mingguan',month:'Bulanan'};
+  const reminderRows=reminders.map(x=>{const label=x.days<0?'Terlambat '+Math.abs(x.days)+' hari':x.days===0?'Hari ini':x.days+' hari lagi';return `<div class="ai" data-on-click="${ea(["openP",x.p.id,x.tab])}"><span class="tag" style="background:${x.days<0?'#ef4444':x.days<=2?'#f59e0b':'#3b82f6'}">${label}</span><div><b>${esc(x.label)} · ${esc(x.p.name)}</b><div class="small muted">${esc(x.p.code)} · ${fmtDate(x.date)}${x.p.pic?' · '+esc(x.p.pic):''}</div></div></div>`;}).join('')||'<div class="muted">Tidak ada prioritas terjadwal pada periode ini.</div>';
+  const reminderPanel=`<div class="card deadline-reminders ${reminders.some(x=>x.days<0)?'has-overdue':''}"><div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap"><h3 style="margin:0;flex:1">Prioritas ${periodNames[RPERIOD]} <span class="muted small" style="font-weight:400">(${reminders.length})</span></h3><div class="priority-controls"><div class="reminder-period">${[['day','Hari ini'],['week','Minggu ini'],['month','Bulan ini']].map(x=>`<button class="${RPERIOD===x[0]?'on':''}" data-on-click="${ea(["setReminderPeriod",x[0]])}">${x[1]}</button>`).join('')}</div><button class="btn sm" type="button" aria-controls="priority-reminder-content" aria-expanded="${!PRIORITY_COLLAPSED}" data-on-click="[&quot;togglePriorityReminders&quot;]">${PRIORITY_COLLAPSED?'Tampilkan daftar':'Sembunyikan daftar'}</button></div></div><div id="priority-reminder-content" ${PRIORITY_COLLAPSED?'hidden':''}>${reminderRows}</div></div>`;
+  const board=L.slice().sort((a,b)=>ST_ORDER.indexOf(effStatus(a))-ST_ORDER.indexOf(effStatus(b))||(a.end>b.end?1:-1)).map(p=>{
+    const st=effStatus(p),cs=curStage(p),late=p.stages.filter(s=>stEff(s)==='Delayed').length;
+    return `<div class="pb" data-on-click="${ea(["viewP",p.id])}">
+      <div><b>${esc(p.name)}</b><div class="small muted">${esc(p.code)} · ${esc(p.pic||'-')} · ${chip(p.category)}</div></div>
+      <div><div class="bar"><div class="fill" style="width:${p.progress}%;background:${catColor(p.category)}"></div>${st==='Completed'||p.stages.length?'':`<div class="plan" style="left:${planned(p)}%" title="Rencana ${planned(p)}%"></div>`}</div>${stageStrip(p)}
+        <div class="small muted" style="margin-top:4px">${fmtDate(p.start)} → ${fmtDate(p.end)}${cs?' · Tahap: <b style="color:var(--text)">'+esc(cs.txt)+'</b> ('+cs.done+'/'+cs.total+' selesai)':''}${late&&st!=='Completed'?' · <span style="color:var(--bad);font-weight:600">'+late+' stage terlambat</span>':''}</div></div>
+      <div style="text-align:right"><b>${p.progress}%</b> ${badge(st)}${atRisk(p)?' <span class="tag" style="background:#f97316">BERISIKO</span>':''}</div></div>`;
+  }).join('')||'<div class="empty">Tidak ada project.</div>';
+  $('#main').innerHTML=ban+`
+  <div class="grid kpis">${kp('','Total Project')}${kp('On Progress','On Progress')}${kp('Completed','Completed')}${kp('Delayed','Delayed')}${kp('On Hold','On Hold')}${kp('Not Started','Not Started')}
+    <div class="kpi static"><i style="background:var(--pri)"></i><b>${avg}%</b><span>Rata-rata progres</span><div class="mini"><div style="width:${avg}%"></div></div></div></div>
+  <div class="grid kpis">
+    <div class="kpi" data-on-click="[&quot;go&quot;,&quot;improvements&quot;]"><i style="background:#10b981"></i><b>${dashboardImprovements.length}</b><span>Improvement masuk</span><small>${newImprovements} baru</small></div>
+    <div class="kpi static"><i style="background:#a855f7"></i><b>${nQ}</b><span>Quotation masuk</span><small>${waitQ} project belum ada quotation</small></div>
+    <div class="kpi static"><i style="background:#3b82f6"></i><b>${nPO}</b><span>PO terbit</span><small>${waitPO} quotation terpilih belum di-PO</small></div>
+  </div>
+  ${reminderPanel}
+  <div class="grid g3">
+    <div class="card"><h3>Status Project</h3>${donut(stData,'setStatus','project')}</div>
+    <div class="card"><h3>Klasifikasi Project</h3>${donut(catData,'setCat','project')}</div>
+    <div class="card"><h3>Perlu Perhatian (${att.length})</h3><div class="att">${att.map(a=>`<div class="ai" data-on-click="${ea(['openP',a.p.id,...(a.tag==='Stage'||a.tag==='Belum mulai'?['stage']:a.tag==='PO'||a.tag==='Quotation'?['budget']:[])])}"><span class="tag" style="background:${a.c}">${a.tag}</span><div><b>${esc(a.p.name)}</b><div class="small muted">${esc(a.txt)}</div></div></div>`).join('')||'<div class="muted">Tidak ada yang perlu perhatian.</div>'}</div></div>
+  </div>
+  <div class="card"><h3>Papan Progres <span class="muted small" style="font-weight:400">· kotak kecil = tahap project (abu belum mulai, biru berjalan, hijau selesai, merah terlambat, kuning tertahan)</span></h3>${board}</div>`;
+}
+
+/* ================= GANTT ================= */
+function segments(rs,reEx,unit){
+  const out=[];let c=new Date(rs);
+  while(c<reEx){
+    let n;
+    if(unit==='month')n=new Date(c.getFullYear(),c.getMonth()+1,1);
+    else if(unit==='year')n=new Date(c.getFullYear()+1,0,1);
+    else if(unit==='quarter')n=new Date(c.getFullYear(),(Math.floor(c.getMonth()/3)+1)*3,1);
+    else n=addDays(c,((8-c.getDay())%7)||7);
+    if(n>reEx)n=reEx;
+    out.push({s:new Date(c),e:n});c=n;
+  }
+  return out;
+}
+function setScale(s){GS=s;GJUMP=true;render();}
+function jumpToday(){GJUMP=true;render();}
+let GEXP={},GCMP=true;
+function togX(id){GEXP[id]=!GEXP[id];render();}
+function expAll(v){GEXP={};if(v)getL(false).forEach(p=>{if(p.stages.length)GEXP[p.id]=true;});render();}
+function rGantt(){
+  const L=getL(false).filter(p=>p.start&&p.end);
+  const cats=DB.settings.categories;
+  const anyS=L.some(p=>p.stages.length);
+  const tool=`<div class="card gtool"><div class="seg">${[['week','Minggu'],['month','Bulan'],['quarter','Kuartal']].map(x=>`<button class="${GS===x[0]?'on':''}" data-on-click="${ea(["setScale",x[0]])}">${x[1]}</button>`).join('')}</div>
+    <label style="display:flex;gap:6px;align-items:center;font-size:13px;color:var(--text)"><input type="checkbox" style="width:auto;margin:0" ${GGROUP?'checked':''} data-on-change="[&quot;setGgroup&quot;,&quot;@checked&quot;]"> Kelompokkan per klasifikasi</label>
+    ${anyS?`<label style="display:flex;gap:6px;align-items:center;font-size:13px;color:var(--text)"><input type="checkbox" style="width:auto;margin:0" ${GCMP?'checked':''} data-on-change="[&quot;setGcmp&quot;,&quot;@checked&quot;]"> Plan vs Actual</label><button class="btn sm" data-on-click="[&quot;expAll&quot;,true]">Buka semua stage</button><button class="btn sm" data-on-click="[&quot;expAll&quot;,false]">Tutup semua</button>`:''}
+    <button class="btn sm" data-on-click="[&quot;jumpToday&quot;]">Ke hari ini</button>
+    <div class="lg">${cats.map(c=>`<span><i style="background:${c.color}"></i>${esc(c.name)}</span>`).join('')}<span><i style="background:rgba(148,163,184,.3);border:1px solid var(--muted)"></i>Plan</span><span><i style="background:#3b82f6"></i>Actual</span><span><i style="border:2px solid var(--bad)"></i>Terlambat</span><span><i style="border:1px dashed var(--muted)"></i>On Hold</span><span><i style="background:var(--ok);transform:rotate(45deg) scale(.7)"></i>Milestone</span></div></div>`;
+  if(!L.length){$('#main').innerHTML=tool+'<div class="card empty">Tidak ada project untuk ditampilkan.</div>';return;}
+  const old=$('#gs'),sl=old?old.scrollLeft:0,stp=old?old.scrollTop:0;
+  const dw={week:18,month:5,quarter:1.8}[GS],LW=270;
+  const t=today();
+  let mn=pd(L[0].start),mx=pd(L[0].end);
+  const ext=d=>{d=pd(d);if(!d)return;if(d<mn)mn=d;if(d>mx)mx=d;};
+  L.forEach(p=>{ext(p.start);ext(p.end);p.stages.forEach(s=>{ext(s.ps);ext(s.pf);ext(s.as);ext(s.af);});});
+  if(t<mn)mn=t;if(t>mx)mx=t;
+  const rs=new Date(mn.getFullYear(),mn.getMonth(),1),reEx=new Date(mx.getFullYear(),mx.getMonth()+2,1);
+  const W=Math.round(diffDays(rs,reEx)*dw);
+  const x=d=>Math.round(diffDays(rs,d)*dw*100)/100;
+  const topU=GS==='week'?'month':'year',botU=GS==='week'?'week':(GS==='month'?'month':'quarter');
+  const gLoc={id:'id-ID',en:'en-US',ko:'ko-KR'}[APP_LANG]||'id-ID';
+  const lbl=(s,u)=>u==='month'?(GS==='week'?s.toLocaleDateString(gLoc,{month:'long',year:'numeric'}):s.toLocaleDateString(gLoc,{month:'short'})):u==='year'?String(s.getFullYear()):u==='quarter'?'Q'+(Math.floor(s.getMonth()/3)+1):String(s.getDate());
+  const top=segments(rs,reEx,topU).map(g=>`<div class="gseg t" style="left:${x(g.s)}px;width:${x(g.e)-x(g.s)}px">${lbl(g.s,topU)}</div>`).join('');
+  const botSeg=segments(rs,reEx,botU);
+  const bot=botSeg.map(g=>`<div class="gseg b" style="left:${x(g.s)}px;width:${x(g.e)-x(g.s)}px">${lbl(g.s,botU)}</div>`).join('');
+  const lines=botSeg.map(g=>`<div style="left:${x(g.s)}px"></div>`).join('');
+  const tx=x(t)+dw/2;
+  const span=(a,b)=>{const l=x(a);return [l,Math.max(x(addDays(b,1))-l,5)];};
+  const row=p=>{
+    const st=effStatus(p),col=catColor(p.category),s=pd(p.start),e=pd(p.end),cs=curStage(p);
+    const left=x(s),width=Math.max(x(addDays(e,1))-left,8);
+    const cls='gbar'+(st==='Delayed'?' late':'')+(st==='On Hold'?' hold':'');
+    const ttl=`${p.name} · ${p.category} · ${st} · ${p.progress}% · ${fmtDate(p.start)} → ${fmtDate(p.end)}`;
+    const ms=(p.milestones||[]).filter(m=>m.date).map(m=>`<div class="gms ${m.done?'done':''}" style="left:${x(pd(m.date))+dw/2-6}px" title="${esc(m.name+' · '+fmtDate(m.date))}"></div>`).join('');
+    const tg=p.stages.length?`<span class="gx" data-on-click="${ea(["!togX",p.id])}" title="Buka / tutup stage">${GEXP[p.id]?'▾':'▸'}</span>`:'<span class="gx"></span>';
+    return `<div class="grow"><div class="gl" data-on-click="${ea(["openP",p.id])}">${tg}<span class="dot" style="background:${ST_COLOR[st]}"></span><div><div class="gn">${esc(p.name)}</div><div class="gs">${esc(p.code)} · ${cs?esc(cs.txt):esc(p.pic||'-')}</div></div></div>
+      <div class="gt" style="width:${W}px"><div class="${cls}" style="left:${left}px;width:${width}px;background:${col}33;border-color:${col}" title="${esc(ttl)}" data-on-click="${ea(["openP",p.id])}"><div style="width:${p.progress}%;background:${col}"></div></div><span class="gpct" style="left:${left+width+6}px">${p.progress}%</span>${ms}</div></div>`;
+  };
+  const srow=(p,s)=>{
+    const e=stEff(s),sc=ST_COLOR[e],ps=pd(s.ps),pf=pd(s.pf),as=pd(s.as),af=pd(s.af),dv=stDev(s);
+    let bars='',right=0;
+    const late=e==='Delayed';
+    if(GCMP){
+      if(ps&&pf){const sp=span(ps,pf);bars+=`<div class="gsp ${late?'late':''}" style="left:${sp[0]}px;width:${sp[1]}px;top:5px;height:10px" title="Plan ${esc(fmtDate(s.ps)+' - '+fmtDate(s.pf))}"></div>`;right=Math.max(right,sp[0]+sp[1]);}
+      if(as){const end=af||(t>as?t:as);const sp=span(as,end);bars+=`<div class="gsa ${af?'':'run'}" style="left:${sp[0]}px;width:${sp[1]}px;top:19px;height:10px;background:${sc}" data-on-click="${ea(["openP",p.id,"stage"])}" title="Actual ${esc(fmtDate(s.as)+' - '+(s.af?fmtDate(s.af):'berjalan'))}"></div>`;right=Math.max(right,sp[0]+sp[1]);}
+    }else{
+      if(as){const end=af||(t>as?t:as);const sp=span(as,end);bars+=`<div class="gsa ${af?'':'run'}" style="left:${sp[0]}px;width:${sp[1]}px;top:11px;height:14px;background:${sc}" data-on-click="${ea(["openP",p.id,"stage"])}" title="Actual ${esc(fmtDate(s.as)+' - '+(s.af?fmtDate(s.af):'berjalan'))}"></div>`;right=sp[0]+sp[1];}
+      else if(ps&&pf){const sp=span(ps,pf);bars+=`<div class="gsp ${late?'late':''}" style="left:${sp[0]}px;width:${sp[1]}px;top:11px;height:14px" data-on-click="${ea(["openP",p.id,"stage"])}" title="Plan ${esc(fmtDate(s.ps)+' - '+fmtDate(s.pf))}"></div>`;right=sp[0]+sp[1];}
+    }
+    const dtxt=dv===null?'':(dv>0?`<span class="gdev" style="left:${right+6}px;top:${GCMP?12:11}px;color:var(--bad)">+${dv} hr</span>`:dv<0?`<span class="gdev" style="left:${right+6}px;top:${GCMP?12:11}px;color:var(--ok)">${dv} hr</span>`:'');
+    const docCount=(s.attachments||[]).length+(s.docLinks||[]).length,docs=docCount?`<button class="gdoc" title="Lihat dokumentasi stage" aria-label="Lihat ${docCount} dokumentasi ${esc(s.name||'stage')}" data-on-click="${ea(["!viewStageDocs",p.id,s.id])}">📎 ${docCount}</button>`:'';
+    return `<div class="grow gsr"><div class="gl" data-on-click="${ea(["openP",p.id,"stage"])}"><span class="dot" style="background:${e==='Not Started'?'#94a3b8':sc}"></span><div><div class="gn gstage-heading"><span>${esc(s.name||'-')}</span>${docs}</div><div class="gs">${esc(fmtDate(s.ps))} - ${esc(fmtDate(s.pf))}${s.pic?' · '+esc(s.pic):''}</div></div></div><div class="gt" style="width:${W}px">${bars}${dtxt}</div></div>`;
+  };
+  const groups=GGROUP?cats.map(c=>({name:c.name,items:L.filter(p=>p.category===c.name)})).filter(g=>g.items.length):[{name:null,items:L}];
+  let rows='';
+  groups.forEach(g=>{
+    if(g.name)rows+=`<div class="grow ghd"><div class="gl"><i style="background:${catColor(g.name)}"></i><b>${esc(g.name)}</b><span class="muted small">(${g.items.length})</span></div><div class="gt" style="width:${W}px"></div></div>`;
+    g.items.slice().sort((a,b)=>a.start>b.start?1:-1).forEach(p=>{rows+=row(p);if(GEXP[p.id])p.stages.forEach(s=>{rows+=srow(p,s);});});
+  });
+  $('#main').innerHTML=tool+`<div class="card gscroll" id="gs"><div class="gwrap" style="width:${LW+W}px">
+    <div class="ghead"><div class="gl gcorner">Project / Stage</div><div class="gcols" style="width:${W}px">${top}${bot}<div class="gtodayh" style="left:${tx}px">Hari ini</div></div></div>
+    ${rows}<div class="glines" style="left:${LW}px;width:${W}px">${lines}<div class="today" style="left:${tx}px"></div></div></div></div>`;
+  const sc=$('#gs');
+  if(GJUMP){sc.scrollLeft=Math.max(0,tx-(sc.clientWidth-LW)*0.3);sc.scrollTop=0;GJUMP=false;}else{sc.scrollLeft=sl;sc.scrollTop=stp;}
+}
+
+/* ================= PEKERJAAN SAYA & DAFTAR PROJECT ================= */
+const SORTV={code:p=>p.code,name:p=>p.name.toLowerCase(),category:p=>p.category,pic:p=>(p.pic||'').toLowerCase(),status:p=>ST_ORDER.indexOf(effStatus(p)),progress:p=>p.progress,stage:p=>{const c=curStage(p);return c?c.txt.toLowerCase():'~';},start:p=>p.start,end:p=>p.end,vendor:p=>(p.vendor||'').toLowerCase(),budget:p=>p.budget,cost:p=>committed(p),quotes:p=>quotes(p).length,po:p=>p.pos.length};
+function sortBy(k){SORT=SORT.k===k?{k:k,d:-SORT.d}:{k:k,d:1};render();}
+function rMyProjects(){
+  const L=getL(false).filter(p=>isMyProject(p)).slice().sort((a,b)=>(b.updatedAt||0)-(a.updatedAt||0));
+  const active=L.filter(p=>effStatus(p)==='On Progress').length,late=L.filter(p=>effStatus(p)==='Delayed').length,done=L.filter(p=>effStatus(p)==='Completed').length;
+  const rows=L.map(p=>{
+    const st=effStatus(p),cs=curStage(p),lateStg=p.stages.filter(s=>stEff(s)==='Delayed').length;
+    const canMod=canEdit()&&canModifyProj(p);
+    return `<tr data-on-click="${ea(["viewP",p.id])}">
+      <td><b>${esc(p.code)}</b></td>
+      <td><b style="color:var(--pri)">${esc(p.name)}</b><div class="small muted">${esc(p.area||'Area belum diisi')}</div></td>
+      <td>${chip(p.category)}</td>
+      <td>${badge(st)}</td>
+      <td><span class="pbar"><div style="width:${p.progress}%"></div></span><b>${p.progress}%</b></td>
+      <td>${cs?`<span style="font-weight:600">${esc(cs.txt)}</span> <span class="muted small">(${cs.done}/${cs.total} task)</span>`+(lateStg?` <span class="tag" style="background:#ef4444">${lateStg} telat</span>`:''):'<span class="muted">Belum ada task</span>'}</td>
+      <td>${fmtDate(p.end)}</td>
+      <td class="r" style="white-space:nowrap" data-on-click="${ea(["!ptStop"])}">
+        <button class="btn sm" data-on-click="${ea(["viewP",p.id])}">Buka Detail</button>
+        ${canMod?`<button class="btn sm pri" data-on-click="${ea(["editP",p.id,2])}">Update Task</button>`:''}
+      </td>
+    </tr>`;
+  }).join('');
+  $('#main').innerHTML=`
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-bottom:14px">
+      <div><h2 style="font-size:20px;margin:0;font-weight:800">Pekerjaan Saya (${esc(ME)})</h2><div class="muted small">Project yang menjadi tanggung jawab Anda. Klik baris project untuk melihat detail atau langsung memperbarui progres task.</div></div>
+      ${canEdit()?`<button class="btn pri" data-on-click="[&quot;newP&quot;]">+ Project Baru</button>`:''}
+    </div>
+    <div class="grid kpis" style="grid-template-columns:repeat(auto-fit,minmax(170px,1fr))">
+      <div class="kpi static"><i style="background:var(--pri)"></i><b>${L.length}</b><span>Total Project Saya</span><small>PIC: ${esc(ME)}</small></div>
+      <div class="kpi static"><i style="background:#3b82f6"></i><b>${active}</b><span>Sedang Berjalan</span><small>On Progress</small></div>
+      <div class="kpi static"><i style="background:#ef4444"></i><b>${late}</b><span>Perlu Perhatian</span><small>Melewati jadwal target</small></div>
+      <div class="kpi static"><i style="background:#10b981"></i><b>${done}</b><span>Selesai</span><small>Completed 100%</small></div>
+    </div>
+    <div class="card" style="padding:0"><div class="tw"><table><thead><tr><th>Kode</th><th>Project</th><th>Klasifikasi</th><th>Status</th><th>Progres</th><th>Tahap Saat Ini</th><th>Target Selesai</th><th class="r">Aksi</th></tr></thead><tbody>${rows||`<tr><td colspan="8" class="empty">Belum ada project untuk ${esc(ME)}. Klik "+ Project Baru" untuk menambahkan.</td></tr>`}</tbody></table></div></div>`;
+}
+function rList(){
+  const ub=useBud();
+  const L=getL(false).slice().sort((a,b)=>{const x=SORTV[SORT.k](a),y=SORTV[SORT.k](b);return (x<y?-1:x>y?1:0)*SORT.d;});
+  const cols=[['code','Kode'],['name','Project'],['category','Klasifikasi'],['pic','PIC'],['status','Status'],['progress','Progres'],['stage','Tahap saat ini'],['start','Mulai'],['end','Target'],['vendor','Vendor']].concat(ub?[['budget','Budget'],['cost','Komitmen']]:[]).concat([['quotes','Quotation'],['po','PO']]);
+  const th=cols.map(c=>`<th class="${c[0]==='budget'||c[0]==='cost'?'r':''}" data-on-click="${ea(["sortBy",c[0]])}">${c[1]}${SORT.k===c[0]?(SORT.d>0?' ▲':' ▼'):''}</th>`).join('')+'<th class="r">Aksi</th>';
+  const tb=L.map(p=>{const st=effStatus(p),bs=budgetState(p),cm=committed(p),lq=lowQ(p),cs=curStage(p);
+    const late=p.stages.filter(s=>stEff(s)==='Delayed').length;
+    const canMod=canEdit()&&canModifyProj(p);
+    return `<tr data-on-click="${ea(["viewP",p.id])}"><td>${esc(p.code)}</td><td><b>${esc(p.name)}</b></td><td>${chip(p.category)}</td><td>${esc(p.pic||'-')}</td><td>${badge(st)}</td>
+    <td><span class="pbar"><div style="width:${p.progress}%"></div></span>${p.progress}%</td><td>${cs?esc(cs.txt)+' <span class="muted small">('+cs.done+'/'+cs.total+')</span>'+(late?' <span class="tag" style="background:#ef4444">'+late+' telat</span>':''):'-'}</td><td>${fmtDate(p.start)}</td><td>${fmtDate(p.end)}</td><td>${esc(p.vendor||'-')}</td>
+    ${ub?`<td class="r">${p.budget?money(p.budget):"-"}</td><td class="r" style="color:${bs.key==="over"?"var(--bad)":"inherit"};font-weight:${bs.key==="over"?700:400}">${cm?money(cm):(bs.c.amt?`<span class="muted">est. ${moneyC(bs.c.amt)}</span>`:"-")}</td>`:""}
+    <td>${quotes(p).length?quotes(p).length+(lq?' · terendah '+poMoney(lq.amount,lq.currency):''):'-'}</td><td>${p.pos.length?esc(p.pos.map(o=>o.no).join(', ')):esc(p.po||'-')}</td>
+    <td class="r" style="white-space:nowrap" data-on-click="${ea(["!ptStop"])}">
+      <button class="btn sm" data-on-click="${ea(["viewP",p.id])}">Detail</button>
+      ${canMod?`<button class="btn sm pri" data-on-click="${ea(["editP",p.id,1])}">Edit</button>`:''}
+    </td></tr>`;}).join('');
+  const sb=L.reduce((a,p)=>a+p.budget,0),sc=L.reduce((a,p)=>a+committed(p),0);
+  const foot=ub?`<tfoot><tr><td colspan="10" class="r"><b>Total (${L.length} project)</b></td><td class="r"><b>${money(sb)}</b></td><td class="r"><b>${money(sc)}</b></td><td colspan="3"></td></tr></tfoot>`:'';
+  $('#main').innerHTML=`<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px;flex-wrap:wrap"><div><h2 style="font-size:19px;margin:0;font-weight:800">Daftar Project</h2><div class="muted small">Klik baris project untuk membuka ringkasan &amp; progres task, atau klik "Edit" untuk mengubah pengaturan project.</div></div>${canEdit()?`<button class="btn pri" data-on-click="[&quot;newP&quot;]">+ Project Baru</button>`:''}</div><div class="card" style="padding:0"><div class="tw" style="max-height:calc(100vh - 240px)"><table><thead><tr>${th}</tr></thead><tbody>${tb||`<tr><td colspan="${cols.length+1}" class="empty">Tidak ada project. Klik "+ Project Baru" untuk menambah.</td></tr>`}</tbody>${foot}</table></div></div>`;
+}
+
+/* ================= BUDGET & QUOTATION ================= */
+function rBudget(){
+  const L=getL(false),ub=useBud();
+  let chart='';
+  if(ub){
+    const rows=L.filter(p=>p.budget>0||costBasis(p).amt>0).sort((a,b)=>b.budget-a.budget);
+    const mx=Math.max.apply(null,rows.map(p=>Math.max(p.budget,costBasis(p).amt)).concat([1]));
+    chart=`<div class="card" style="margin-bottom:12px"><h3>Budget vs Komitmen per Project <span class="muted small" style="font-weight:400">· hanya untuk project yang punya budget</span></h3>`+(rows.map(p=>{const bs=budgetState(p),candidate=lowQ(p),lq=candidate&&(candidate.currency||DB.settings.currency||'IDR')===(DB.settings.currency||'IDR')?candidate:null;
+      return `<div class="brow" data-on-click="${ea(["viewP",p.id,"budget"])}"><div><b>${esc(p.name)}</b><div class="small muted">${esc(p.code)} · ${esc(p.vendor||'vendor belum dipilih')}</div></div>
+      <div class="btrack"><div class="bbud" style="width:${p.budget/mx*100}%"></div><div class="bfill" style="width:${bs.c.amt/mx*100}%;background:${bs.color};opacity:${p.actual>0||selQ(p)?1:.55}"></div>${lq?`<div class="blow" style="left:${lq.amount/mx*100}%"></div>`:''}</div>
+      <div style="text-align:right;font-size:12px"><b>${bs.c.amt?moneyC(bs.c.amt):'-'}</b> / ${p.budget?moneyC(p.budget):'-'}<br><span style="color:${bs.color};font-weight:700">${bs.label}</span></div></div>`;}).join('')||'<div class="empty">Belum ada data budget.</div>')+'</div>';
+  }
+  const qProjects=L.filter(p=>quotes(p).length).sort((a,b)=>a.code.localeCompare(b.code));
+  const flat=[];L.forEach(p=>quotes(p).forEach(q=>flat.push({p:p,q:q})));
+  const qrows=qProjects.map(p=>{const items=quotes(p).slice(),lq=lowQ(p),currencies=new Set(items.map(q=>q.currency||DB.settings.currency||'IDR'));
+    items.sort((a,b)=>lq?(a.id===lq.id?-1:b.id===lq.id?1:a.amount-b.amount):(String(a.currency||DB.settings.currency||'IDR').localeCompare(String(b.currency||DB.settings.currency||'IDR'))||a.amount-b.amount));
+    const canMod=canEdit()&&canModifyProj(p);
+    const heading=`<tr class="project-group q-project-group" data-on-click="${ea(["viewP",p.id,"budget"])}"><td colspan="${ub?9:8}"><b>${esc(p.code)} · ${esc(p.name)}</b><span class="muted"> · ${items.length} quotation</span>${lq?`<span class="muted"> · Terendah: ${poMoney(lq.amount,lq.currency)} (${esc(lq.vendor||'-')})</span>`:items.length>1&&currencies.size>1?'<span class="muted"> · Mata uang berbeda, harga tidak dibandingkan</span>':''}${canMod?` <button class="btn sm pri" style="float:right" data-on-click="${ea(["!editP",p.id,3])}">Kelola Quotation &amp; PO</button>`:''}</td></tr>`;
+    const rows=items.map(q=>{const isLow=lq&&lq.id===q.id,qCurrency=q.currency||DB.settings.currency||'IDR',pct=p.budget&&qCurrency===(DB.settings.currency||'IDR')?Math.round(q.amount/p.budget*100):null,note=String(q.note||''),notePreview=note.length>120?note.slice(0,120)+'...':note;
+      const exp=q.valid?diffDays(today(),pd(q.valid)):null,hasPO=p.pos.some(x=>x.qid===q.id);
+      const statusCell=canMod?`<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap" data-on-click="${ea(["!ptStop"])}"><select style="padding:4px 8px;border:1px solid ${QCOL[q.status]||'var(--line)'};border-radius:6px;background:var(--card);font-size:11.5px;font-weight:700;color:${QCOL[q.status]||'var(--text)'}" data-on-change="${ea(["quickQStatus",p.id,q.id,"@value"])}">${QSTAT.map(s=>`<option value="${s}" ${s===q.status?'selected':''}>${s}</option>`).join('')}</select>${q.status==='Terpilih'?`<button type="button" class="btn sm" title="Kembalikan status quotation ke semula" data-on-click="${ea(['quickQStatus',p.id,q.id,(q.prevStatus&&q.prevStatus!=='Terpilih')?q.prevStatus:'Diterima'])}">↺ Batalkan</button>`:''}${hasPO?'<span class="tag" style="background:#3b82f6">PO</span>':''}</div>`:`<span class="badge" style="background:${QCOL[q.status]}">${q.status}</span>${hasPO?' <span class="tag" style="background:#3b82f6">PO</span>':''}`;
+      return `<tr class="quotation-row"><td><b>${esc(q.vendor||'-')}</b></td><td>${esc(q.no||'-')}</td><td class="r"><b>${poMoney(q.amount,qCurrency)}</b> ${isLow?'<span class="tag" style="background:#10b981">TERENDAH</span>':''}</td><td class="qnote">${note?`<div>${esc(notePreview)}</div>${note.length>120?`<details><summary>Lihat selengkapnya</summary><div class="q-note-full">${esc(note)}</div></details>`:''}`:'-'}</td>
+      ${ub?`<td class="r" style="color:${pct>100?'var(--bad)':'inherit'}">${pct===null?'-':pct+'%'}</td>`:''}<td>${fmtDate(q.date)}</td><td>${q.valid?fmtDate(q.valid)+(exp!==null&&exp<0?' <span class="tag" style="background:#ef4444">EXPIRED</span>':exp!==null&&exp<=7?' <span class="tag" style="background:#f59e0b">'+exp+' hr</span>':''):'-'}</td>
+      <td>${statusCell}</td><td>${(q.file||q.link)?`<button class="btn sm" data-on-click="${ea(["!openQ",p.id,q.id])}">Buka</button>`:'-'}</td></tr>`;}).join('');
+    return heading+rows;
+  }).join('');
+  const poProjects=L.filter(p=>p.pos.length).sort((a,b)=>a.code.localeCompare(b.code));
+  const fpo=[];L.forEach(p=>p.pos.forEach(o=>fpo.push({p:p,o:o})));
+  const dups=dupPOs();
+  const prow=poProjects.map(p=>`<tr class="project-group po-project-group" data-on-click="${ea(["viewP",p.id,"budget"])}"><td colspan="6"><b>${esc(p.code)} · ${esc(p.name)}</b><span class="muted"> · ${p.pos.length} PO</span></td></tr>`+p.pos.slice().sort((a,b)=>a.date<b.date?1:-1).map(o=>`<tr data-on-click="${ea(["viewP",p.id,"budget"])}"><td><b>${esc(o.no)}</b>${dups.includes(o.no)?' <span class="tag" style="background:#ef4444">GANDA</span>':''}</td><td>${fmtDate(o.date)}</td><td>${esc(o.vendor)}</td><td class="r"><b>${poMoney(poTotals(o).total,o.currency)}</b></td><td>${esc(o.by||'-')}</td><td><button class="btn sm" data-on-click="${ea(["!printSaved",p.id,o.id])}">Cetak / PDF</button></td></tr>`).join('')).join('');
+  const vm={};
+  L.forEach(p=>{quotes(p).forEach(q=>{const v=(q.vendor||'(tanpa nama)').trim(),o=vm[v]=vm[v]||{n:0,pr:{},sel:{},selN:0,po:{},poN:0};o.n++;o.pr[p.id]=1;if(q.status==='Terpilih'){const c=q.currency||DB.settings.currency||'IDR';o.sel[c]=(o.sel[c]||0)+q.amount;o.selN++;}});p.pos.forEach(x=>{const v=(x.vendor||'(tanpa nama)').trim();const o=vm[v]=vm[v]||{n:0,pr:{},sel:{},selN:0,po:{},poN:0},c=x.currency||DB.settings.currency||'IDR';o.poN++;o.po[c]=(o.po[c]||0)+poTotals(x).total;});});
+  const poValue=v=>Object.keys(vm[v].po).map(c=>poMoney(vm[v].po[c],c)).join('<br>')||'-';
+  const selectedQuoteValue=v=>Object.keys(vm[v].sel).map(c=>poMoney(vm[v].sel[c],c)).join('<br>')||'-';
+  const vrows=Object.keys(vm).sort((a,b)=>Object.keys(vm[b].po).length-Object.keys(vm[a].po).length||vm[b].selN-vm[a].selN||vm[b].n-vm[a].n).map(v=>`<tr><td><b>${esc(v)}</b></td><td class="r">${Object.keys(vm[v].pr).length}</td><td class="r">${vm[v].n}</td><td class="r">${vm[v].selN}</td><td class="r">${selectedQuoteValue(v)}</td><td class="r">${vm[v].poN}</td><td class="r">${poValue(v)}</td></tr>`).join('');
+  $('#main').innerHTML=chart+`<div class="card" style="margin-bottom:12px;padding:0"><div style="padding:14px 16px 0"><h3>Semua Quotation (${flat.length})</h3></div><div class="tw" style="max-height:420px"><table><thead><tr><th>Vendor</th><th>No. Quotation</th><th class="r">Harga</th><th>Catatan</th>${ub?'<th class="r">% Budget</th>':''}<th>Diterima</th><th>Berlaku s/d</th><th>Status</th><th>File</th></tr></thead><tbody>${qrows||`<tr><td colspan="${ub?9:8}" class="empty">Belum ada quotation.</td></tr>`}</tbody></table></div></div>
+  <div class="card" style="margin-bottom:12px;padding:0"><div style="padding:14px 16px 0"><h3>Purchase Order (${fpo.length})</h3><div class="muted small" style="margin-bottom:8px">PO dibuat dari quotation berstatus Terpilih: klik "Kelola Quotation &amp; PO" pada project, lalu klik Buat PO.</div></div><div class="tw" style="max-height:340px"><table><thead><tr><th>No. PO</th><th>Tanggal</th><th>Vendor</th><th class="r">Total</th><th>Dibuat oleh</th><th></th></tr></thead><tbody>${prow||'<tr><td colspan="6" class="empty">Belum ada PO.</td></tr>'}</tbody></table></div></div>
+  <div class="card" style="padding:0"><div style="padding:14px 16px 0"><h3>Ringkasan Vendor</h3></div><div class="tw"><table><thead><tr><th>Vendor</th><th class="r">Project</th><th class="r">Quotation</th><th class="r">Terpilih</th><th class="r">Nilai Terpilih</th><th class="r">PO</th><th class="r">Nilai PO</th></tr></thead><tbody>${vrows||'<tr><td colspan="7" class="empty">-</td></tr>'}</tbody></table></div></div>`;
+}
+/* ================= IMPROVEMENT (INPUT & OUTPUT TERPISAH) ================= */
+function improvementTypeLabel(type){return ({saving_mp:'Saving MP',quality:'Quality',efficiency:'Efisiensi proses',other:'Lainnya'})[type]||'Efisiensi proses';}
+function improvementStatusColor(status){return status==='Disetujui'?'#10b981':status==='Tidak Perlu Improvement'?'#64748b':status==='Review PI'?'var(--pri)':status==='Menunggu Data'?'#f59e0b':'#64748b';}
+function rImprovements(){
+  const statuses=['Baru','Review PI','Menunggu Data','Disetujui','Tidak Perlu Improvement'];
+  const q=IMPQ.toLowerCase();
+  const visible=(DB.improvements||[]).filter(x=>canReviewImprovement()||x.submittedBy===ME);
+  const rows=visible.filter(x=>(IMPFILTER==='all'||x.status===IMPFILTER)&&(!q||[x.title,x.department,x.submittedBy,x.issue,x.type].join(' ').toLowerCase().includes(q))).slice().sort((a,b)=>(b.updatedAt||0)-(a.updatedAt||0));
+  const count=s=>visible.filter(x=>x.status===s).length;
+  $('#main').innerHTML=`<div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px"><div style="flex:1"><h2 style="font-size:20px;margin:0;font-weight:800">Daftar Improvement</h2><div class="muted small">Usulan perbaikan lintas departemen, status tinjauan Tim PI, dan tindak lanjut project.</div></div>${canSubmitImprovement()?'<button class="btn pri" data-on-click="[&quot;newImprovement&quot;]">+ Ajukan Improvement</button>':''}</div>
+  <div class="grid kpis"><div class="kpi static"><i style="background:#64748b"></i><b>${count('Baru')}</b><span>Baru</span><small>Menunggu tinjauan</small></div><div class="kpi static"><i style="background:var(--pri)"></i><b>${count('Review PI')}</b><span>Review PI</span><small>Sedang ditinjau</small></div><div class="kpi static"><i style="background:#10b981"></i><b>${count('Disetujui')}</b><span>Disetujui</span><small>Lanjut ke project</small></div><div class="kpi static"><i style="background:#64748b"></i><b>${count('Tidak Perlu Improvement')}</b><span>Saran Alternatif</span><small>Solusi langsung</small></div></div>
+  <div class="stbar"><input style="min-width:220px" placeholder="Cari judul, departemen, pelapor..." value="${esc(IMPQ)}" data-on-input="[&quot;setImpq&quot;,&quot;@value&quot;]"><select data-on-change="[&quot;setImpfilter&quot;,&quot;@value&quot;]"><option value="all">Semua status</option>${statuses.map(s=>`<option value="${s}" ${IMPFILTER===s?'selected':''}>${s}</option>`).join('')}</select><span class="muted small">${rows.length} dari ${visible.length} usulan</span></div>
+  <div class="card">${rows.map(x=>`<div class="imp-row" data-on-click="${ea(["viewImprovement",x.id])}"><div><b>${esc(x.title)}</b><div class="imp-desc">${esc(x.department||'-')} · ${esc(x.submittedBy||'-')} · ${improvementTypeLabel(x.type)}</div></div><div class="imp-desc">${esc(x.issue)}</div><span class="badge" style="background:${improvementStatusColor(x.status)}">${esc(x.status)}</span><span class="small muted">${x.projectId?'Project '+esc((byId(x.projectId)||{}).code||'terkait'):x.updatedAt?fmtDT(x.updatedAt):fmtDate(fd(new Date(x.submittedAt||Date.now())))}</span><div style="display:flex;gap:6px" data-on-click="${ea(["!ptStop"])}"><button class="btn sm" data-on-click="${ea(["viewImprovement",x.id])}">Detail</button>${canReviewImprovement()?`<button class="btn sm pri" data-on-click="${ea(["reviewImprovement",x.id])}">Tinjau PI</button>`:(canSubmitImprovement()&&x.submittedBy===ME&&!x.projectId?`<button class="btn sm pri" data-on-click="${ea(["editImprovement",x.id])}">Edit</button>`:'')}</div></div>`).join('')||'<div class="empty">Belum ada usulan improvement.</div>'}</div>`;
+}
+function rImpReviewQueue(){
+  if(!canReviewImprovement()){go('improvements');return;}
+  const all=(DB.improvements||[]).slice().sort((a,b)=>(b.updatedAt||0)-(a.updatedAt||0));
+  const pending=all.filter(x=>['Baru','Review PI','Menunggu Data'].includes(x.status));
+  const decided=all.filter(x=>!['Baru','Review PI','Menunggu Data'].includes(x.status));
+  $('#main').innerHTML=`
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:14px;flex-wrap:wrap">
+      <div><h2 style="font-size:20px;margin:0;font-weight:800">Antrean Perlu Ditinjau (Tim PI)</h2><div class="muted small">Daftar pengajuan improvement dari kontributor yang memerlukan analisa, keputusan, atau konversi ke Project oleh Tim PI.</div></div>
+      <button class="btn" data-on-click="[&quot;go&quot;,&quot;improvements&quot;]">Lihat Semua Issue (${all.length})</button>
+    </div>
+    <div class="grid kpis" style="grid-template-columns:repeat(auto-fit,minmax(180px,1fr))">
+      <div class="kpi static"><i style="background:#ef4444"></i><b>${all.filter(x=>x.status==='Baru').length}</b><span>Issue Baru</span><small>Belum direview</small></div>
+      <div class="kpi static"><i style="background:var(--pri)"></i><b>${all.filter(x=>x.status==='Review PI').length}</b><span>Dalam Review PI</span><small>Sedang ditinjau</small></div>
+      <div class="kpi static"><i style="background:#f59e0b"></i><b>${all.filter(x=>x.status==='Menunggu Data').length}</b><span>Menunggu Data</span><small>Perlu kelengkapan kontributor</small></div>
+      <div class="kpi static"><i style="background:#10b981"></i><b>${decided.length}</b><span>Telah Diputuskan</span><small>Disetujui / Saran alternatif</small></div>
+    </div>
+    <div class="card" style="margin-bottom:14px">
+      <h3>Menunggu Keputusan PI (${pending.length})</h3>
+      ${pending.map(x=>`<div class="imp-row" data-on-click="${ea(["viewImprovement",x.id])}">
+        <div><b>${esc(x.title)}</b><div class="imp-desc">${esc(x.department||'-')} · Pelapor: ${esc(x.submittedBy||'-')} · ${improvementTypeLabel(x.type)}</div></div>
+        <div class="imp-desc">${esc(x.issue)}</div>
+        <span class="badge" style="background:${improvementStatusColor(x.status)}">${esc(x.status)}</span>
+        <span class="small muted">${fmtDT(x.updatedAt||x.submittedAt)}</span>
+        <div style="display:flex;gap:6px" data-on-click="${ea(["!ptStop"])}">
+          <button class="btn sm" data-on-click="${ea(["viewImprovement",x.id])}">Lihat Detail</button>
+          <button class="btn sm pri" data-on-click="${ea(["reviewImprovement",x.id])}">Tinjau &amp; Putuskan</button>
+        </div>
+      </div>`).join('')||'<div class="empty">Semua pengajuan improvement sudah ditinjau!</div>'}
+    </div>`;
+}
+function newImprovement(){
+  if(!canSubmitImprovement()){toast('Akun ini tidak memiliki akses untuk mengisi improvement.');return;}
+  PREV_VIEW=VIEW==='imp_form'?'improvements':VIEW;
+  IDRAFT=normImprovement({id:uid(),submittedBy:ME,submittedAt:Date.now(),status:'Baru'});IBASE=null;IISNEW=true;IMP_WIZ_STEP=1;
+  VIEW='imp_form';render();
+}
+function viewImprovement(id){
+  const item=(DB.improvements||[]).find(x=>x.id===id);if(!item)return;
+  if(!['imp_detail','imp_form','imp_review_form'].includes(VIEW))PREV_VIEW=VIEW;
+  IDRAFT=JSON.parse(JSON.stringify(item));IBASE=JSON.parse(JSON.stringify(item));IISNEW=false;
+  VIEW='imp_detail';render();
+}
+function editImprovement(id){
+  const item=(DB.improvements||[]).find(x=>x.id===id);if(!item)return;
+  if(!['imp_detail','imp_form','imp_review_form'].includes(VIEW))PREV_VIEW=VIEW;
+  IDRAFT=JSON.parse(JSON.stringify(item));IBASE=JSON.parse(JSON.stringify(item));IISNEW=false;IMP_WIZ_STEP=1;
+  VIEW='imp_form';render();
+}
+function reviewImprovement(id){
+  if(!canReviewImprovement()){viewImprovement(id);return;}
+  const item=(DB.improvements||[]).find(x=>x.id===id);if(!item)return;
+  if(!['imp_detail','imp_form','imp_review_form'].includes(VIEW))PREV_VIEW=VIEW;
+  IDRAFT=JSON.parse(JSON.stringify(item));IBASE=JSON.parse(JSON.stringify(item));IISNEW=false;
+  VIEW='imp_review_form';render();
+}
+function openImprovement(id){viewImprovement(id);}
+function refreshImpView(){if(['imp_detail','imp_form','imp_review_form'].includes(VIEW))render();else drawImprovementModal();}
+function improvementAttachmentMarkup(readOnly){
+  const editable=!readOnly&&canEditImprovement();
+  return (IDRAFT.attachments||[]).map(a=>{
+    const image=/\.(png|jpe?g|gif|webp)$/i.test(a.name||'');
+    const preview=image?`<img src="${apiURL('/api/files/'+encodeURIComponent(a.file))}" alt="${esc(a.name)}">`:'<span class="badge" style="background:#64748b">FILE</span>';
+    return `<div class="imp-attachment">${preview}<div class="imp-attachment-name"><b>${esc(a.name)}</b><div class="small muted">${a.size?fmtNum(Math.ceil(a.size/1024))+' KB':''}</div><button class="btn sm" data-on-click="${ea(["openImprovementAttachment",a.file])}">Buka</button></div>${editable?`<button class="btn sm bad" title="Lepas lampiran" data-on-click="${ea(["removeImprovementAttachment",a.id])}">✕</button>`:''}</div>`;
+  }).join('')||'<div class="muted small">Belum ada lampiran.</div>';
+}
+function improvementLinksMarkup(readOnly){
+  const editable=!readOnly&&canEditImprovement();
+  return (IDRAFT.links||[]).map(link=>`<div class="imp-link"><b>${esc(link.title)}</b><span class="small muted" style="overflow-wrap:anywhere">${esc(link.url)}</span><button class="btn sm" data-on-click="${ea(["openImprovementLink",link.id])}">Buka / salin</button>${editable?`<button class="btn sm bad" data-on-click="${ea(["removeImprovementLink",link.id])}">Hapus</button>`:''}</div>`).join('')||'<div class="muted small">Belum ada link.</div>';
+}
+async function attachImprovementFiles(input){
+  if(!canEditImprovement()||!IDRAFT)return;
+  const target=IDRAFT;
+  const files=Array.from(input.files||[]),allowed=/\.(png|jpe?g|gif|webp|pdf|docx?|xlsx?|pptx?|csv|txt)$/i;
+  for(const file of files){
+    if(file.size>FILE_MAX){toast('File terlalu besar (maksimal 100 MB).');continue;}
+    if(!allowed.test(file.name)){toast('Format yang didukung: gambar, PDF, Word, Excel, PowerPoint, CSV, atau TXT.');continue;}
+    toast('Mengunggah '+file.name+' ...');
+    try{
+      const prefix='IMP-'+target.id;
+      const uploaded=await api('/api/files',{method:'POST',headers:{'Content-Type':'application/octet-stream','X-Filename':encodeURIComponent(file.name),'X-Prefix':encodeURIComponent(prefix)},body:file});
+      target.attachments.push({id:uid(),name:file.name,file:uploaded.name,size:uploaded.size||file.size,type:file.type||uploaded.mime_type||''});
+      toast('Lampiran tersimpan di server');
+    }catch(e){toast('Gagal mengunggah lampiran: '+e.message);}
+  }
+  input.value='';if(IDRAFT===target)refreshImpView();
+}
+function removeImprovementAttachment(id){if(!canEditImprovement()||!IDRAFT)return;IDRAFT.attachments=IDRAFT.attachments.filter(a=>a.id!==id);refreshImpView();}
+function addImprovementLink(){
+  if(!canEditImprovement()||!IDRAFT)return;
+  const title=$('#imp_link_title').value.trim(),url=$('#imp_link_url').value.trim();
+  const web=/^https?:\/\//i.test(url),network=url.startsWith('\\\\')||url.startsWith('//');
+  if(!title||!url){toast('Isi judul dan link terlebih dahulu.');return;}
+  if(!web&&!network){toast('Gunakan link http/https atau path jaringan \\\\server\\folder.');return;}
+  if(web){try{const parsed=new URL(url);if(!['http:','https:'].includes(parsed.protocol))throw new Error();}catch(e){toast('Link web tidak valid.');return;}}
+  IDRAFT.links.push({id:uid(),title:title,url:url});refreshImpView();
+}
+function removeImprovementLink(id){if(!canEditImprovement()||!IDRAFT)return;IDRAFT.links=IDRAFT.links.filter(link=>link.id!==id);refreshImpView();}
+async function openImprovementAttachment(file){window.open(apiURL('/api/files/'+encodeURIComponent(file)),'_blank','noopener');}
+async function openImprovementLink(id){
+  const link=IDRAFT.links.find(item=>item.id===id);if(!link)return;
+  if(/^https?:\/\//i.test(link.url)){window.open(link.url,'_blank','noopener,noreferrer');return;}
+  try{await navigator.clipboard.writeText(link.url);toast('Path jaringan disalin ke clipboard.');}catch(e){prompt('Salin path ini:',link.url);}
+}
+function setImprovementDecision(value){
+  IDRAFT.decision=value;
+  if(value!=='Suggestion Only'){IDRAFT.piSuggestion='';IDRAFT.piReason='';}
+  refreshImpView();
+}
+function rImpDetail(){
+  if(!IDRAFT){go('improvements');return;}
+  const x=IDRAFT,canReview=canReviewImprovement(),canEditReq=canSubmitImprovement()&&(canReview||x.submittedBy===ME)&&!x.projectId;
+  const proj=x.projectId?byId(x.projectId):null;
+  const stepIdx=x.projectId?4:(x.status==='Disetujui'||x.status==='Tidak Perlu Improvement')?3:(x.status==='Review PI'||x.status==='Menunggu Data')?2:1;
+  const stages=[
+    {n:1,title:'Diajukan Kontributor',sub:esc(x.submittedBy||'-')+' · '+esc(x.department||'-')},
+    {n:2,title:'Tinjauan Tim PI',sub:x.piOwner?'PIC: '+esc(x.piOwner):'Analisa kelayakan'},
+    {n:3,title:'Keputusan PI',sub:x.decision==='To Project'?'Disetujui ke Project':x.decision==='Suggestion Only'?'Saran Alternatif':'Menunggu keputusan'},
+    {n:4,title:'Tindak Lanjut Project',sub:proj?esc(proj.code)+' ('+proj.progress+'%)':'Belum dikonversi'}
+  ];
+  const stepper=`<div class="wiz-stepper">${stages.map(s=>{
+    const st=s.n<stepIdx?'done':s.n===stepIdx?(x.projectId||x.status==='Disetujui'?'done':'active'):'';
+    return `<div class="wiz-node ${st}" style="cursor:default"><div class="wiz-circle">${st==='done'?'✓':s.n}</div><div class="wiz-label">${s.title}<br><span style="font-weight:400;font-size:10px">${s.sub}</span></div></div>`;
+  }).join('')}</div>`;
+  const history=(x.feedbackLog||[]).slice().reverse().map(h=>`<div class="logi"><b>${esc(h.by||'-')}</b> <small>${fmtDT(h.at)}</small><div>Status: <b>${esc(h.status||'')}</b> · Keputusan: <b>${esc(h.decision||'-')}</b></div><div>${esc(h.feedback||h.suggestion||h.reason||h.action||'-')}</div></div>`).join('')||'<div class="muted small">Belum ada riwayat keputusan PI.</div>';
+  $('#main').innerHTML=`
+    <div class="wiz-wrap">
+      <div class="wiz-head">
+        <div>
+          <span class="mode-pill output">RINGKASAN &amp; STATUS IMPROVEMENT</span>
+          <h2 style="margin-top:8px">${esc(x.title||'Detail Improvement')}</h2>
+          <p>Departemen <b>${esc(x.department||'-')}</b> · Dilaporkan oleh <b>${esc(x.submittedBy||'-')}</b> pada ${fmtDT(x.submittedAt)}</p>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <span class="badge" style="background:${improvementStatusColor(x.status)}">${esc(x.status)}</span>
+          <button class="btn" data-on-click="${ea(['go',PREV_VIEW||'improvements'])}">← Kembali</button>
+          ${canEditReq?`<button class="btn" data-on-click="${ea(["editImprovement",x.id])}">Edit Pengajuan</button>`:''}
+          ${canReview?`<button class="btn pri" data-on-click="${ea(["reviewImprovement",x.id])}">Tinjau &amp; Keputusan PI</button>`:''}
+          ${canReview&&x.decision==='To Project'&&!x.projectId?`<button class="btn pri" data-on-click="[&quot;promoteImprovement&quot;]">+ Konversi ke Project</button>`:''}
+        </div>
+      </div>
+      <div class="out-section">
+        <h4>Tahapan Proses Improvement</h4>
+        ${stepper}
+      </div>
+      ${proj?`<div class="banner ok" style="margin-bottom:14px"><span>Usulan ini telah dilanjutkan menjadi Project <b>${esc(proj.code)} · ${esc(proj.name)}</b> (Status: ${esc(effStatus(proj))}, Progres: ${proj.progress}%)</span><button class="btn sm pri" data-on-click="${ea(["viewP",proj.id])}">Buka Project →</button></div>`:''}
+      <div class="out-grid">
+        <div class="out-kv"><small>Departemen</small><b>${esc(x.department||'-')}</b></div>
+        <div class="out-kv"><small>Pelapor</small><b>${esc(x.submittedBy||'-')}</b></div>
+        <div class="out-kv"><small>Jenis Improvement</small><b>${esc(improvementTypeLabel(x.type))}</b></div>
+        <div class="out-kv"><small>PIC Review PI</small><b>${esc(x.piOwner||'Belum ditentukan')}</b></div>
+        ${x.savingMp?`<div class="out-kv"><small>Target Saving Manpower</small><b>${esc(x.savingMp)}</b></div>`:''}
+        ${x.qualityMetric?`<div class="out-kv"><small>Metrik Kualitas</small><b>${esc(x.qualityMetric)}</b></div>`:''}
+      </div>
+      <div class="grid c2">
+        <div class="out-section">
+          <h4>1. Rincian Masalah &amp; Tujuan</h4>
+          <div style="display:grid;gap:12px;font-size:13px">
+            <div><div class="muted small">Kendala / Issue yang Terjadi</div><div style="margin-top:3px;white-space:pre-wrap">${esc(x.issue||'-')}</div></div>
+            <div><div class="muted small">Kondisi Saat Ini (Background)</div><div style="margin-top:3px;white-space:pre-wrap">${esc(x.background||'-')}</div></div>
+            <div><div class="muted small">Alasan Perlu Ditangani (Purpose)</div><div style="margin-top:3px;white-space:pre-wrap">${esc(x.purpose||'-')}</div></div>
+            <div><div class="muted small">Hasil yang Diharapkan (Goals)</div><div style="margin-top:3px;white-space:pre-wrap">${esc(x.goals||'-')}</div></div>
+          </div>
+        </div>
+        <div class="out-section">
+          <h4>2. Hasil Tinjauan &amp; Keputusan Tim PI</h4>
+          <div style="display:grid;gap:12px;font-size:13px">
+            <div><div class="muted small">Status &amp; Keputusan</div><div style="margin-top:4px"><span class="badge" style="background:${improvementStatusColor(x.status)}">${esc(x.status)}</span> · <b>${x.decision==='To Project'?'Proses menjadi Project Improvement':x.decision==='Suggestion Only'?'Saran Alternatif (Tanpa Project)':'Belum Diputuskan'}</b></div></div>
+            <div><div class="muted small">Feedback Tim PI</div><div style="margin-top:3px;white-space:pre-wrap">${esc(x.piFeedback||'Belum ada feedback dari Tim PI.')}</div></div>
+            ${x.piAction?`<div><div class="muted small">Action Plan yang Disarankan</div><div style="margin-top:3px;white-space:pre-wrap">${esc(x.piAction)}</div></div>`:''}
+            ${x.piSuggestion?`<div><div class="muted small">Saran / Solusi Alternatif</div><div style="margin-top:3px;white-space:pre-wrap">${esc(x.piSuggestion)}</div></div>`:''}
+            ${x.piReason?`<div><div class="muted small">Alasan Tidak Dilanjutkan ke Project</div><div style="margin-top:3px;white-space:pre-wrap">${esc(x.piReason)}</div></div>`:''}
+          </div>
+        </div>
+      </div>
+      <div class="grid c2">
+        <div class="out-section">
+          <h4>Lampiran &amp; Referensi</h4>
+          <div class="imp-attachments" style="margin-bottom:12px">${improvementAttachmentMarkup(true)}</div>
+          <div>${improvementLinksMarkup(true)}</div>
+        </div>
+        <div class="out-section">
+          <h4>Riwayat Feedback &amp; Audit Review</h4>
+          ${history}
+        </div>
+      </div>
+    </div>`;
+}
+function setImpWizStep(n){
+  if(n>1&&(!IDRAFT.title.trim()||!IDRAFT.department.trim())){toast('Isi Judul issue dan Departemen terlebih dahulu pada Langkah 1.');return;}
+  if(n>2&&(!IDRAFT.issue.trim()||!IDRAFT.background.trim()||!IDRAFT.purpose.trim()||!IDRAFT.goals.trim())){toast('Lengkapi Issue, Background, Purpose, dan Goals pada Langkah 2.');return;}
+  IMP_WIZ_STEP=n;render();
+}
+function rImpForm(){
+  if(!IDRAFT){go('improvements');return;}
+  const x=IDRAFT;
+  const steps=[
+    {n:1,label:'Informasi Pelapor'},
+    {n:2,label:'Analisa Masalah & Goals'},
+    {n:3,label:'Lampiran & Kirim'}
+  ];
+  const stepper=`<div class="wiz-step-count">Langkah ${IMP_WIZ_STEP} dari ${steps.length}</div><div class="wiz-stepper">${steps.map(s=>{
+    const cls=s.n<IMP_WIZ_STEP?'done':s.n===IMP_WIZ_STEP?'active':'';
+    return `<div class="wiz-node ${cls}" data-on-click="${ea(["setImpWizStep",s.n])}"><div class="wiz-circle">${s.n<IMP_WIZ_STEP?'✓':s.n}</div><div class="wiz-label">${s.label}</div></div>`;
+  }).join('')}</div>`;
+  const opts=(values,value)=>values.map(v=>`<option value="${v[0]}" ${value===v[0]?'selected':''}>${v[1]}</option>`).join('');
+  let body='';
+  if(IMP_WIZ_STEP===1){
+    body=`<div class="wiz-card"><h4>Langkah 1 · Identitas Issue &amp; Departemen Pelapor</h4><div class="fg">
+      <label class="full">Judul Issue Improvement *<input value="${esc(x.title||'')}" placeholder="Contoh: Otomasi penimbangan bahan kemas line 3" data-on-input="[&quot;setIDraftField&quot;,&quot;title&quot;,&quot;@value&quot;]"></label>
+      <label>Departemen Pengaju *<input value="${esc(x.department||'')}" placeholder="Contoh: Production / QAC / Filling" data-on-input="[&quot;setIDraftField&quot;,&quot;department&quot;,&quot;@value&quot;]"></label>
+      <label>Nama Pelapor<input value="${esc(x.submittedBy||ME)}" disabled></label>
+      <label>Jenis Improvement<select data-on-change="[&quot;setIDraftType&quot;,&quot;@value&quot;]">${opts([['saving_mp','Saving MP'],['quality','Quality'],['efficiency','Efisiensi proses'],['other','Lainnya']],x.type)}</select></label>
+      ${x.type==='saving_mp'?`<label>Estimasi Saving Manpower<input value="${esc(x.savingMp||'')}" placeholder="Contoh: 2 orang atau 45 menit/shift" data-on-input="[&quot;setIDraftField&quot;,&quot;savingMp&quot;,&quot;@value&quot;]"></label>`:''}
+      ${x.type==='quality'?`<label>Dampak / Metrik Kualitas<input value="${esc(x.qualityMetric||'')}" placeholder="Contoh: Menurunkan defect rate dari 2% ke 0.3%" data-on-input="[&quot;setIDraftField&quot;,&quot;qualityMetric&quot;,&quot;@value&quot;]"></label>`:''}
+    </div></div>`;
+  }else if(IMP_WIZ_STEP===2){
+    body=`<div class="wiz-card"><h4>Langkah 2 · Detail Masalah, Kondisi Saat Ini &amp; Target</h4><div class="fg">
+      <label class="full">Issue yang Terjadi *<textarea rows="3" placeholder="Jelaskan kendala utama yang terjadi di lapangan..." data-on-input="[&quot;setIDraftField&quot;,&quot;issue&quot;,&quot;@value&quot;]">${esc(x.issue||'')}</textarea></label>
+      <label class="full">Background / Kondisi Saat Ini *<textarea rows="3" placeholder="Bagaimana proses berjalan saat ini dan seberapa sering masalah muncul?" data-on-input="[&quot;setIDraftField&quot;,&quot;background&quot;,&quot;@value&quot;]">${esc(x.background||'')}</textarea></label>
+      <label class="full">Purpose / Alasan Perlu Ditangani *<textarea rows="2" placeholder="Mengapa masalah ini penting untuk segera diselesaikan?" data-on-input="[&quot;setIDraftField&quot;,&quot;purpose&quot;,&quot;@value&quot;]">${esc(x.purpose||'')}</textarea></label>
+      <label class="full">Goals / Hasil Akhir yang Diharapkan *<textarea rows="2" placeholder="Output terukur yang diharapkan setelah improvement selesai..." data-on-input="[&quot;setIDraftField&quot;,&quot;goals&quot;,&quot;@value&quot;]">${esc(x.goals||'')}</textarea></label>
+    </div></div>`;
+  }else{
+    body=`<div class="wiz-card"><h4>Langkah 3 · Lampiran Bukti &amp; Tinjau Pengajuan</h4>
+      <div class="fg">
+        <label class="full">Unggah Foto / Dokumen Pendukung<input type="file" accept="image/png,image/jpeg,image/gif,image/webp,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.csv,.txt" multiple data-on-change="[&quot;attachImprovementFiles&quot;,&quot;@el&quot;]"><small class="hint" style="text-align:left">Gambar, PDF, dokumen Office, CSV, atau TXT (Maks. 100 MB per file).</small></label>
+        <div class="full imp-attachments">${improvementAttachmentMarkup(false)}</div>
+        <label>Judul Link Referensi<input id="imp_link_title" placeholder="Contoh: Video kondisi line"></label>
+        <label>URL Web / Path Jaringan<input id="imp_link_url" placeholder="https://... atau \\\\server\\folder"></label>
+        <div class="full"><button class="btn sm" data-on-click="[&quot;addImprovementLink&quot;]">+ Tambah Link</button></div>
+        <div class="full">${improvementLinksMarkup(false)}</div>
+      </div>
+      <div style="margin-top:18px;padding-top:14px;border-top:1px solid var(--line)">
+        <h4 style="margin-bottom:10px">Ringkasan Pengajuan</h4>
+        <div class="out-grid">
+          <div class="out-kv"><small>Judul Issue</small><b>${esc(x.title||'-')}</b></div>
+          <div class="out-kv"><small>Departemen</small><b>${esc(x.department||'-')}</b></div>
+          <div class="out-kv"><small>Jenis</small><b>${esc(improvementTypeLabel(x.type))}</b></div>
+          <div class="out-kv"><small>Lampiran</small><b>${(x.attachments||[]).length} file · ${(x.links||[]).length} link</b></div>
+        </div>
+      </div>
+    </div>`;
+  }
+  $('#main').innerHTML=`
+    <div class="wiz-wrap">
+      <div class="wiz-head">
+        <div>
+          <span class="mode-pill input">FORM PENGAJUAN IMPROVEMENT</span>
+          <h2 style="margin-top:8px">${IISNEW?'Ajukan Improvement Baru':'Edit Usulan Improvement'}</h2>
+          <p>Lengkapi 3 langkah singkat di bawah ini untuk mengirimkan usulan ke Tim PI.</p>
+        </div>
+        <span class="badge" style="background:${improvementStatusColor(x.status||'Baru')}">${esc(x.status||'Draft')}</span>
+      </div>
+      ${stepper}
+      ${body}
+      <div class="wiz-foot">
+        <button class="btn" data-on-click="${ea(IMP_WIZ_STEP>1?['setImpWizStep',IMP_WIZ_STEP-1]:['go',PREV_VIEW||'improvements'])}">${IMP_WIZ_STEP>1?'← Sebelumnya':'Batal'}</button>
+        ${!IISNEW?`<button class="btn" data-on-click="${ea(["viewImprovement",x.id])}">Lihat Detail</button>`:''}
+        ${IMP_WIZ_STEP<3?`<button class="btn pri" data-on-click="${ea(["setImpWizStep",IMP_WIZ_STEP+1])}">Berikutnya →</button>`:`<button class="btn pri" data-on-click="[&quot;saveImprovement&quot;]">Kirim Usulan Improvement</button>`}
+      </div>
+    </div>`;
+}
+function rImpReviewForm(){
+  if(!IDRAFT||!canReviewImprovement()){go('improvements');return;}
+  const x=IDRAFT;
+  const opts=(values,value)=>values.map(v=>`<option value="${v[0]}" ${value===v[0]?'selected':''}>${v[1]}</option>`).join('');
+  const statusOptions=['Baru','Review PI','Menunggu Data','Disetujui','Tidak Perlu Improvement'];
+  $('#main').innerHTML=`
+    <div class="wiz-wrap">
+      <div class="wiz-head">
+        <div>
+          <span class="mode-pill input">TINJAUAN &amp; KEPUTUSAN TIM PI</span>
+          <h2 style="margin-top:8px">Evaluasi Improvement · ${esc(x.title)}</h2>
+          <p>Tinjau laporan dari <b>${esc(x.submittedBy||'-')} (${esc(x.department||'-')})</b> dan tentukan tindak lanjut.</p>
+        </div>
+        <span class="badge" style="background:${improvementStatusColor(x.status)}">${esc(x.status)}</span>
+      </div>
+      <div class="out-section">
+        <h4>Ringkasan Usulan Pelapor</h4>
+        <div class="out-grid">
+          <div class="out-kv"><small>Departemen</small><b>${esc(x.department||'-')}</b></div>
+          <div class="out-kv"><small>Pelapor</small><b>${esc(x.submittedBy||'-')}</b></div>
+          <div class="out-kv"><small>Jenis Improvement</small><b>${esc(improvementTypeLabel(x.type))}</b></div>
+          <div class="out-kv"><small>Tanggal Lapor</small><b>${fmtDT(x.submittedAt)}</b></div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;font-size:13px">
+          <div><b class="muted small">Issue:</b><div style="margin-top:3px;white-space:pre-wrap">${esc(x.issue||'-')}</div></div>
+          <div><b class="muted small">Background:</b><div style="margin-top:3px;white-space:pre-wrap">${esc(x.background||'-')}</div></div>
+          <div><b class="muted small">Purpose:</b><div style="margin-top:3px;white-space:pre-wrap">${esc(x.purpose||'-')}</div></div>
+          <div><b class="muted small">Goals:</b><div style="margin-top:3px;white-space:pre-wrap">${esc(x.goals||'-')}</div></div>
+        </div>
+      </div>
+      <div class="wiz-card">
+        <h4>Form Keputusan &amp; Feedback Tim PI</h4>
+        <div class="fg">
+          <label>Keputusan Tindak Lanjut<select data-on-change="[&quot;setImprovementDecision&quot;,&quot;@value&quot;]">${opts([['Pending','Belum diputuskan'],['To Project','Proses menjadi Project Improvement'],['Suggestion Only','Tidak diproses (Berikan Saran Alternatif)']],x.decision)}</select></label>
+          <label>Status Review<select data-on-change="[&quot;setIDraftField&quot;,&quot;status&quot;,&quot;@value&quot;]">${opts(statusOptions.map(s=>[s,s]),x.status)}</select></label>
+          <label class="full">PIC Review Tim PI<input value="${esc(x.piOwner||ME)}" placeholder="Nama PIC PI yang meninjau" data-on-input="[&quot;setIDraftField&quot;,&quot;piOwner&quot;,&quot;@value&quot;]"></label>
+          <label class="full">Feedback Analisa Tim PI *<textarea rows="3" placeholder="Tuliskan hasil analisa kelayakan oleh Tim PI..." data-on-input="[&quot;setIDraftField&quot;,&quot;piFeedback&quot;,&quot;@value&quot;]">${esc(x.piFeedback||'')}</textarea></label>
+          ${x.decision==='Suggestion Only'?`
+            <label class="full">Suggestion / Alternatif Solusi *<textarea rows="3" placeholder="Saran tindakan tanpa perlu membuka project baru..." data-on-input="[&quot;setIDraftField&quot;,&quot;piSuggestion&quot;,&quot;@value&quot;]">${esc(x.piSuggestion||'')}</textarea></label>
+            <label class="full">Alasan Tidak Dilanjutkan sebagai Project *<textarea rows="2" placeholder="Alasan mengapa issue cukup diselesaikan dengan saran alternatif..." data-on-input="[&quot;setIDraftField&quot;,&quot;piReason&quot;,&quot;@value&quot;]">${esc(x.piReason||'')}</textarea></label>
+          `:''}
+          <label class="full">Action Plan / Langkah Berikutnya<textarea rows="2" placeholder="Rencana tindak lanjut yang perlu dilakukan..." data-on-input="[&quot;setIDraftField&quot;,&quot;piAction&quot;,&quot;@value&quot;]">${esc(x.piAction||'')}</textarea></label>
+        </div>
+      </div>
+      <div class="wiz-foot">
+        <button class="btn" data-on-click="${ea(["viewImprovement",x.id])}">Kembali ke Detail Output</button>
+        ${x.decision==='To Project'&&!x.projectId?`<button class="btn" style="border-color:var(--ok);color:var(--ok)" data-on-click="[&quot;promoteImprovement&quot;]">Simpan &amp; Konversi ke Project Baru</button>`:''}
+        <button class="btn pri" data-on-click="[&quot;saveImprovement&quot;]">Simpan Keputusan PI</button>
+      </div>
+    </div>`;
+}
+function drawImprovementModal(){refreshImpView();}
+async function saveImprovement(){
+  const x=IDRAFT;if(!x)return;
+  if(!canEditImprovement()&&!canReviewImprovement()){toast('Anda tidak memiliki akses untuk mengubah improvement ini.');return;}
+  if(!x.title.trim()||!x.department.trim()||!x.issue.trim()||!x.background.trim()||!x.purpose.trim()||!x.goals.trim()){toast('Lengkapi judul, departemen, issue, background, purpose, dan goals.');return;}
+  if(x.decision==='Suggestion Only'&&(!x.piReason.trim()||!x.piSuggestion.trim())){toast('Isi alasan dan saran alternatif untuk keputusan tanpa project.');return;}
+  if(x.status==='Tidak Perlu Improvement'&&!x.piReason.trim()){toast('Isi alasan tidak dilanjutkan sebagai improvement.');return;}
+  const now=Math.max(Date.now(),(x.updatedAt||0)+1);x.updatedAt=now;x.updatedBy=ME;
+  if(IISNEW){x.submittedBy=canReviewImprovement()?(x.submittedBy.trim()||ME):ME;x.submittedAt=now;}
+  if(canReviewImprovement()&&IBASE&&VIEW==='imp_review_form'){
+    ['title','department','submittedBy','submittedAt','type','issue','background','purpose','goals','savingMp','qualityMetric','attachments','links'].forEach(k=>{x[k]=IBASE[k];});
+  }else if(!canReviewImprovement()){
+    const protectedFields=['status','decision','piOwner','piFeedback','piSuggestion','piAction','piReason','feedbackLog','projectId'];
+    if(IBASE)protectedFields.forEach(k=>{x[k]=IBASE[k];});
+    else{Object.assign(x,{status:'Baru',decision:'Pending',piOwner:'',piFeedback:'',piSuggestion:'',piAction:'',piReason:'',feedbackLog:[],projectId:''});}
+  }
+  const changedReview=canReviewImprovement()&&(!IBASE||['status','decision','piOwner','piFeedback','piSuggestion','piAction','piReason'].some(k=>String(IBASE[k]||'')!==String(x[k]||'')));
+  if(changedReview)x.feedbackLog=(x.feedbackLog||[]).concat([{by:ME,at:now,status:x.status,decision:x.decision,feedback:x.piFeedback,suggestion:x.piSuggestion,action:x.piAction,reason:x.piReason}]);
+  const index=DB.improvements.findIndex(v=>v.id===x.id);if(index<0)DB.improvements.push(x);else DB.improvements[index]=x;
+  closeM2();await persist();viewImprovement(x.id);toast('Improvement tersimpan');
+}
+async function promoteImprovement(){
+  if(!canReviewImprovement()){toast('Akun ini tidak memiliki akses untuk meneruskan improvement ke project.');return;}
+  const x=IDRAFT;if(!x||x.decision!=='To Project'){toast('Pilih keputusan Lanjut ke Project terlebih dahulu.');return;}
+  if(x.projectId){const p=byId(x.projectId);if(p)viewP(p.id);return;}
+  const category=DB.settings.categories.find(c=>c.name.toLowerCase()==='improvement')?.name||DB.settings.categories[0]?.name||'Improvement';
+  const template=(DB.settings.templates||[]).find(t=>t.category===category)|| (DB.settings.templates||[]).find(t=>/improvement/i.test(t.name));
+  const project=normP({id:uid(),code:nextCode(),name:x.title,category,status:'Not Started',priority:'Medium',pic:x.submittedBy||ME,area:x.department,start:fd(today()),end:fd(addDays(today(),60)),desc:'Issue: '+x.issue+'\n\nBackground: '+x.background+'\n\nPurpose: '+x.purpose+'\n\nGoals: '+x.goals+'\n\nPI feedback: '+(x.piFeedback||'-')+'\n\nPI action: '+(x.piAction||'-'),stages:template?buildStages(template.stages,fd(today())):[],updatedAt:Date.now(),updatedBy:ME,log:[{by:ME,t:Date.now(),items:['Project dibuat dari improvement '+x.id]}]});
+  applyAuto(project);DB.projects.push(project);x.projectId=project.id;x.status='Disetujui';x.updatedAt=Math.max(Date.now(),(x.updatedAt||0)+1);x.updatedBy=ME;x.feedbackLog=(x.feedbackLog||[]).concat([{by:ME,at:x.updatedAt,status:x.status,decision:'To Project',feedback:x.piFeedback,suggestion:x.piSuggestion,action:x.piAction,reason:x.piReason}]);
+  const improvementIndex=DB.improvements.findIndex(v=>v.id===x.id);if(improvementIndex>=0)DB.improvements[improvementIndex]=x;
+  closeM2();await persist();viewP(project.id);toast('Improvement dilanjutkan menjadi '+project.code);
+}
+function printSaved(pid,oid){const p=byId(pid),o=p&&p.pos.find(x=>x.id===oid);if(o)openDoc(poHTML(o,p,true));}
+
+/* ================= PROJECT: DETAIL & UPDATE PROGRES TASK ================= */
+function openP(id,tab){viewP(id,tab);}
+function normDetailTab(t){
+  if(t==='budget')return 'budget';
+  if(t==='ms')return 'ms';
+  if(t==='info'||t==='log')return 'info';
+  return 'stages';
+}
+function viewP(id,tab){
+  const p=byId(id);if(!p)return;
+  if(!['project_detail','project_form'].includes(VIEW))PREV_VIEW=VIEW;
+  PROJECT_READ_ONLY=!canModifyProj(p);
+  draft=JSON.parse(JSON.stringify(p));
+  baseAt=p.updatedAt;isNew=false;
+  DETAIL_TAB=normDetailTab(tab);
+  TAB=tab||'info';SBASE='';
+  VIEW='project_detail';
+  render();
+}
+function editP(id,step){
+  const p=byId(id);if(!p)return;
+  if(!canEdit()||!canModifyProj(p)){toast('Akses hanya baca untuk project ini.');viewP(id);return;}
+  if(!['project_detail','project_form'].includes(VIEW))PREV_VIEW=VIEW;
+  PROJECT_READ_ONLY=false;
+  draft=JSON.parse(JSON.stringify(p));
+  baseAt=p.updatedAt;isNew=false;
+  WIZ_STEP=step||1;
+  TAB=(['info','stage','budget','ms','info'])[WIZ_STEP-1]||'info';
+  SBASE='';
+  VIEW='project_form';
+  render();
+}
+function newP(cat){
+  if(!canEdit()){toast('Akses Viewer hanya dapat melihat data');return;}
+  if(!['project_detail','project_form'].includes(VIEW))PREV_VIEW=VIEW;
+  PROJECT_READ_ONLY=false;
+  draft=normP({id:uid(),code:nextCode(),category:cat||DB.settings.categories[0].name,start:fd(today()),end:fd(addDays(today(),60)),pic:ME,createdBy:ME});
+  baseAt=0;isNew=true;
+  WIZ_STEP=1;TAB='info';SBASE='';
+  VIEW='project_form';
+  render();
+}
+function closeModal(){STAGE_DOC_ID='';STAGE_DOC_VIEW=null;$('#modal').innerHTML='';$('#modal2').innerHTML='';PD=null;}
+function closeM2(){$('#modal2').innerHTML='';STAGE_DOC_ID='';STAGE_DOC_VIEW=null;PD=null;}
+function setDetailTab(t){DETAIL_TAB=normDetailTab(t);render();}
+function setWizStep(n){
+  WIZ_STEP=Math.max(1,Math.min(5,n));
+  TAB=(['info','stage','budget','ms','info'])[WIZ_STEP-1]||'info';
+  render();
+}
+function drawModal(){render();}
+function setTab(t){
+  TAB=t;
+  if(VIEW==='project_form'){
+    const map={info:1,stage:2,budget:3,ms:4,log:5};
+    WIZ_STEP=map[t]||WIZ_STEP;
+  }
+  render();
+}
+function drawTab(){
+  if(VIEW==='project_form'||VIEW==='project_detail'){render();}
+}
+async function quickStage(pid,sid,k,v){
+  const cur=byId(pid);if(!cur||!canEdit()||!canModifyProj(cur))return;
+  draft=JSON.parse(JSON.stringify(cur));
+  baseAt=cur.updatedAt;isNew=false;PROJECT_READ_ONLY=false;
+  setS(sid,k,v,true);
+  applyAuto(draft);
+  const items=diffLog(cur,draft);
+  draft.log=(draft.log||[]).slice(-59);
+  if(items.length)draft.log.push({t:Date.now(),by:ME||'-',items:items});
+  draft.updatedAt=Math.max(Date.now(),(cur.updatedAt||0)+1);
+  draft.updatedBy=ME||'-';
+  DB.projects[DB.projects.indexOf(cur)]=draft;
+  baseAt=draft.updatedAt;
+  render();
+  await persist();
+}
+function applyQuoteStatusChange(proj,qid,v){
+  if(!proj||!QSTAT.includes(v))return null;
+  const q=(proj.quotations||[]).find(x=>x.id===qid);if(!q)return null;
+  const prevSel=selQ(proj);
+  const prevSelVendor=(prevSel&&prevSel.vendor)||'';
+  if(v==='Terpilih'){
+    (proj.quotations||[]).forEach(x=>{
+      if(x.id!==qid&&x.status==='Terpilih'){
+        x.status=(x.prevStatus&&x.prevStatus!=='Terpilih'&&QSTAT.includes(x.prevStatus))?x.prevStatus:'Diterima';
+      }
+    });
+    if(q.status&&q.status!=='Terpilih')q.prevStatus=q.status;
+    q.status='Terpilih';
+    if(q.vendor)proj.vendor=q.vendor;
+  }else{
+    const wasSel=q.status==='Terpilih';
+    q.status=v;
+    q.prevStatus=v;
+    if(wasSel){
+      const otherSel=selQ(proj);
+      if(otherSel&&otherSel.vendor)proj.vendor=otherSel.vendor;
+      else if(!(proj.pos||[]).length&&(!q.vendor||proj.vendor===q.vendor||proj.vendor===prevSelVendor))proj.vendor='';
+    }
+  }
+  return q;
+}
+async function quickQStatus(pid,qid,v){
+  const cur=byId(pid);if(!cur||!canEdit()||!canModifyProj(cur))return;
+  const next=JSON.parse(JSON.stringify(cur));
+  const q=applyQuoteStatusChange(next,qid,v);if(!q)return;
+  next.updatedAt=Math.max(Date.now(),(cur.updatedAt||0)+1);
+  next.updatedBy=ME||'-';
+  next.log=(next.log||[]).slice(-59);
+  next.log.push({t:Date.now(),by:ME||'-',items:[`Status quotation ${q.vendor||q.no||'-'}: ${v}`]});
+  DB.projects[DB.projects.indexOf(cur)]=next;
+  if(draft&&draft.id===pid){draft=JSON.parse(JSON.stringify(next));baseAt=draft.updatedAt;}
+  render();
+  toast(`Status quotation ${q.vendor||''} diubah menjadi ${v}`);
+  await persist();
+}
+async function quickMilestone(pid,mid,done){
+  const cur=byId(pid);if(!cur||!canEdit()||!canModifyProj(cur))return;
+  draft=JSON.parse(JSON.stringify(cur));
+  const m=draft.milestones.find(x=>x.id===mid);if(!m)return;
+  m.done=!!done;
+  draft.updatedAt=Math.max(Date.now(),(cur.updatedAt||0)+1);
+  draft.updatedBy=ME||'-';
+  draft.log=(draft.log||[]).slice(-59);
+  draft.log.push({t:Date.now(),by:ME||'-',items:[`Milestone ${m.done?'selesai':'dibuka kembali'}: ${m.name||'-'}`]});
+  DB.projects[DB.projects.indexOf(cur)]=draft;
+  baseAt=draft.updatedAt;
+  render();
+  await persist();
+}
+function rProjectDetail(){
+  if(!draft){go(PREV_VIEW||'list');return;}
+  const current=byId(draft.id);
+  if(current&&!isNew)draft=JSON.parse(JSON.stringify(current));
+  const p=draft,st=effStatus(p),cs=curStage(p),bs=budgetState(p),ub=useBud(),canMod=canEdit()&&canModifyProj(p);
+  const stgStepper=p.stages.length?`<div class="wiz-stepper">${p.stages.map((s,idx)=>{
+    const e=stEff(s),sp=stProg(s),cls=e==='Completed'?'done':e==='Delayed'?'delayed':e==='On Progress'?'active':'';
+    const sub=e==='Completed'?(s.af?'Selesai '+fmtDate(s.af):'100% Selesai'):e==='Delayed'?'Telat +'+stDev(s)+' hr ('+sp+'%)':e==='On Progress'?sp+'% berjalan':(s.pf?'Target '+fmtDate(s.pf):'Belum mulai');
+    return `<div class="wiz-node ${cls}" data-on-click="[&quot;setDetailTab&quot;,&quot;stages&quot;]"><div class="wiz-circle">${e==='Completed'?'✓':e==='Delayed'?'!':(idx+1)}</div><div class="wiz-label">${esc(s.name||'Task '+(idx+1))}<br><span style="font-weight:400;font-size:10px">${esc(sub)}</span></div></div>`;
+  }).join('')}</div>`:`<div class="empty" style="padding:16px">Belum ada tahapan / task pada project ini.${canMod?` <button class="btn sm pri" style="margin-left:8px" data-on-click="${ea(["editP",p.id,2])}">+ Tambah Task / Muat Template</button>`:''}</div>`;
+
+  let tabContent='';
+  if(DETAIL_TAB==='stages'){
+    const stgRows=p.stages.map((s,i)=>{
+      const e=stEff(s),sp=stProg(s),dv=stDev(s);
+      const dtxt=e==='Delayed'?`<span style="color:var(--bad);font-weight:700">Telat +${dv} hr</span>`:dv===null?'<span class="muted">-</span>':dv>0?`<span style="color:var(--bad);font-weight:700">+${dv} hr</span>`:dv<0?`<span style="color:var(--ok);font-weight:700">${dv} hr</span>`:'<span style="color:var(--ok)">Tepat waktu</span>';
+      const docCount=(s.attachments||[]).length+(s.docLinks||[]).length;
+      const progCell=canMod?`
+        <div class="task-prog-box">
+          <input type="range" min="0" max="100" step="5" value="${sp}" data-on-change="${ea(["quickStage",p.id,s.id,"prog","@value"])}" data-on-input="[&quot;setProg&quot;,&quot;@value&quot;]">
+          <input type="number" min="0" max="100" value="${sp}" data-on-change="${ea(["quickStage",p.id,s.id,"prog","@value"])}">
+          <span class="small muted">%</span>
+        </div>
+        <div class="task-qbtns" style="margin-top:4px">
+          <button type="button" data-on-click="${ea(["quickStage",p.id,s.id,"prog",0])}">0%</button>
+          <button type="button" data-on-click="${ea(["quickStage",p.id,s.id,"prog",50])}">50%</button>
+          <button type="button" class="done-btn" data-on-click="${ea(["quickStage",p.id,s.id,"prog",100])}">✓ Selesai</button>
+        </div>`:`<div><span class="pbar"><div style="width:${sp}%"></div></span><b>${sp}%</b></div>`;
+      const statusCell=canMod?`<select style="padding:5px 8px;border:1px solid var(--line);border-radius:6px;background:var(--card);font-size:12px;font-weight:600" data-on-change="${ea(["quickStage",p.id,s.id,"status","@value"])}">${STG_ST.map(o=>`<option value="${o}" ${o===s.status?'selected':''}>${o}</option>`).join('')}</select><div style="margin-top:4px">${badge(e)} · ${dtxt}</div>`:`${badge(e)}<div>${dtxt}</div>`;
+      const actualCell=canMod?`<div style="display:grid;gap:4px;min-width:135px">
+        <div style="display:flex;align-items:center;gap:4px"><span class="muted small" style="width:42px">Mulai:</span><input type="date" style="padding:3px 6px;border:1px solid var(--line);border-radius:6px;background:var(--card);font-size:11.5px" value="${esc(s.as)}" data-on-change="${ea(["quickStage",p.id,s.id,"as","@value"])}"></div>
+        <div style="display:flex;align-items:center;gap:4px"><span class="muted small" style="width:42px">Selesai:</span><input type="date" style="padding:3px 6px;border:1px solid var(--line);border-radius:6px;background:var(--card);font-size:11.5px" value="${esc(s.af)}" data-on-change="${ea(["quickStage",p.id,s.id,"af","@value"])}"></div>
+      </div>`:`${s.as||s.af?`${fmtDate(s.as)} → ${fmtDate(s.af)}`:'<span class="muted">Belum mulai</span>'}`;
+      const noteCell=canMod?`<input style="padding:5px 8px;border:1px solid var(--line);border-radius:6px;background:var(--card);font-size:12px;width:100%;min-width:130px" placeholder="Tulis catatan task..." value="${esc(s.note||'')}" data-on-change="${ea(["quickStage",p.id,s.id,"note","@value"])}">`:esc(s.note||'-');
+      const docBtn=canMod?`<button class="btn sm" data-on-click="${ea(['openStageDocsEdit',s.id])}">${docCount?'📎 Bukti ('+docCount+')':'+ Bukti'}</button>`:(docCount?`<button class="btn sm" data-on-click="${ea(["viewStageDocs",p.id,s.id])}">📎 Lihat (${docCount})</button>`:'<span class="muted small">-</span>');
+      return `<tr>
+        <td class="muted">${i+1}</td>
+        <td style="white-space:normal;min-width:160px"><b>${esc(s.name||'-')}</b><div class="small muted">PIC: ${esc(s.pic||p.pic||'-')}</div></td>
+        <td><div class="small">${fmtDate(s.ps)} → ${fmtDate(s.pf)}</div><div class="small muted">${stageDays(s)} hari</div></td>
+        <td>${progCell}</td>
+        <td>${statusCell}</td>
+        <td>${actualCell}</td>
+        <td>${noteCell}</td>
+        <td class="r">${docBtn}</td>
+      </tr>`;
+    }).join('');
+    tabContent=`<div class="out-section">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px;flex-wrap:wrap">
+        <div>
+          <h4 style="margin:0">Daftar Tahapan &amp; Progres Task (${p.stages.length})</h4>
+          <div class="small muted">${canMod?'Geser slider atau klik tombol % untuk memperbarui progres setiap task secara langsung (tersimpan otomatis).':'Rincian jadwal rencana dan progres setiap task.'}</div>
+        </div>
+        ${canMod?`<button class="btn sm pri" data-on-click="${ea(["editP",p.id,2])}">Atur Jadwal / Tambah Task</button>`:''}
+      </div>
+      ${p.stages.length?`<div class="tw" style="border:1px solid var(--line);border-radius:10px"><table><thead><tr><th>#</th><th>Task / Tahapan</th><th>Rencana (Plan)</th><th>Progres Task</th><th>Status &amp; Deviasi</th><th>Realisasi (Actual)</th><th>Catatan</th><th class="r">Dokumentasi</th></tr></thead><tbody>${stgRows}</tbody></table></div>`:`<div class="empty">Belum ada tahapan task.${canMod?` Klik <b>Atur Jadwal / Tambah Task</b> untuk memuat template atau menambah task baru.`:''}</div>`}
+    </div>`;
+  }else if(DETAIL_TAB==='budget'){
+    const qRows=quotes(p).map(q=>{
+      const hasPO=(p.pos||[]).some(o=>o.qid===q.id);
+      const stCell=canMod?`<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap"><select style="padding:4px 8px;border:1px solid ${QCOL[q.status]||'var(--line)'};border-radius:6px;background:var(--card);font-size:11.5px;font-weight:700;color:${QCOL[q.status]||'var(--text)'}" data-on-change="${ea(["quickQStatus",p.id,q.id,"@value"])}">${QSTAT.map(s=>`<option value="${s}" ${s===q.status?'selected':''}>${s}</option>`).join('')}</select>${q.status==='Terpilih'?`<button type="button" class="btn sm" title="Kembalikan status quotation ke semula" data-on-click="${ea(['quickQStatus',p.id,q.id,(q.prevStatus&&q.prevStatus!=='Terpilih')?q.prevStatus:'Diterima'])}">↺ Batalkan</button>`:''}${hasPO?'<span class="tag" style="background:#3b82f6">PO</span>':''}</div>`:`<span class="badge" style="background:${QCOL[q.status]}">${esc(q.status)}</span>${hasPO?' <span class="tag" style="background:#3b82f6">PO</span>':''}`;
+      return `<tr>
+        <td><b>${esc(q.vendor||'-')}</b></td>
+        <td>${esc(q.no||'-')}</td>
+        <td class="r"><b>${poMoney(q.amount,q.currency)}</b></td>
+        <td>${fmtDate(q.date)}</td>
+        <td>${fmtDate(q.valid)}</td>
+        <td>${stCell}</td>
+        <td>${esc(q.note||'-')}</td>
+        <td class="r">${(q.file||q.link)?`<button class="btn sm" data-on-click="${ea(["openQ",p.id,q.id])}">Buka File</button>`:'-'}</td>
+      </tr>`;
+    }).join('');
+    const poRows=(p.pos||[]).map(o=>`<tr>
+      <td><b>${esc(o.no)}</b></td>
+      <td>${fmtDate(o.date)}</td>
+      <td>${esc(o.vendor||'-')}</td>
+      <td>${esc(o.qno||'-')}</td>
+      <td class="r"><b>${poMoney(poTotals(o).total,o.currency)}</b></td>
+      <td class="r"><button class="btn sm" data-on-click="${ea(['openPODoc',o.id,true])}">Cetak / PDF</button></td>
+    </tr>`).join('');
+    tabContent=`<div class="grid c2">
+      <div class="out-section">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+          <h4 style="margin:0">Quotation Vendor (${quotes(p).length})</h4>
+          ${canMod?`<button class="btn sm pri" data-on-click="${ea(["editP",p.id,3])}">+ Kelola Quotation</button>`:''}
+        </div>
+        <div class="tw"><table><thead><tr><th>Vendor</th><th>No.</th><th class="r">Harga</th><th>Diterima</th><th>Berlaku</th><th>Status</th><th>Catatan</th><th class="r">File</th></tr></thead><tbody>${qRows||'<tr><td colspan="8" class="empty">Belum ada quotation.</td></tr>'}</tbody></table></div>
+      </div>
+      <div class="out-section">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+          <h4 style="margin:0">Purchase Order (${p.pos.length})</h4>
+          ${canMod?`<button class="btn sm" data-on-click="${ea(["editP",p.id,3])}">Kelola PO</button>`:''}
+        </div>
+        <div class="tw"><table><thead><tr><th>No. PO</th><th>Tanggal</th><th>Vendor</th><th>Ref. Quote</th><th class="r">Total</th><th class="r">Dokumen</th></tr></thead><tbody>${poRows||'<tr><td colspan="6" class="empty">Belum ada PO terbit.</td></tr>'}</tbody></table></div>
+      </div>
+    </div>`;
+  }else if(DETAIL_TAB==='ms'){
+    const msRows=(p.milestones||[]).map(m=>`<tr>
+      <td style="width:44px">${canMod?`<input type="checkbox" style="width:16px;height:16px;cursor:pointer" ${m.done?'checked':''} data-on-change="${ea(["quickMilestone",p.id,m.id,"@checked"])}">`:(m.done?'<span class="tag" style="background:#10b981">✓</span>':'<span class="tag" style="background:#64748b">•</span>')}</td>
+      <td><b>${esc(m.name||'-')}</b></td>
+      <td>${fmtDate(m.date)}</td>
+      <td>${m.done?'<span style="color:var(--ok);font-weight:700">Tercapai</span>':'<span class="muted">Menunggu</span>'}</td>
+    </tr>`).join('');
+    tabContent=`<div class="out-section">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+        <h4 style="margin:0">Target Milestone (${p.milestones.length})</h4>
+        ${canMod?`<button class="btn sm pri" data-on-click="${ea(["editP",p.id,4])}">+ Tambah / Edit Milestone</button>`:''}
+      </div>
+      <div class="tw"><table><thead><tr><th>Selesai</th><th>Nama Milestone</th><th>Target Tanggal</th><th>Status</th></tr></thead><tbody>${msRows||'<tr><td colspan="4" class="empty">Belum ada milestone.</td></tr>'}</tbody></table></div>
+    </div>`;
+  }else{
+    tabContent=`<div class="grid c2">
+      <div class="out-section">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+          <h4 style="margin:0">Deskripsi &amp; Catatan Project</h4>
+          ${canMod?`<button class="btn sm" data-on-click="${ea(["editP",p.id,1])}">Edit Info</button>`:''}
+        </div>
+        <div style="font-size:13px;white-space:pre-wrap;line-height:1.6">${esc(p.desc||'Belum ada deskripsi atau catatan tambahan.')}</div>
+      </div>
+      <div class="out-section">
+        <h4 style="margin-bottom:10px">Riwayat Perubahan</h4>
+        <div style="max-height:300px;overflow:auto">${tLog()}</div>
+      </div>
+    </div>`;
+  }
+
+  $('#main').innerHTML=`
+    <div class="wiz-wrap">
+      <div class="wiz-head">
+        <div>
+          <span class="mode-pill output">RINGKASAN &amp; PROGRES PROJECT</span>
+          <h2 style="margin-top:6px">${esc(p.code)} · ${esc(p.name)}</h2>
+          <p>${chip(p.category)} · PIC: <b>${esc(p.pic||'-')}</b> · Area/Line: <b>${esc(p.area||'-')}</b> · Diperbarui ${p.updatedAt?fmtDT(p.updatedAt):'-'} oleh ${esc(p.updatedBy||'-')}</p>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          ${badge(st)}
+          <button class="btn" data-on-click="${ea(['go',PREV_VIEW||'list'])}">← Kembali</button>
+          ${canMod?`<button class="btn pri" data-on-click="${ea(["editP",p.id,1])}">Edit Pengaturan Project</button>`:''}
+        </div>
+      </div>
+
+      <div class="out-grid">
+        <div class="out-kv"><small>Total Progres</small><b>${p.progress}%</b><div style="margin-top:5px"><span class="pbar" style="width:100%;margin:0"><div style="width:${p.progress}%"></div></span></div></div>
+        <div class="out-kv"><small>Tahap Saat Ini</small><b>${cs?esc(cs.txt):'Belum ada task'}</b><span class="small muted">${cs?`Selesai ${cs.done} dari ${cs.total} task`:'-'}</span></div>
+        <div class="out-kv"><small>Jadwal Project</small><b>${fmtDate(p.start)} → ${fmtDate(p.end)}</b><span class="small muted">Prioritas: ${esc(p.priority||'Medium')}</span></div>
+        <div class="out-kv"><small>Vendor &amp; PO</small><b>${esc(p.vendor||'Belum dipilih')}</b><span class="small muted">${esc(p.pos.length?p.pos.map(o=>o.no).join(', '):(p.po||'Belum ada PO'))}</span></div>
+        ${ub?`<div class="out-kv"><small>Budget vs Komitmen</small><b style="color:${bs.color}">${bs.c.amt?moneyC(bs.c.amt):'-'}</b><span class="small muted">Budget: ${p.budget?moneyC(p.budget):'-'} (${bs.label})</span></div>`:''}
+      </div>
+
+      <div class="out-section" style="padding:14px 18px 8px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+          <small class="muted" style="font-weight:700;text-transform:uppercase;letter-spacing:.04em">Alur Tahapan Task</small>
+          <span class="small muted">${cs?`${cs.done}/${cs.total} selesai`:''}</span>
+        </div>
+        ${stgStepper}
+      </div>
+
+      <div class="sub-tabs">
+        <button class="${DETAIL_TAB==='stages'?'on':''}" data-on-click="[&quot;setDetailTab&quot;,&quot;stages&quot;]">Tahapan &amp; Progres Task (${p.stages.length})</button>
+        <button class="${DETAIL_TAB==='budget'?'on':''}" data-on-click="[&quot;setDetailTab&quot;,&quot;budget&quot;]">Quotation &amp; PO (${quotes(p).length}/${p.pos.length})</button>
+        <button class="${DETAIL_TAB==='ms'?'on':''}" data-on-click="[&quot;setDetailTab&quot;,&quot;ms&quot;]">Milestone (${p.milestones.length})</button>
+        <button class="${DETAIL_TAB==='info'?'on':''}" data-on-click="[&quot;setDetailTab&quot;,&quot;info&quot;]">Catatan &amp; Riwayat</button>
+      </div>
+
+      ${tabContent}
+    </div>`;
+}
+function rProjectForm(){
+  if(!draft){go(PREV_VIEW||'list');return;}
+  const d=draft,canDel=!isNew&&canDeleteProj(d);
+  const steps=[
+    {n:1,label:'Info Utama'},
+    {n:2,label:'Tahapan & Task'},
+    {n:3,label:'Quotation & PO'},
+    {n:4,label:'Milestone'},
+    {n:5,label:'Ringkasan'}
+  ];
+  const stepper=`<div class="wiz-step-count">Langkah ${WIZ_STEP} dari ${steps.length}</div><div class="wiz-stepper">${steps.map(s=>{
+    const cls=s.n<WIZ_STEP?'done':s.n===WIZ_STEP?'active':'';
+    return `<div class="wiz-node ${cls}" data-on-click="${ea(["setWizStep",s.n])}"><div class="wiz-circle">${s.n<WIZ_STEP?'✓':s.n}</div><div class="wiz-label">${s.label}</div></div>`;
+  }).join('')}</div>`;
+
+  let body='';
+  if(WIZ_STEP===1){
+    body=`<div class="wiz-card"><h4>Langkah 1 · Informasi Utama Project</h4>${tInfo()}</div>`;
+  }else if(WIZ_STEP===2){
+    body=`<div class="wiz-card"><h4>Langkah 2 · Susun Jadwal &amp; Progres Task (Stage)</h4>${tStage()}</div>`;
+  }else if(WIZ_STEP===3){
+    body=`<div class="wiz-card"><h4>Langkah 3 · Penawaran Vendor (Quotation) &amp; PO</h4>${tBudget()}</div>`;
+  }else if(WIZ_STEP===4){
+    body=`<div class="wiz-card"><h4>Langkah 4 · Target Milestone Project</h4>${tMs()}</div>`;
+  }else{
+    applyAuto(d);
+    const cs=curStage(d),lq=lowQ(d),sq=selQ(d);
+    body=`<div class="wiz-card">
+      <h4>Langkah 5 · Periksa Ringkasan Sebelum Disimpan</h4>
+      <p class="muted small" style="margin-top:-6px;margin-bottom:14px">Pastikan seluruh data di bawah ini sudah sesuai sebelum disimpan.</p>
+      <div class="out-grid">
+        <div class="out-kv"><small>Kode &amp; Nama Project</small><b>${esc(d.code)} · ${esc(d.name||'(Nama belum diisi)')}</b><span class="small muted">${esc(d.category)} · Prioritas ${esc(d.priority)}</span></div>
+        <div class="out-kv"><small>PIC &amp; Area</small><b>${esc(d.pic||'-')}</b><span class="small muted">Area/Line: ${esc(d.area||'-')}</span></div>
+        <div class="out-kv"><small>Status &amp; Progres</small><b>${esc(effStatus(d))} (${d.progress}%)</b><span class="small muted">${cs?`Tahap aktif: ${esc(cs.txt)}`:'Tanpa tahapan'}</span></div>
+        <div class="out-kv"><small>Periode Project</small><b>${fmtDate(d.start)} → ${fmtDate(d.end)}</b><span class="small muted">${d.stages.length} task · ${d.milestones.length} milestone</span></div>
+        <div class="out-kv"><small>Quotation &amp; Vendor</small><b>${quotes(d).length} Quotation</b><span class="small muted">${sq?`Terpilih: ${esc(sq.vendor)} (${poMoney(sq.amount,sq.currency)})`:lq?`Terendah: ${esc(lq.vendor)}`:'Belum ada quotation'}</span></div>
+        <div class="out-kv"><small>Purchase Order</small><b>${d.pos.length} PO</b><span class="small muted">${esc(d.pos.length?d.pos.map(o=>o.no).join(', '):(d.po||'-'))}</span></div>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">
+        <button class="btn sm" data-on-click="[&quot;setWizStep&quot;,1]">Ubah Info Utama</button>
+        <button class="btn sm" data-on-click="[&quot;setWizStep&quot;,2]">Ubah Task (${d.stages.length})</button>
+        <button class="btn sm" data-on-click="[&quot;setWizStep&quot;,3]">Ubah Quotation &amp; PO (${quotes(d).length}/${d.pos.length})</button>
+        <button class="btn sm" data-on-click="[&quot;setWizStep&quot;,4]">Ubah Milestone (${d.milestones.length})</button>
+      </div>
+    </div>`;
+  }
+
+  $('#main').innerHTML=`
+    <div class="wiz-wrap">
+      <div class="wiz-head">
+        <div>
+          <span class="mode-pill input">PENGATURAN &amp; UPDATE PROJECT</span>
+          <h2 style="margin-top:6px">${isNew?'Buat Project Baru':esc(d.code)+' · '+esc(d.name||'Project')}</h2>
+          <p>${isNew?'Isi informasi utama dan tahapan project baru di bawah ini.':'Klik lingkaran langkah di bawah untuk berpindah bagian, lalu klik Simpan.'}</p>
+        </div>
+        <span class="badge" style="background:${ST_COLOR[effStatus(d)]||'#64748b'}">${isNew?'Project Baru':esc(effStatus(d))}</span>
+      </div>
+      ${stepper}
+      <div id="mbody">${body}</div>
+      <div class="wiz-foot">
+        ${canDel?`<button class="btn bad l" data-on-click="[&quot;delP&quot;]">Hapus Project</button>`:''}
+        <button class="btn" data-on-click="${ea(WIZ_STEP>1?['setWizStep',WIZ_STEP-1]:(isNew?['go',PREV_VIEW||'list']:['viewP',d.id]))}">${WIZ_STEP>1?'← Sebelumnya':'Batal'}</button>
+        ${!isNew?`<button class="btn" data-on-click="${ea(["viewP",d.id])}">Kembali ke Detail</button>`:''}
+        ${WIZ_STEP<5?`<button class="btn" data-on-click="${ea(["setWizStep",WIZ_STEP+1])}">Berikutnya →</button>`:''}
+        <button class="btn pri" data-on-click="[&quot;saveProject&quot;]">${isNew?'Simpan Project':'Simpan Perubahan'}</button>
+      </div>
+    </div>`;
+  if(WIZ_STEP===3)updB();
+}
+function setD(k,v){draft[k]=v;}
+const inp=(l,k,type,extra)=>`<label>${l}<input type="${type||'text'}" value="${esc(draft[k])}" data-on-input="${ea(["setD",k,"@value"])}" ${extra||''}></label>`;
+function tInfo(){
+  const d=draft,sts=d.status==='Delayed'?STATUS_INPUT.concat(['Delayed']):STATUS_INPUT;
+  const hasS=d.stages.length>0,lockD=hasS&&gset('autoDates'),lockP=hasS&&gset('autoProgress');
+  const sel=(l,k,opts,id)=>`<label>${l}<select ${id?'id="'+id+'"':''} data-on-change="${ea(['setDChange',k,'@value'])}">${opts.map(o=>`<option value="${esc(o)}" ${o===d[k]?'selected':''}>${esc(o)}</option>`).join('')}</select></label>`;
+  return `${hasS&&(lockD||lockP)?`<div class="banner info" style="margin-bottom:12px"><span>Project ini memiliki <b>${d.stages.length} task/tahapan</b>. ${lockD?'Tanggal mulai & target mengikuti jadwal task. ':''}${lockP?'Total progres dihitung otomatis dari progres tiap task.':''}</span><button type="button" class="btn sm pri" data-on-click="[&quot;setWizStep&quot;,2]">Isi Progres per Task →</button></div>`:''}<div class="fg">${inp('Kode Project','code')}${inp('Nama Project *','name')}
+    ${sel('Klasifikasi','category',DB.settings.categories.map(c=>c.name))}${sel('Prioritas','priority',['High','Medium','Low'])}
+    ${sel('Status','status',sts,'f_status')}${inp('PIC Utama','pic','text','list="plist"')}${inp('Area / Line','area')}<span></span>
+    ${inp('Tanggal Mulai *','start','date',lockD?'disabled':'')}${inp('Target Selesai *','end','date',lockD?'disabled':'')}
+    <label class="full">Progres Keseluruhan (%) ${lockP?`<span class="muted small" style="font-weight:400">(otomatis dari ${d.stages.length} task — klik langkah 2 untuk mengubah progres per task)</span>`:''}<div class="prow"><input type="range" id="pr" min="0" max="100" value="${d.progress}" ${lockP?'disabled':''} data-on-input="[&quot;setProg&quot;,&quot;@value&quot;]"><input type="number" id="pn" min="0" max="100" value="${d.progress}" ${lockP?'disabled':''} data-on-input="[&quot;setProg&quot;,&quot;@value&quot;]" style="margin-top:0">${hasS?`<button type="button" class="btn sm" data-on-click="[&quot;setWizStep&quot;,2]">Atur Progres Task</button>`:''}</div></label>
+    <label class="full">Deskripsi / Catatan Project<textarea rows="3" data-on-input="[&quot;setDescField&quot;,&quot;@value&quot;]">${esc(d.desc)}</textarea></label></div>
+    <datalist id="plist">${[...new Set(DB.projects.map(p=>p.pic).filter(Boolean))].map(x=>`<option value="${esc(x)}">`).join('')}</datalist>`;
+}
+function onStat(){
+  if(draft.status==='Completed'){
+    if(draft.stages.length&&gset('autoProgress')&&stageCalc(draft)<100){toast('Masih ada stage yang belum selesai. Selesaikan semua stage di tab Stage.');draft.status=stageCalc(draft)>0?'On Progress':'Not Started';$('#f_status').value=draft.status;return;}
+    draft.progress=100;$('#pr').value=100;$('#pn').value=100;
+  }
+}
+function setProg(v){
+  v=Math.max(0,Math.min(100,Number(v)||0));draft.progress=v;$('#pr').value=v;$('#pn').value=v;
+  let s=draft.status;if(v>=100)s='Completed';else if(s==='Completed')s='On Progress';else if(v>0&&s==='Not Started')s='On Progress';
+  if(s!==draft.status){draft.status=s;$('#f_status').value=s;}
+}
+/* --- budget tab --- */
+const moneyF=(l,k)=>`<label>${l}<input class="num" inputmode="numeric" value="${draft[k]?fmtNum(draft[k]):''}" data-on-focus="${ea(['draftFocusNum',k,'@el'])}" data-on-input="${ea(['setM',k,'@el'])}" data-on-blur="${ea(['draftBlurNum',k,'@el'])}"><small class="hint" id="h_${k}">${draft[k]?moneyC(draft[k]):''}</small></label>`;
+function setM(k,el){draft[k]=parseNum(el.value);const h=$('#h_'+k);if(h)h.textContent=draft[k]?moneyC(draft[k]):'';updB();}
+function updB(){
+  const el=$('#bsum');if(!el)return;
+  const d=draft,low=lowQ(d),sel=selQ(d);
+  const poValues={};d.pos.forEach(o=>{const c=o.currency||DB.settings.currency||'IDR';poValues[c]=(poValues[c]||0)+poTotals(o).total;});
+  const poValueText=Object.keys(poValues).map(c=>poMoney(poValues[c],c)).join('<br>');
+  let h=`<div><small>Jumlah quotation</small><b>${quotes(d).length}</b></div>
+  <div><small>Quotation terendah</small><b>${low?poMoney(low.amount,low.currency):'-'}</b><small>${low?esc(low.vendor):''}</small></div>
+  <div><small>Quotation terpilih</small><b>${sel?poMoney(sel.amount,sel.currency):'-'}</b><small>${sel?esc(sel.vendor):''}</small></div>
+  <div><small>Purchase Order</small><b>${d.pos.length?d.pos.length+' PO':'-'}</b><small>${poValueText}</small></div>`;
+  if(useBud()){
+    const bs=budgetState(d),diff=d.budget-bs.c.amt;
+    h+=`<div><small>Budget (opsional)</small><b>${d.budget?money(d.budget):'-'}</b></div>
+    <div style="border-color:${bs.color}"><small>${bs.c.amt&&d.budget?(diff>=0?'Sisa budget':'Over budget'):'Status budget'}</small><b style="color:${bs.color}">${bs.c.amt&&d.budget?money(Math.abs(diff)):bs.label}</b><small>${esc(bs.c.src)}</small></div>`;
+  }
+  el.innerHTML=h;
+}
+function poRow(o){
+  return `<div class="porow"><b>${esc(o.no)}</b><span>${fmtDate(o.date)}</span><span>${esc(o.vendor)}<span class="muted small"> · ${esc(o.qno||'')}</span></span><b style="text-align:right">${poMoney(poTotals(o).total,o.currency)}</b><span style="display:flex;gap:6px"><button class="btn sm" data-on-click="${ea(["editPO",o.id])}">Edit</button><button class="btn sm" data-on-click="${ea(['openPODoc',o.id,true])}">Cetak / PDF</button><button class="btn sm bad" data-on-click="${ea(["delPO",o.id])}">Hapus</button></span></div>`;
+}
+function tBudget(){
+  const d=draft,ub=useBud();
+  return `<div id="bsum" class="bsum"></div>
+  <div class="fg">${inp('Vendor Utama','vendor','text','list="vlist"')}${inp('No. PO (isi manual bila PO dibuat di luar aplikasi)','po')}${ub?moneyF('Budget (opsional)','budget')+moneyF('Nilai Aktual / PO','actual'):''}</div>
+  <div class="qh"><h4>Quotation yang diterima</h4><button class="btn sm pri" data-on-click="[&quot;addQ&quot;]">+ Tambah Quotation</button></div>
+  <div id="qlist">${d.quotations.map(qCard).join('')||'<div class="empty">Belum ada quotation. Klik "+ Tambah Quotation".</div>'}</div>
+  <div class="qh"><h4>Purchase Order (${d.pos.length})</h4></div>
+  <div id="polist">${d.pos.map(poRow).join('')||'<div class="muted small">Belum ada PO. Ubah status quotation menjadi Terpilih, lalu klik Buat PO pada quotation tersebut.</div>'}</div>`;
+}
+function qCard(q){
+  const fileRow=q.file?`<span class="fchip" title="${esc(q.fileName||q.file)}">${esc(q.fileName||q.file)}</span><button type="button" class="btn sm" data-on-click="${ea(["openQ","draft",q.id])}">Buka</button>${isViewer()?'':`<button type="button" class="btn sm" data-on-click="${ea(["rmFile",q.id])}">Lepas file</button>`}`
+    :isViewer()?'<span class="muted">Tidak ada file</span>':`<span class="muted">File:</span><input type="file" data-on-change="${ea(["attachFile",q.id,"@el"])}" style="max-width:260px">`;
+  const po=(draft.pos||[]).find(x=>x.qid===q.id);
+  const revertStatus=(q.prevStatus&&q.prevStatus!=='Terpilih'&&QSTAT.includes(q.prevStatus))?q.prevStatus:'Diterima';
+  const unselectBtn=(q.status==='Terpilih'&&!isViewer())?`<button type="button" class="btn sm" title="Kembalikan status quotation ke ${esc(revertStatus)}" data-on-click="${ea(["setQStatus",q.id,revertStatus])}">↺ Batalkan Terpilih</button>`:'';
+  const selectBtn=(q.status!=='Terpilih'&&!isViewer())?`<button type="button" class="btn sm" data-on-click="${ea(["setQStatus",q.id,"Terpilih"])}">✓ Pilih Quotation</button>`:'';
+  const poBtn=q.status==='Terpilih'?(po?(isViewer()?`<button type="button" class="btn sm" data-on-click="${ea(['openPODoc',po.id,false])}">Lihat PO ${esc(po.no)}</button>`:`<button type="button" class="btn sm" data-on-click="${ea(["editPO",po.id])}">Lihat PO ${esc(po.no)}</button>`):isViewer()?'':`<button type="button" class="btn sm pri" data-on-click="${ea(["makePO",q.id])}">Buat PO</button>`):'';
+  return `<div class="qcard ${q.status==='Terpilih'?'sel':''}" id="qc_${q.id}"><div class="qgrid">
+    <label>Vendor<input value="${esc(q.vendor)}" list="vlist" data-on-input="${ea(["setQ",q.id,"vendor","@value"])}"></label>
+    <label>Harga Quotation<input class="num" inputmode="numeric" value="${q.amount?fmtNum(q.amount):''}" data-on-focus="${ea(['qFocusAmount',q.id,'@el'])}" data-on-input="${ea(['setQM',q.id,'@el'])}" data-on-blur="${ea(['qBlurAmount',q.id,'@el'])}"><small class="hint" id="hq_${q.id}">${q.amount?quoteMoneyC(q.amount,q.currency):''}</small></label>
+    <label>Mata uang<select data-on-change="${ea(["setQCurrency",q.id,"@value"])}">${Object.keys(SYMS).map(c=>`<option value="${c}" ${(q.currency||DB.settings.currency||'IDR')===c?'selected':''}>${c} · ${SYMS[c]}</option>`).join('')}</select></label>
+    <label>No. Quotation<input value="${esc(q.no)}" data-on-input="${ea(["setQ",q.id,"no","@value"])}"></label>
+    <label>Tanggal diterima<input type="date" value="${esc(q.date)}" data-on-input="${ea(["setQ",q.id,"date","@value"])}"></label>
+    <label>Berlaku sampai<input type="date" value="${esc(q.valid)}" data-on-input="${ea(["setQ",q.id,"valid","@value"])}"></label>
+    <label>Status<select data-on-change="${ea(["setQStatus",q.id,"@value"])}">${QSTAT.map(s=>`<option value="${s}" ${s===q.status?'selected':''}>${s}</option>`).join('')}</select></label>
+    <label style="grid-column:1/-1">Link (SharePoint / URL / path jaringan)<input value="${esc(q.link)}" data-on-input="${ea(["setQ",q.id,"link","@value"])}" placeholder="https://... atau \\\\server\\folder\\file.pdf"></label>
+    <label style="grid-column:1/-1">Catatan (lead time, termin pembayaran, garansi, dll.)<input value="${esc(q.note)}" data-on-input="${ea(["setQ",q.id,"note","@value"])}"></label></div>
+    <div class="qfoot">${fileRow}<span class="sp"></span>${selectBtn}${unselectBtn}${poBtn}<button type="button" class="btn sm bad" data-on-click="${ea(["delQ",q.id])}">Hapus quotation</button></div></div>`;
+}
+const getQ=id=>draft.quotations.find(x=>x.id===id);
+function setQ(id,k,v){getQ(id)[k]=v;if(k==='vendor'&&getQ(id).status==='Terpilih'){draft.vendor=v;const vinp=document.querySelector('input[list="vlist"]');if(vinp)vinp.value=v;}}
+function setQM(id,el){const q=getQ(id);q.amount=parseNum(el.value);const h=$('#hq_'+id);if(h)h.textContent=q.amount?quoteMoneyC(q.amount,q.currency):'';updB();}
+function setQCurrency(id,currency){const q=getQ(id);q.currency=currency;const h=$('#hq_'+id);if(h)h.textContent=q.amount?quoteMoneyC(q.amount,currency):'';updB();}
+function setQStatus(id,v){
+  if(!applyQuoteStatusChange(draft,id,v))return;
+  drawTab();
+}
+function addQ(){draft.quotations.push({id:uid(),vendor:'',amount:0,currency:DB.settings.currency||'IDR',status:'Diterima',date:fd(today()),valid:'',no:'',link:'',file:'',fileName:'',note:''});drawTab();}
+function delQ(id){if(!confirm('Hapus quotation ini?'))return;draft.quotations=draft.quotations.filter(x=>x.id!==id);drawTab();}
+function rmFile(id){const q=getQ(id);q.file='';q.fileName='';drawTab();}
+async function attachFile(id,input){
+  const f=input.files[0];if(!f)return;
+  if(f.size>FILE_MAX){toast('File terlalu besar (maksimal 100 MB). Simpan di SharePoint lalu tempel linknya.');input.value='';return;}
+  toast('Mengunggah '+f.name+' ...');
+  try{
+    const r=await api('/api/files',{method:'POST',headers:{'Content-Type':'application/octet-stream','X-Filename':encodeURIComponent(f.name),'X-Prefix':encodeURIComponent(draft.code||'PRJ')},body:f});
+    const q=getQ(id);q.file=r.name;q.fileName=f.name;
+    toast('File tersimpan di server');drawTab();
+  }catch(e){toast('Gagal mengunggah file: '+e.message);input.value='';}
+}
+async function openQ(pid,qid){
+  const p=getProj(pid),q=p&&p.quotations.find(x=>x.id===qid);if(!q)return;
+  if(q.file){window.open(apiURL('/api/files/'+encodeURIComponent(q.file)),'_blank');return;}
+  if(q.link){
+    if(/^https?:/i.test(q.link)){window.open(q.link,'_blank','noopener');return;}
+    try{navigator.clipboard.writeText(q.link);toast('Path disalin ke clipboard: tempel di File Explorer');}catch(e){prompt('Salin path ini:',q.link);}
+    return;
+  }
+  toast('Quotation ini belum punya file/link.');
+}
+/* --- milestone & log --- */
+function tMs(){
+  return `<div class="qh"><h4>Milestone</h4><button class="btn sm pri" data-on-click="[&quot;addMs&quot;]">+ Milestone</button></div>`+
+  (draft.milestones.map(m=>`<div class="msrow"><input type="checkbox" ${m.done?'checked':''} data-on-change="${ea(["setMs",m.id,"done","@checked"])}"><input type="text" value="${esc(m.name)}" placeholder="Nama milestone" data-on-input="${ea(["setMs",m.id,"name","@value"])}"><input type="date" value="${esc(m.date)}" data-on-input="${ea(["setMs",m.id,"date","@value"])}"><button class="btn sm bad" data-on-click="${ea(["delMs",m.id])}">Hapus</button></div>`).join('')||'<div class="empty">Belum ada milestone (contoh: PO terbit, FAT, instalasi, SAT).</div>');
+}
+function addMs(){draft.milestones.push({id:uid(),name:'',date:'',done:false});drawTab();}
+function setMs(id,k,v){draft.milestones.find(m=>m.id===id)[k]=v;}
+function delMs(id){draft.milestones=draft.milestones.filter(m=>m.id!==id);drawTab();}
+function tLog(){
+  return (draft.log||[]).slice().reverse().map(l=>`<div class="logi"><b>${esc(l.by||'-')}</b> <small>${fmtDT(l.t)}</small><div>${l.items.map(i=>'• '+esc(i)).join('<br>')}</div></div>`).join('')||'<div class="empty">Belum ada riwayat perubahan.</div>';
+}
+function diffLog(o,n){
+  if(!o)return ['Project dibuat'];
+  const L=[],f=(lb,a,b,fm)=>{if(String(a==null?'':a)!==String(b==null?'':b)){fm=fm||(x=>x);L.push(lb+': '+(fm(a)||'-')+' → '+(fm(b)||'-'));}};
+  f('Status',o.status,n.status);f('Progres',o.progress,n.progress,x=>x+'%');f('Mulai',o.start,n.start,fmtDate);f('Target',o.end,n.end,fmtDate);f('PIC',o.pic,n.pic);
+  f('Vendor utama',o.vendor,n.vendor);f('Budget',o.budget,n.budget,money);f('Aktual/PO',o.actual,n.actual,money);f('No. PO',o.po,n.po);
+  const so=selQ(o),sn=selQ(n);
+  if(o.quotations.length<n.quotations.length)L.push('Quotation ditambah ('+n.quotations.length+' total)');
+  if(o.quotations.length>n.quotations.length)L.push('Quotation dihapus');
+  if((so?so.id:'')!==(sn?sn.id:''))L.push('Quotation terpilih: '+(sn?sn.vendor+' '+poMoney(sn.amount,sn.currency):'-'));
+  (n.pos||[]).forEach(x=>{if(!(o.pos||[]).some(y=>y.id===x.id))L.push('PO dibuat: '+x.no+' ('+x.vendor+')');});
+  (o.pos||[]).forEach(x=>{if(!(n.pos||[]).some(y=>y.id===x.id))L.push('PO dihapus: '+x.no);});
+  const om={};(o.stages||[]).forEach(s=>{om[s.id]=s;});let added=0;
+  (n.stages||[]).forEach(s=>{const a=om[s.id];
+    if(!a){added++;return;}
+    if(!a.af&&s.af)L.push('Task selesai (100%): '+s.name+' ('+fmtDate(s.af)+')');
+    else if(!a.as&&s.as)L.push('Task mulai: '+s.name+' ('+fmtDate(s.as)+')'+((stProg(s)>0&&stProg(s)<100)?' · '+stProg(s)+'%':''));
+    else if(stProg(a)!==stProg(s))L.push('Progres task '+s.name+': '+stProg(a)+'% → '+stProg(s)+'%');
+    else if(a.ps!==s.ps||a.pf!==s.pf)L.push('Jadwal plan diubah: '+s.name);
+    else if(a.status!==s.status)L.push('Status task '+s.name+': '+a.status+' → '+s.status);
+    else if(a.as!==s.as||a.af!==s.af)L.push('Tanggal actual diubah: '+s.name);
+  });
+  if(added)L.push(added+' stage ditambah');
+  (o.stages||[]).forEach(s=>{if(!(n.stages||[]).some(x=>x.id===s.id))L.push('Stage dihapus: '+s.name);});
+  if(!L.length&&JSON.stringify(o.quotations)!==JSON.stringify(n.quotations))L.push('Data quotation diperbarui');
+  if(!L.length&&(JSON.stringify(o.milestones)!==JSON.stringify(n.milestones)||JSON.stringify(o.pos)!==JSON.stringify(n.pos)||JSON.stringify(o.stages)!==JSON.stringify(n.stages)||o.name!==n.name||o.desc!==n.desc||o.category!==n.category||o.area!==n.area||o.priority!==n.priority))L.push('Info project diperbarui');
+  return L.slice(0,12);
+}
+async function saveProject(){
+  if(!canEdit()){toast('Akses Viewer hanya dapat melihat data');return;}
+  const d=draft;
+  if(!d.name.trim()){setWizStep(1);toast('Nama project wajib diisi');return;}
+  applyAuto(d);
+  if(!d.start||!d.end){setWizStep(1);toast('Tanggal mulai dan target wajib diisi');return;}
+  if(d.end<d.start){setWizStep(1);toast('Target selesai tidak boleh sebelum tanggal mulai');return;}
+  const bad=d.stages.find(s=>!s.name.trim());if(bad){setWizStep(2);toast('Ada stage tanpa nama. Isi nama atau hapus stage tersebut.');return;}
+  const cur=byId(d.id);
+  if(!isNew&&cur&&cur.updatedAt!==baseAt){
+    if(!confirm('Project ini baru saja diubah oleh '+(cur.updatedBy||'pengguna lain')+' ('+fmtDT(cur.updatedAt)+'). Simpan dan timpa perubahan tersebut?'))return;
+  }
+  if(d.status==='Completed')d.progress=100;
+  let renum='';
+  const used={};DB.projects.forEach(p=>{if(p.id!==d.id)(p.pos||[]).forEach(o=>{used[o.no]=1;});});
+  d.pos.forEach(o=>{if(used[o.no]){const old=o.no;o.no=nextPONo();if(d.po===old)d.po=o.no;renum+=old+' → '+o.no+' ';}used[o.no]=1;});
+  const items=diffLog(isNew?null:cur,d);
+  d.log=(d.log||[]).slice(-59);
+  if(items.length)d.log.push({t:Date.now(),by:ME||'-',items:items});
+  d.updatedAt=Math.max(Date.now(),(cur?cur.updatedAt:0)+1);d.updatedBy=ME||'-';
+  if(cur)DB.projects[DB.projects.indexOf(cur)]=d;else DB.projects.push(d);
+  if(!DB.settings.categories.some(c=>c.name===d.category))DB.settings.categories.push({name:d.category,color:PALETTE[DB.settings.categories.length%PALETTE.length]});
+  closeModal();await persist();viewP(d.id);
+  const dp=dupPOs();
+  toast(dp.length?'Tersimpan, tetapi ada nomor PO ganda: '+dp.join(', ')+'. Perbaiki nomor PO tersebut.':(renum?'Tersimpan. Nomor PO diganti karena sudah dipakai: '+renum:'Tersimpan'));
+}
+async function delP(){
+  if(!canEdit()){toast('Akses Viewer hanya dapat melihat data');return;}
+  if(!confirm('Hapus project "'+draft.name+'"? Tindakan ini juga berlaku untuk seluruh tim.'))return;
+  const id=draft.id,old=byId(id);DB.projects=DB.projects.filter(p=>p.id!==id);DB.deleted[id]=Math.max(Date.now(),(old?old.updatedAt:0)+1);
+  closeModal();draft=null;await persist();go(PREV_VIEW||'list');toast('Project dihapus');
+}
+
+/* ================= STAGE (tab di form project) ================= */
+let SBASE='';
+let STAGE_DOC_ID='';
+let STAGE_DOC_VIEW=null;
+function tStage(){
+  const d=draft,rawTp=DB.settings.templates||[];
+  if(!SBASE)SBASE=d.start||fd(today());
+  const curPic=(d.pic||ME||'').trim().toLowerCase();
+  const tp=rawTp.slice().sort((a,b)=>{
+    const aMine=a.owner&&a.owner.trim().toLowerCase()===curPic?1:0;
+    const bMine=b.owner&&b.owner.trim().toLowerCase()===curPic?1:0;
+    if(aMine!==bMine)return bMine-aMine;
+    const aCat=a.category===d.category?1:0,bCat=b.category===d.category?1:0;
+    return bCat-aCat;
+  });
+  const defT=(tp.find(t=>t.owner&&t.owner.trim().toLowerCase()===curPic&&(!t.category||t.category===d.category))||tp.find(t=>t.category===d.category)||tp[0]||{}).id;
+  const cs=curStage(d);
+  const bar=`<div class="stbar">
+    <span class="muted small">Template</span>
+    <select id="tsel">${tp.map(t=>`<option value="${esc(t.id)}" ${t.id===defT?'selected':''}>${esc(t.name)} (${t.stages.length} task)${t.owner?' · PIC: '+esc(t.owner):' · Umum'}</option>`).join('')||'<option value="">(belum ada template)</option>'}</select>
+    <span class="muted small">Mulai plan</span>
+    <input type="date" id="sbase" value="${esc(SBASE)}" data-on-change="[&quot;setSBaseVal&quot;,&quot;@value&quot;]">
+    <button class="btn sm pri" data-on-click="[&quot;loadTpl&quot;]" title="Ganti daftar task dengan template yang dipilih">Muat Template</button>
+    <button class="btn sm" data-on-click="[&quot;appendTpl&quot;]" title="Tambahkan tahapan dari template ke daftar task saat ini tanpa menghapus yang sudah ada">+ Sisipkan dari Template</button>
+    <button class="btn sm" data-on-click="[&quot;reflowStages&quot;]" title="Hitung ulang tanggal Plan Mulai & Selesai berurutan/paralel dari tanggal Mulai plan">Susun Ulang Jadwal</button>
+    <button class="btn sm" data-on-click="[&quot;saveAsTpl&quot;]" title="Simpan susunan task project ini sebagai template baru untuk Anda / PIC">Simpan Jadi Template</button>
+    <button class="btn sm" data-on-click="[&quot;openTpl&quot;]" title="Buat atau ubah daftar template stage">Kelola Template</button>
+  </div>`;
+  const rows=d.stages.map((s,i)=>{
+    const e=stEff(s),dv=stDev(s),sp=stProg(s);
+    const dtxt=e==='Delayed'?`<span style="color:var(--bad);font-weight:700">Terlambat +${dv}h</span>`:dv===null?'<span class="muted">-</span>':dv>0?`<span style="color:var(--bad);font-weight:700">+${dv}h</span>`:dv<0?`<span style="color:var(--ok);font-weight:700">${dv}h</span>`:'<span style="color:var(--ok)">Tepat</span>';
+    const docCount=(s.attachments||[]).length+(s.docLinks||[]).length,docButton=PROJECT_READ_ONLY?(docCount?`<button class="btn sm" data-on-click="${ea(['viewStageDocs',d.id,s.id])}">Bukti (${docCount})</button> `:''):`<button class="btn sm" data-on-click="${ea(['openStageDocs',s.id])}">${docCount?'Bukti ('+docCount+')':'+ Bukti'}</button> `;
+    return `<tr><td class="muted">${i+1}</td>
+    <td style="min-width:155px"><input value="${esc(s.name)}" placeholder="Nama task / tahap" data-on-input="${ea(["setS",s.id,"name","@value",1])}"></td>
+    <td style="width:90px"><input value="${esc(s.pic)}" placeholder="PIC" list="plist2" data-on-input="${ea(["setS",s.id,"pic","@value",1])}"></td>
+    <td><input type="date" value="${esc(s.ps)}" data-on-change="${ea(["setS",s.id,"ps","@value"])}"></td>
+    <td><input type="date" value="${esc(s.pf)}" data-on-change="${ea(["setS",s.id,"pf","@value"])}"></td>
+    <td style="width:74px">
+      <input type="number" min="1" value="${s.ps&&s.pf?stageDays(s):''}" style="width:52px" data-on-change="${ea(["setS",s.id,"days","@value"])}">
+      ${i>0?`<label style="display:flex;gap:3px;align-items:center;font-size:10px;margin-top:2px;font-weight:400" title="Jalan bersamaan (paralel) dengan task sebelumnya saat jadwal disusun ulang"><input type="checkbox" style="width:auto;margin:0" ${s.par?'checked':''} data-on-change="${ea(["setS",s.id,"par","@checked"])}">Paralel</label>`:''}
+    </td>
+    <td style="min-width:155px">
+      <div class="task-prog-box">
+        <input type="range" min="0" max="100" step="5" value="${sp}" data-on-change="${ea(["setS",s.id,"prog","@value"])}">
+        <input type="number" min="0" max="100" value="${sp}" style="width:52px;padding:3px 5px;text-align:right;font-weight:700" data-on-change="${ea(["setS",s.id,"prog","@value"])}"><span class="small muted">%</span>
+        ${sp<100?`<button type="button" class="btn sm ok" style="padding:2px 6px" title="Tandai 100% Selesai" data-on-click="${ea(["setS",s.id,"prog",100])}">✓</button>`:''}
+      </div>
+    </td>
+    <td style="width:110px"><select data-on-change="${ea(["setS",s.id,"status","@value"])}">${STG_ST.map(o=>`<option value="${o}" ${o===s.status?'selected':''}>${o}</option>`).join('')}</select></td>
+    <td><input type="date" value="${esc(s.as)}" data-on-change="${ea(["setS",s.id,"as","@value"])}"></td>
+    <td><input type="date" value="${esc(s.af)}" data-on-change="${ea(["setS",s.id,"af","@value"])}"></td>
+    <td>${dtxt}</td>
+    <td style="min-width:115px"><input value="${esc(s.note)}" placeholder="catatan" data-on-input="${ea(["setS",s.id,"note","@value",1])}"></td>
+    <td style="white-space:nowrap">${docButton}${PROJECT_READ_ONLY?'':`<button class="btn sm" data-on-click="${ea(["moveS",s.id,-1])}">▲</button> <button class="btn sm" data-on-click="${ea(["moveS",s.id,1])}">▼</button> <button class="btn sm bad" data-on-click="${ea(["delS",s.id])}">✕</button>`}</td></tr>`;
+  }).join('');
+  return bar+`<datalist id="plist2">${[...new Set(DB.projects.map(p=>p.pic).concat([ME,d.pic]).filter(Boolean))].map(x=>`<option value="${esc(x)}">`).join('')}</datalist>
+  <div class="qh"><h4>Tahapan & Progres Task (${d.stages.length})${cs?' <span class="muted small" style="font-weight:400">· selesai '+cs.done+', saat ini: '+esc(cs.txt)+' · Total '+d.progress+'%</span>':''}</h4><button class="btn sm pri" data-on-click="[&quot;addStage&quot;]">+ Tambah Task Manual</button></div>
+  ${d.stages.length?`<div class="tw" style="border:1px solid var(--line);border-radius:8px"><table class="stt"><thead><tr><th>#</th><th>Task / Tahap</th><th>PIC</th><th>Plan Mulai</th><th>Plan Selesai</th><th>Hari</th><th>Progres (%)</th><th>Status</th><th>Actual Mulai</th><th>Actual Selesai</th><th>Deviasi</th><th>Catatan</th><th>Bukti & Urutan</th></tr></thead><tbody>${rows}</tbody></table></div>
+  <div class="small muted" style="margin-top:8px"><b>Fleksibel per Project / PIC:</b> Anda bebas menambah, menghapus, mengubah urutan (▲/▼), atau memodifikasi tahapan sesuai kebutuhan project ini, lalu klik <b>Simpan Jadi Template</b> bila ingin menjadikannya template andalan Anda berikutnya.</div>`:'<div class="empty">Belum ada tahapan task. Pilih template lalu klik <b>Muat Template</b>, atau klik <b>+ Tambah Task Manual</b> untuk menyusun tahapan sesuai kebutuhan Anda.</div>'}`;
+}
+function openStageDocs(id){if(!draft)return;STAGE_DOC_ID=id;drawStageDocs();}
+function viewStageDocs(projectId,stageId){STAGE_DOC_VIEW={projectId,stageId};drawStageDocsViewer();}
+function closeStageDocs(){$('#modal2').innerHTML='';STAGE_DOC_ID='';STAGE_DOC_VIEW=null;}
+function stageDocsMarkup(stage,editable){
+  const files=(stage.attachments||[]).map(file=>{
+    const url=apiURL('/api/files/'+encodeURIComponent(file.file)),image=/\.(png|jpe?g|gif|webp)$/i.test(file.name||''),video=/\.(mp4|webm|mov|m4v)$/i.test(file.name||'');
+    const preview=image?`<img src="${esc(url)}" alt="${esc(file.name)}">`:video?`<video controls preload="metadata" src="${esc(url)}"></video>`:`<span class="badge" style="background:#64748b">${esc(((file.name||'').split('.').pop()||'FILE').toUpperCase())}</span>`;
+    return `<div class="stage-doc"><div class="stage-doc-preview">${preview}</div><div class="stage-doc-info"><b>${esc(file.name)}</b><div class="small muted">${file.size?fmtNum(Math.ceil(file.size/1024))+' KB':''}${file.uploadedBy?' · '+esc(file.uploadedBy):''}${file.uploadedAt?' · '+esc(fmtDT(file.uploadedAt)):''}</div></div><div class="stage-doc-actions"><button class="btn sm" data-on-click="${ea(["openStageDocFile",file.file])}">Buka</button>${editable&&canEdit()?`<button class="btn sm bad" data-on-click="${ea(["detachStageDoc",file.id])}">Lepas</button>`:''}</div></div>`;
+  }).join('');
+  const links=(stage.docLinks||[]).map(link=>`<div class="stage-doc-link"><div class="stage-doc-link-info"><b>${esc(link.title||link.url)}</b><div class="small muted">${esc(link.url)}</div></div><div class="stage-doc-actions"><button class="btn sm" data-on-click="${ea(["openStageDocLink",stage.id,link.id])}">Buka</button>${editable&&canEdit()?`<button class="btn sm bad" data-on-click="${ea(["removeStageDocLink",link.id])}">Hapus</button>`:''}</div></div>`).join('');
+  return files+links;
+}
+function drawStageDocsViewer(){
+  const project=STAGE_DOC_VIEW&&byId(STAGE_DOC_VIEW.projectId),stage=project&&project.stages.find(s=>s.id===STAGE_DOC_VIEW.stageId);if(!stage){closeStageDocs();return;}
+  const files=stageDocsMarkup(stage,false);
+  const count=(stage.attachments||[]).length+(stage.docLinks||[]).length;
+  $('#modal2').innerHTML=`<div class="ov"><div class="dlg wide"><div class="dh"><h3>${esc(project.name)} · ${esc(stage.name||'Stage')}</h3><button class="x" data-on-click="[&quot;closeStageDocs&quot;]">✕</button></div><div class="db"><div class="small muted" style="margin-bottom:12px">Dokumentasi stage (${count})</div><div class="stage-doc-list">${files||'<div class="empty">Belum ada dokumentasi untuk stage ini.</div>'}</div></div><div class="df"><button class="btn" data-on-click="[&quot;closeStageDocs&quot;]">Tutup</button></div></div></div>`;
+}
+function drawStageDocs(){
+  const stage=draft&&draft.stages.find(s=>s.id===STAGE_DOC_ID);if(!stage){closeStageDocs();return;}
+  const files=stageDocsMarkup(stage,true);
+  const upload=canEdit()?(isNew?'<div class="small muted">Simpan project terlebih dahulu sebelum mengunggah dokumentasi.</div>':'<label class="btn sm pri stage-doc-upload">Tambah file<input type="file" accept="image/*,video/mp4,video/webm,video/quicktime,.m4v,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.csv,.txt" multiple data-on-change="[&quot;uploadStageDocs&quot;,&quot;@el&quot;]"></label>'):'';
+  const linkForm=canEdit()?`<div class="fg" style="margin-top:14px"><label>Nama link (opsional)<input id="stage_doc_link_title" placeholder="Contoh: Report FAT"></label><label class="full">Tempel link OneDrive / SharePoint<input id="stage_doc_link_url" type="url" placeholder="https://..." data-on-keydown="[&quot;handleDocLinkKey&quot;]"></label><div><button class="btn sm" data-on-click="[&quot;addStageDocLink&quot;]">+ Tambah link</button></div></div>`:'';
+  $('#modal2').innerHTML=`<div class="ov"><div class="dlg wide"><div class="dh"><h3>Dokumentasi · ${esc(stage.name||'Stage')}</h3><button class="x" data-on-click="[&quot;closeStageDocs&quot;]">✕</button></div><div class="db"><div style="display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin-bottom:12px">${upload}<span class="small muted">Foto, video, dan dokumen · Maksimal 100 MB per file</span></div><div class="stage-doc-list">${files||'<div class="empty">Belum ada dokumentasi untuk stage ini.</div>'}</div><h4 style="margin:18px 0 0">Link dokumentasi</h4>${linkForm}</div><div class="df"><button class="btn" data-on-click="[&quot;closeStageDocs&quot;]">Tutup</button></div></div></div>`;
+}
+async function syncStageDocsIfDetail(){
+  if(VIEW==='project_detail'&&draft&&!isNew){
+    draft.updatedAt=Date.now();draft.updatedBy=ME;
+    const i=DB.projects.findIndex(x=>x.id===draft.id);
+    if(i>=0){DB.projects[i]=clone(draft);await persist();render();}
+  }else if(VIEW==='project_form'){
+    drawTab();
+  }
+}
+async function addStageDocLink(){
+  if(!canEdit()||!draft)return;
+  const stage=draft.stages.find(s=>s.id===STAGE_DOC_ID);if(!stage)return;
+  const rawUrl=$('#stage_doc_link_url').value.trim(),title=$('#stage_doc_link_title').value.trim();
+  let parsed;try{parsed=new URL(rawUrl);}catch(e){toast('Link tidak valid.');return;}
+  if(!['http:','https:'].includes(parsed.protocol)||parsed.username||parsed.password){toast('URL harus menggunakan http atau https.');return;}
+  stage.docLinks=stage.docLinks||[];stage.docLinks.push({id:uid(),title:title||parsed.hostname,url:parsed.href});
+  await syncStageDocsIfDetail();drawStageDocs();toast('Link dokumentasi ditambahkan');
+}
+async function removeStageDocLink(id){
+  if(!canEdit()||!draft)return;
+  const stage=draft.stages.find(s=>s.id===STAGE_DOC_ID);if(!stage)return;
+  stage.docLinks=(stage.docLinks||[]).filter(link=>link.id!==id);await syncStageDocsIfDetail();drawStageDocs();
+}
+function openStageDocLink(stageId,linkId){
+  const stage=STAGE_DOC_ID===stageId&&draft?draft.stages.find(s=>s.id===stageId):STAGE_DOC_VIEW&&byId(STAGE_DOC_VIEW.projectId)?.stages.find(s=>s.id===stageId);
+  const link=stage&&(stage.docLinks||[]).find(item=>item.id===linkId);if(!link)return;
+  try{const url=new URL(link.url);if(!['http:','https:'].includes(url.protocol)||url.username||url.password)throw new Error();window.open(url.href,'_blank','noopener,noreferrer');}catch(e){toast('Link dokumentasi tidak valid.');}
+}
+async function uploadStageDocs(input){
+  const stage=draft&&draft.stages.find(s=>s.id===STAGE_DOC_ID);if(!canEdit()||!stage)return;
+  if(isNew){toast('Simpan project terlebih dahulu sebelum mengunggah dokumentasi.');input.value='';return;}
+  const allowed=/\.(png|jpe?g|gif|webp|mp4|webm|mov|m4v|pdf|docx?|xlsx?|pptx?|csv|txt)$/i;
+  for(const file of Array.from(input.files||[])){
+    if(file.size>FILE_MAX){toast('File terlalu besar (maksimal 100 MB).');continue;}
+    if(!allowed.test(file.name)){toast('Format file tidak didukung.');continue;}
+    toast('Mengunggah '+file.name+' ...');
+    try{
+      const uploaded=await api('/api/files',{method:'POST',headers:{'Content-Type':'application/octet-stream','X-Filename':encodeURIComponent(file.name),'X-Prefix':encodeURIComponent(draft.code||'PRJ')},body:file});
+      stage.attachments=stage.attachments||[];stage.attachments.push({id:uid(),name:file.name,file:uploaded.name,size:uploaded.size||file.size,type:file.type||uploaded.mime_type||'',uploadedAt:Date.now(),uploadedBy:ME});
+      toast('File dokumentasi berhasil diunggah');
+    }catch(e){toast('Gagal mengunggah dokumentasi: '+e.message);}
+  }
+  input.value='';await syncStageDocsIfDetail();drawStageDocs();
+}
+async function detachStageDoc(id){
+  if(!canEdit()||!draft)return;
+  const stage=draft.stages.find(s=>s.id===STAGE_DOC_ID);if(!stage)return;
+  stage.attachments=(stage.attachments||[]).filter(file=>file.id!==id);await syncStageDocsIfDetail();drawStageDocs();
+}
+function openStageDocFile(file){window.open(apiURL('/api/files/'+encodeURIComponent(file)),'_blank','noopener');}
+function setS(id,k,v,quiet){
+  const s=draft.stages.find(x=>x.id===id);if(!s)return;
+  const t=fd(today());
+  if(k==='days'){const n=Math.max(1,parseInt(v,10)||1);if(s.ps)s.pf=fd(addDays(pd(s.ps),n-1));}
+  else if(k==='prog'){
+    const n=Math.max(0,Math.min(100,Math.round(Number(v)||0)));
+    s.prog=n;
+    if(n===100){s.status='Completed';s.af=s.af||t;s.as=s.as||((s.ps&&s.ps<=s.af)?s.ps:s.af);}
+    else if(n>0){s.status='On Progress';s.af='';s.as=s.as||t;}
+    else{s.status='Not Started';s.as='';s.af='';}
+  }
+  else if(k==='status'){
+    s.status=v;
+    if(v==='Completed'){s.prog=100;s.af=s.af||t;s.as=s.as||((s.ps&&s.ps<=s.af)?s.ps:s.af);}
+    else if(v==='Not Started'){s.prog=0;s.as='';s.af='';}
+    else if(v==='On Progress'){if(!s.prog||s.prog>=100)s.prog=50;s.af='';s.as=s.as||t;}
+    else if(v==='On Hold'){s.af='';}
+  }
+  else if(k==='af'){
+    s.af=v;
+    if(v){s.status='Completed';s.prog=100;if(!s.as)s.as=(s.ps&&s.ps<=v)?s.ps:v;}
+    else{s.status=s.as?'On Progress':'Not Started';s.prog=s.as?50:0;}
+  }
+  else if(k==='as'){
+    s.as=v;
+    if(v&&s.status==='Not Started'){s.status='On Progress';if(!s.prog)s.prog=50;}
+    if(!v&&!s.af&&s.status==='On Progress'){s.status='Not Started';s.prog=0;}
+  }
+  else s[k]=v;
+  if((k==='pf'||k==='ps')&&s.ps&&s.pf&&s.pf<s.ps){if(k==='pf')toast('Plan selesai tidak boleh sebelum plan mulai');s.pf=s.ps;}
+  if(quiet)return;
+  applyAuto(draft);drawTab();
+}
+function addStage(){
+  const st=draft.stages,last=st[st.length-1];
+  const ps=last&&last.pf?fd(addDays(pd(last.pf),1)):(SBASE||draft.start||fd(today()));
+  st.push({id:uid(),name:'',pic:'',ps:ps,pf:fd(addDays(pd(ps),6)),as:'',af:'',status:'Not Started',prog:0,note:'',par:false});
+  applyAuto(draft);drawTab();
+}
+function moveS(id,dir){const a=draft.stages,i=a.findIndex(x=>x.id===id),j=i+dir;if(i<0||j<0||j>=a.length)return;const t=a[i];a[i]=a[j];a[j]=t;drawTab();}
+function delS(id){const s=draft.stages.find(x=>x.id===id);if(!s)return;if(!confirm('Hapus stage "'+(s.name||'tanpa nama')+'"?'))return;draft.stages=draft.stages.filter(x=>x.id!==id);applyAuto(draft);drawTab();}
+function loadTpl(){
+  const t=(DB.settings.templates||[]).find(x=>x.id===$('#tsel').value);if(!t){toast('Belum ada template. Klik "Kelola Template" untuk membuat template baru.');return;}
+  if(draft.stages.length&&!confirm('Ganti '+draft.stages.length+' task yang ada dengan template "'+t.name+'"? (Tips: Gunakan tombol "+ Sisipkan dari Template" bila ingin menambahkan tanpa menghapus task yang sudah ada).'))return;
+  SBASE=$('#sbase').value||draft.start||fd(today());
+  draft.stages=buildStages(t.stages,SBASE);
+  draft.stages.forEach(s=>{if(!s.pic)s.pic=draft.pic||ME||'';});
+  if(draft.status==='Completed')draft.status='On Progress';
+  applyAuto(draft);drawTab();toast('Template "'+t.name+'" dimuat ('+draft.stages.length+' task)');
+}
+function appendTpl(){
+  const t=(DB.settings.templates||[]).find(x=>x.id===$('#tsel').value);if(!t){toast('Pilih template terlebih dahulu.');return;}
+  const last=draft.stages[draft.stages.length-1];
+  const baseDate=last&&last.pf?fd(addDays(pd(last.pf),1)):($('#sbase').value||SBASE||draft.start||fd(today()));
+  const added=buildStages(t.stages,baseDate);
+  added.forEach(s=>{if(!s.pic)s.pic=draft.pic||ME||'';draft.stages.push(s);});
+  if(draft.status==='Completed'&&added.length)draft.status='On Progress';
+  applyAuto(draft);drawTab();toast(added.length+' task dari template "'+t.name+'" ditambahkan');
+}
+function reflowStages(){
+  if(!draft.stages.length)return;
+  if(!confirm('Susun ulang jadwal Plan semua task dari tanggal Mulai plan? Durasi & pengaturan paralel tiap task tetap, tanggal Actual tidak berubah.'))return;
+  const defs=draft.stages.map(s=>({name:s.name,days:stageDays(s),par:s.par}));
+  const b=buildStages(defs,$('#sbase').value||SBASE||draft.start);
+  draft.stages.forEach((s,i)=>{s.ps=b[i].ps;s.pf=b[i].pf;});
+  applyAuto(draft);drawTab();
+}
+async function saveAsTpl(){
+  if(!canEdit()){toast('Akses Viewer hanya dapat melihat data');return;}
+  if(!draft.stages.length){toast('Belum ada task untuk disimpan sebagai template');return;}
+  const defOwner=draft.pic||ME||'';
+  const nm=prompt('Nama template baru (akan disimpan agar bisa dipakai kembali oleh Anda / PIC):',(draft.category||'Template')+' - '+(draft.name||defOwner));if(!nm||!nm.trim())return;
+  DB.settings.templates.push({id:uid(),name:nm.trim(),category:draft.category||'',owner:defOwner,stages:draft.stages.map(s=>({name:s.name,pic:s.pic||'',days:stageDays(s),par:!!s.par}))});
+  DB.settings.settingsAt=Date.now();await persist();if(draft)drawTab();toast('Template "'+nm.trim()+'" berhasil disimpan');
+}
+
+/* ================= PURCHASE ORDER ================= */
+let PD=null,POISNEW=false;
+const getPO=id=>draft.pos.find(x=>x.id===id);
+function openDoc(html){
+  try{const url=URL.createObjectURL(new Blob([html],{type:'text/html'}));const w=window.open(url,'_blank');if(!w){toast('Pop-up diblokir browser. Izinkan pop-up untuk halaman ini, lalu coba lagi.');return;}setTimeout(()=>URL.revokeObjectURL(url),120000);}
+  catch(e){toast('Gagal membuka dokumen: '+e.message);}
+}
+function fillPOdef(o){const S=DB.settings.po;['shipName','shipAddr','shipTel','shipAttn','leadTime'].forEach(k=>{if(o[k]===undefined)o[k]=S[k]||'';});['tel','email','attn','addr'].forEach(k=>{if(o[k]===undefined)o[k]='';});if(o.useSig===undefined)o.useSig=!!S.sigDefault;(o.items||[]).forEach(i=>{if(i.due===undefined)i.due='';});return o;}
+async function makePO(qid){
+  const q=getQ(qid);if(!q)return;
+  try{await syncNow();}catch(e){}
+  const S=DB.settings.po;
+  PD=fillPOdef({id:uid(),no:nextPONo(),date:fd(today()),qid:q.id,vendor:q.vendor,addr:'',attn:'',tel:'',email:'',qno:q.no||'',subject:draft.name,
+    items:[{id:uid(),desc:draft.name+(q.note?' - '+q.note:''),qty:1,unit:'Unit',price:q.amount,due:''}],currency:q.currency||DB.settings.currency||'IDR',tax:S.tax,terms:S.terms,delivery:S.delivery,leadTime:S.leadTime,note:S.note,by:ME,at:Date.now()});
+  POISNEW=true;drawPO();
+}
+function editPO(id){const o=getPO(id);if(!o)return;PD=fillPOdef(JSON.parse(JSON.stringify(o)));POISNEW=false;drawPO();}
+function drawPO(){
+  const o=PD,hasSig=(DB.settings.po.sign||[]).some(x=>x.img);
+  const t=(l,k,x)=>`<label>${l}<input value="${esc(o[k])}" data-on-input="${ea(['setPDField',k,'@value'])}" ${x||''}></label>`;
+  const ta=(l,k,r)=>`<label class="full">${l}<textarea rows="${r||2}" data-on-input="${ea(['setPDField',k,'@value'])}">${esc(o[k])}</textarea></label>`;
+  $('#modal2').innerHTML=`<div class="ov"><div class="dlg wide"><div class="dh"><h3>${POISNEW?'Buat Purchase Order':'Purchase Order '+esc(o.no)}</h3><button class="x" data-on-click="[&quot;closeM2&quot;]">✕</button></div><div class="db">
+  <div class="fg">
+   <div class="sec">Dokumen</div>
+  ${t('No. PO','no')}<label>Tanggal PO<input type="date" value="${esc(o.date)}" data-on-input="[&quot;setPDField&quot;,&quot;date&quot;,&quot;@value&quot;]"></label><label>Mata uang PO<select data-on-change="[&quot;setPDCurrency&quot;,&quot;@value&quot;]">${Object.keys(SYMS).map(c=>`<option value="${c}" ${(o.currency||DB.settings.currency||'IDR')===c?'selected':''}>${c} · ${SYMS[c]}</option>`).join('')}</select></label>${t('Ref. No. Quotation','qno')}${t('Perihal / project','subject')}
+   <div class="sec">Kepada (TO) - vendor, isi manual</div>
+   ${t('Nama vendor','vendor','list="vlist"')}${t('Attn / kontak vendor','attn')}${t('Telp vendor','tel')}${t('E-mail vendor','email')}
+   ${ta('Alamat vendor','addr',2)}
+   <div class="sec">Kirim ke (SHIP TO)</div>
+   ${t('Nama','shipName')}${t('Telp','shipTel')}${t('Attn','shipAttn')}
+   ${ta('Alamat pengiriman','shipAddr',2)}
+  </div>
+  <div class="qh"><h4>Item</h4><button class="btn sm" data-on-click="[&quot;addPOItem&quot;]">+ Baris</button></div><div id="poit"></div>
+  <div class="bsum" id="pot" style="margin-top:10px"></div>
+  <div class="fg" style="margin-top:10px"><label>PPN (%)<input type="number" min="0" step="0.1" value="${esc(o.tax)}" data-on-input="[&quot;setPDTax&quot;,&quot;@value&quot;]"></label><span></span>
+   <div class="sec">Ketentuan</div>
+   ${ta('Payment (termin pembayaran)','terms',2)}${t('Lead Time','leadTime')}${t('Delivery Place (lokasi pengiriman)','delivery')}
+   ${ta('Catatan tambahan (opsional)','note',2)}
+   <label class="full" style="display:flex;gap:8px;align-items:center;color:var(--fg)"><input type="checkbox" style="width:auto" ${o.useSig?'checked':''} data-on-change="[&quot;setPDUseSig&quot;,&quot;@checked&quot;]"> Cetak tanda tangan digital pada PO ini (kalau tidak dicentang, kolom dikosongkan untuk tanda tangan basah)</label>
+   ${hasSig?'':'<div class="small muted full">Belum ada gambar tanda tangan digital. Unggah di Pengaturan &gt; Template &amp; nomor PO.</div>'}
+  </div>
+  <div class="small muted" style="margin-top:8px">Kop surat, logo, nomor, tanda tangan, dan teks standar PO diatur di Pengaturan &gt; Template &amp; nomor PO. PO baru tersimpan untuk seluruh tim setelah Anda klik Simpan PO.</div>
+  </div><div class="df"><button class="btn l" data-on-click="[&quot;printPDDoc&quot;]">Cetak / PDF</button><button class="btn" data-on-click="[&quot;dlPOWord&quot;]">Unduh Word</button><button class="btn" data-on-click="[&quot;closeM2&quot;]">Batal</button><button class="btn pri" data-on-click="[&quot;savePO&quot;]">Simpan PO</button></div></div></div>`;
+  drawPOItems();updPOT();
+}
+function drawPOItems(){
+  $('#poit').innerHTML='<div class="itrow muted small"><span>Deskripsi</span><span>Qty</span><span>Satuan</span><span>Due Date</span><span>Harga satuan</span><span></span></div>'+PD.items.map(i=>`<div class="itrow"><input value="${esc(i.desc)}" data-on-input="${ea(["setPOI",i.id,"desc","@value"])}"><input type="number" step="any" value="${esc(i.qty)}" data-on-input="${ea(["setPOI",i.id,"qty","@value"])}"><input value="${esc(i.unit)}" data-on-input="${ea(["setPOI",i.id,"unit","@value"])}"><input type="date" value="${esc(i.due||'')}" data-on-input="${ea(["setPOI",i.id,"due","@value"])}"><input type="number" step="any" value="${esc(i.price)}" data-on-input="${ea(["setPOI",i.id,"price","@value"])}"><button class="btn sm bad" data-on-click="${ea(["delPOI",i.id])}">✕</button></div>`).join('');
+}
+function setPOI(id,k,v){const i=PD.items.find(x=>x.id===id);if(!i)return;i[k]=(k==='qty'||k==='price')?(Number(v)||0):v;updPOT();}
+function addPOItem(){PD.items.push({id:uid(),desc:'',qty:1,unit:'Unit',price:0,due:''});drawPOItems();updPOT();}
+function delPOI(id){PD.items=PD.items.filter(x=>x.id!==id);drawPOItems();updPOT();}
+function updPOT(){const T=poTotals(PD),el=$('#pot');if(el)el.innerHTML=`<div><small>Subtotal</small><b>${poMoney(T.sub,PD.currency)}</b></div><div><small>PPN ${esc(PD.tax||0)}%</small><b>${poMoney(T.tax,PD.currency)}</b></div><div style="border-color:var(--pri)"><small>Total PO</small><b>${poMoney(T.total,PD.currency)}</b></div>`;}
+function dlPOWord(){dl((PD.no||'PO').replace(/[\\/:*?"<>|]+/g,'-')+'.doc',poHTML(PD,draft,false),'application/msword',false);}
+function markPOStage(date){
+  const s=draft.stages.find(x=>/\bPO\b|purchase order/i.test(x.name)&&stEff(x)!=='Completed');
+  if(s){s.as=s.as||((s.ps&&s.ps<date)?s.ps:date);s.af=date;s.status='Completed';}
+}
+async function savePO(){
+  const o=PD;o.no=(o.no||'').trim();
+  if(!o.no){toast('Nomor PO wajib diisi');return;}
+  if(!o.items.length||!o.items.some(i=>i.desc.trim())){toast('Isi minimal satu item PO');return;}
+  if(allPOs().some(x=>x.id!==o.id&&x.no===o.no)){toast('Nomor PO "'+o.no+'" sudah dipakai. Gunakan nomor lain.');return;}
+  const i=draft.pos.findIndex(x=>x.id===o.id);
+  if(i>=0)draft.pos[i]=o;else{draft.pos.push(o);markPOStage(o.date);}
+  draft.po=o.no;if(!draft.vendor)draft.vendor=o.vendor;
+  applyAuto(draft);
+  closeM2();await saveProject();
+}
+function delPO(id){
+  const o=getPO(id);if(!o||!confirm('Hapus PO '+o.no+'? Nomor PO ini tidak dipakai ulang secara otomatis.'))return;
+  draft.pos=draft.pos.filter(x=>x.id!==id);
+  if(draft.po===o.no)draft.po=draft.pos.length?draft.pos[draft.pos.length-1].no:'';
+  drawTab();
+}
+
+/* ================= TEMPLATE STAGE & PENGATURAN PO ================= */
+let TPL=[],TSEL=0,POS=null;
+function openTpl(){if(!canEdit()){toast('Akses Viewer hanya dapat melihat data');return;}TPL=JSON.parse(JSON.stringify(DB.settings.templates||[]));TSEL=0;if(!TPL.length)tplNew(true);drawTpl();}
+function tplNew(noDraw){TPL.push({id:uid(),name:'Template '+(ME||'Baru'),category:draft?draft.category||'':'',owner:ME||'',stages:[{name:'Tahap 1',pic:ME||'',days:7,par:false}]});TSEL=TPL.length-1;if(!noDraw)drawTpl();}
+function tplDup(){const t=JSON.parse(JSON.stringify(TPL[TSEL]));t.id=uid();t.name+=' ('+(ME||'Salinan')+')';t.owner=ME||t.owner||'';TPL.push(t);TSEL=TPL.length-1;drawTpl();}
+function tplRemove(){if(!confirm('Hapus template "'+TPL[TSEL].name+'"? Project yang sudah memakainya tidak berubah.'))return;TPL.splice(TSEL,1);TSEL=0;if(!TPL.length)tplNew(true);drawTpl();}
+function tplS(i,k,v){const s=TPL[TSEL].stages[i];s[k]=(k==='days')?(Math.max(1,parseInt(v,10)||1)):v;}
+function tplMove(i,dir){const a=TPL[TSEL].stages,j=i+dir;if(j<0||j>=a.length)return;const t=a[i];a[i]=a[j];a[j]=t;drawTpl();}
+function tplDel(i){TPL[TSEL].stages.splice(i,1);drawTpl();}
+function tplAdd(){const defPic=TPL[TSEL].owner||ME||'';TPL[TSEL].stages.push({name:'',pic:defPic,days:7,par:false});drawTpl();}
+function drawTpl(){
+  const t=TPL[TSEL],cats=DB.settings.categories.map(c=>c.name);
+  const pics=[...new Set(DB.projects.map(p=>p.pic).concat([ME]).filter(Boolean))];
+  const b=buildStages(t.stages,fd(today()));let tot=0;
+  if(b.length){let mn=b[0].ps,mx=b[0].pf;b.forEach(s=>{if(s.ps<mn)mn=s.ps;if(s.pf>mx)mx=s.pf;});tot=diffDays(pd(mn),pd(mx))+1;}
+  $('#modal2').innerHTML=`<div class="ov"><div class="dlg wide"><div class="dh"><h3>Kelola Template Stage (Fleksibel per PIC / Kategori)</h3><button class="x" data-on-click="[&quot;closeM2&quot;]">✕</button></div><div class="db">
+   <datalist id="tpl_pics">${pics.map(x=>`<option value="${esc(x)}">`).join('')}</datalist>
+   <div class="tplwrap">
+   <div class="tpll">${TPL.map((x,i)=>`<button class="btn ${i===TSEL?'on':''}" data-on-click="${ea(['selectTpl',i])}" style="text-align:left"><div><b>${esc(x.name||'(tanpa nama)')}</b> <span class="muted">(${x.stages.length})</span></div><div class="small muted">${x.owner?'PIC: '+esc(x.owner):'Umum (Semua PIC)'}${x.category?' · '+esc(x.category):''}</div></button>`).join('')}<button class="btn sm pri" data-on-click="[&quot;tplNew&quot;]">+ Buat Template Saya</button></div>
+   <div><div class="fg" style="grid-template-columns:repeat(3,1fr)">
+    <label>Nama Template<input value="${esc(t.name)}" placeholder="Contoh: Standar Mesin Filling" data-on-input="[&quot;setTPLField&quot;,&quot;name&quot;,&quot;@value&quot;]"></label>
+    <label>PIC / Pemilik Template<input value="${esc(t.owner||'')}" list="tpl_pics" placeholder="Kosongkan = Umum (Semua PIC)" data-on-input="[&quot;setTPLField&quot;,&quot;owner&quot;,&quot;@value&quot;]"><small class="hint" style="text-align:left">Isi nama Anda/PIC agar otomatis diprioritaskan pada project milik PIC tersebut</small></label>
+    <label>Klasifikasi Tujuan<select data-on-change="[&quot;setTPLField&quot;,&quot;category&quot;,&quot;@value&quot;]"><option value="">Semua klasifikasi</option>${cats.map(c=>`<option value="${esc(c)}" ${c===t.category?'selected':''}>${esc(c)}</option>`).join('')}</select></label></div>
+    <div class="qh"><h4>Daftar Task / Stage (${t.stages.length}) <span class="muted small" style="font-weight:400">· estimasi durasi sekitar ${tot} hari</span></h4><button class="btn sm pri" data-on-click="[&quot;tplAdd&quot;]">+ Tambah Task</button></div>
+    <div class="strow muted small"><span>#</span><span>Nama Task / Stage</span><span>PIC Default</span><span>Hari</span><span>Paralel</span><span></span></div>
+    ${t.stages.map((s,i)=>`<div class="strow"><span class="muted">${i+1}</span><input type="text" value="${esc(s.name)}" placeholder="Nama tahap..." data-on-input="${ea(["tplS",i,"name","@value"])}"><input type="text" list="tpl_pics" value="${esc(s.pic||'')}" placeholder="Mengikuti PIC project" data-on-input="${ea(["tplS",i,"pic","@value"])}"><input type="number" min="1" value="${s.days}" data-on-input="${ea(['tplSDays',i,'@value'])}"><label style="display:flex;gap:4px;align-items:center;font-size:11px;font-weight:400"><input type="checkbox" style="width:auto;margin:0" ${s.par?'checked':''} data-on-change="${ea(['tplSPar',i,'@checked'])}"> dgn sebelumnya</label><span style="white-space:nowrap"><button class="btn sm" data-on-click="${ea(["tplMove",i,-1])}">▲</button> <button class="btn sm" data-on-click="${ea(["tplMove",i,1])}">▼</button> <button class="btn sm bad" data-on-click="${ea(["tplDel",i])}">✕</button></span></div>`).join('')}
+    <div class="small muted" style="margin-top:8px">Setiap PIC bebas membuat atau menduplikasi template sesuai alur kerja masing-masing. Jika kolom <b>PIC Default</b> dikosongkan, maka saat template dimuat ke project, task akan otomatis menggunakan nama PIC project tersebut.</div>
+    <div style="margin-top:10px;display:flex;gap:8px"><button class="btn sm" data-on-click="[&quot;tplDup&quot;]">Duplikat &amp; Sesuaikan untuk Saya</button><button class="btn sm bad" data-on-click="[&quot;tplRemove&quot;]">Hapus Template Ini</button></div></div></div></div>
+   <div class="df"><button class="btn" data-on-click="[&quot;closeM2&quot;]">Batal</button><button class="btn pri" data-on-click="[&quot;tplSave&quot;]">Simpan Semua Template</button></div></div></div>`;
+}
+async function tplSave(){
+  const out=TPL.map(t=>({id:t.id,name:(t.name||'').trim(),category:t.category||'',owner:(t.owner||'').trim(),stages:t.stages.filter(s=>(s.name||'').trim()).map(s=>({name:s.name.trim(),pic:(s.pic||'').trim(),days:Math.max(1,Number(s.days)||1),par:!!s.par}))})).filter(t=>t.name);
+  DB.settings.templates=out;DB.settings.settingsAt=Date.now();closeM2();await persist();render();toast('Template stage tersimpan ('+out.length+' template)');
+}
+function openPOS(){if(!isAdmin()){toast('Hanya admin yang dapat mengubah template PO');return;}POS=JSON.parse(JSON.stringify(DB.settings.po));POS.sign=normSigners(POS.sign);drawPOS();}
+function loadImg(file,maxW,maxH,sig){return new Promise((res,rej)=>{
+  if(!file||!/^image\/(png|jpeg)$/.test(file.type)){rej(new Error('File harus berupa gambar PNG atau JPG'));return;}
+  if(file.size>6*1024*1024){rej(new Error('Ukuran gambar maksimal 6 MB'));return;}
+  const fr=new FileReader();fr.onerror=()=>rej(new Error('Gagal membaca file'));
+  fr.onload=()=>{const im=new Image();im.onerror=()=>rej(new Error('Gambar tidak dapat dibaca'));
+    im.onload=()=>{
+      const r=Math.min(1,maxW/im.width,maxH/im.height),w=Math.max(1,Math.round(im.width*r)),h=Math.max(1,Math.round(im.height*r));
+      const c=document.createElement('canvas');c.width=w;c.height=h;const x=c.getContext('2d');x.drawImage(im,0,0,w,h);
+      if(sig){const d=x.getImageData(0,0,w,h),a=d.data;for(let i=0;i<a.length;i+=4){const mn=Math.min(a[i],a[i+1],a[i+2]);if(mn>=235)a[i+3]=0;else if(mn>180)a[i+3]=Math.round(a[i+3]*(235-mn)/55);}x.putImageData(d,0,0);}
+      res(c.toDataURL('image/png'));};
+    im.src=fr.result;};
+  fr.readAsDataURL(file);});}
+function pickImg(kind,i){
+  const inp=document.createElement('input');inp.type='file';inp.accept='image/png,image/jpeg';
+  inp.onchange=async()=>{const f=inp.files&&inp.files[0];if(!f)return;
+    try{if(kind==='logo')POS.logo=await loadImg(f,480,200,false);else POS.sign[i].img=await loadImg(f,360,160,true);drawPOS();toast(kind==='logo'?'Logo dimuat':'Tanda tangan digital dimuat');}
+    catch(e){toast(e.message);}};
+  inp.click();
+}
+function samplePO(S){
+  return {id:'sample',no:nextPONo(S.pattern),date:fd(today()),qno:'QT-0001',subject:'Contoh project',vendor:'PT CONTOH VENDOR',addr:'Jl. Contoh No. 1\nJakarta',tel:'(021) 0000 0000',attn:'Mr. Contoh',email:'vendor@contoh.com',
+    items:[{id:'a',desc:'AUTOMATIC BOX FOLDING MACHINE INCLUDING 5 SETS OF ADDITIONAL MOLD',qty:1,unit:'set',due:fd(addDays(today(),30)),price:97284702}],
+    tax:S.tax,terms:S.terms||'100% After Delivery within 14 Days',leadTime:S.leadTime||'3 Weeks After Receiving PO',delivery:S.delivery,useSig:!!S.sigDefault};
+}
+function drawPOS(){
+  const S=POS;
+  const f=(l,k,t)=>`<label>${l}<input value="${esc(S[k])}" ${t==='num'?'type="number" step="any"':''} data-on-input="${ea(['setPOSField',k,'@value'])}"></label>`;
+  const ta=(l,k,r,h)=>`<label class="full">${l}<textarea rows="${r}" data-on-input="${ea(['setPOSField',k,'@value'])}">${esc(S[k])}</textarea>${h?`<small class="hint" style="text-align:left">${h}</small>`:''}</label>`;
+  const sel=(l,k,opts)=>`<label>${l}<select data-on-change="${ea(['setPOSField',k,'@value'])}">${opts.map(o=>`<option value="${esc(o[0])}" ${S[k]===o[0]?'selected':''}>${esc(o[1])}</option>`).join('')}</select></label>`;
+  const thumb=(src,clrDesc,pk)=>(/^data:image\//.test(src||'')?`<img src="${src}" style="max-height:44px;max-width:150px;background:#fff;border:1px solid var(--line);border-radius:4px;padding:2px;vertical-align:middle"> <button class="btn sm bad" data-on-click="${ea(clrDesc)}">Hapus</button>`:'<span class="muted small">Belum ada gambar</span>')+' '+pk;
+  const sg=S.sign.map((x,i)=>`<div class="sgrow"><label>Judul ${i+1}<input value="${esc(x.label)}" data-on-input="${ea(['setPOSSignField',i,'label','@value'])}"></label><label>Nama<input value="${esc(x.name)}" data-on-input="${ea(['setPOSSignField',i,'name','@value'])}"></label><label>Jabatan<input value="${esc(x.title)}" data-on-input="${ea(['setPOSSignField',i,'title','@value'])}"></label>
+    <div style="grid-column:1/-1">${thumb(x.img,['clearPOSSignImg',i],`<button class="btn sm" data-on-click="${ea(["pickImg","sign",i])}">Unggah TTD digital</button>`)}</div></div>`).join('');
+  $('#modal2').innerHTML=`<div class="ov"><div class="dlg wide"><div class="dh"><h3>Template &amp; nomor PO</h3><button class="x" data-on-click="[&quot;closeM2&quot;]">✕</button></div><div class="db"><div class="fg">
+   <div class="sec">Kop dokumen</div>
+   ${f('Nama perusahaan','company')}${f('Kode dokumen (pojok kanan atas)','docCode')}${f('Judul dokumen','title')}
+   ${ta('Alamat perusahaan','address',2)}${ta('Telp / Fax / Website','contact',2)}
+   <div class="full">Logo perusahaan: ${thumb(S.logo,['clearPOSLogo'],`<button class="btn sm" data-on-click="[&quot;pickImg&quot;,&quot;logo&quot;]">Unggah logo</button>`)}<small class="hint" style="text-align:left">PNG atau JPG. Gambar otomatis diperkecil. Logo dengan latar transparan (PNG) paling bagus.</small></div>
+   <div class="sec">Nomor, tanggal, bahasa</div>
+   <label class="full">Format nomor PO<input value="${esc(S.pattern)}" data-on-input="[&quot;setPOSPattern&quot;,&quot;@value&quot;]"><small class="hint" style="text-align:left">Kode: {NNN} nomor urut, {YYYY} tahun 4 digit, {YY} tahun 2 digit, {MM} bulan angka, {RM} bulan Romawi. Contoh: {NNN}/PO/PI/{RM}/{YYYY}. Nomor berikutnya: <b id="pnex">${esc(nextPONo(S.pattern))}</b>. Nomor urut mulai lagi dari 001 bila kode bulan atau tahun berubah.</small></label>
+   ${sel('Format tanggal','dateFmt',[['dd-Mmm-yy','28-Aug-26'],['dd Mmm yyyy','28 Aug 2026'],['dd Mmmm yyyy','28 August 2026'],['dd/mm/yyyy','28/08/2026']])}
+   ${sel('Bahasa label PO','lang',[['en','English (PO. Number, DESCRIPTION, ...)'],['id','Indonesia (No. PO, DESKRIPSI, ...)']])}
+   ${f('PPN / Tax default (%)','tax','num')}
+   <div class="sec">Ship To standar</div>
+   ${f('Nama','shipName')}${f('Telp','shipTel')}${f('Attn','shipAttn')}${ta('Alamat pengiriman','shipAddr',2)}
+   <div class="sec">Ketentuan standar</div>
+   ${ta('Payment (termin pembayaran) standar','terms',2)}${f('Lead Time standar','leadTime')}${f('Delivery Place standar','delivery')}
+   ${ta('Daftar dokumen penagihan','billing',6,'Baris pertama menjadi judul (tebal dan bergaris bawah), baris berikutnya berupa daftar.')}
+   ${ta('Pernyataan standar (anti-suap, whistleblower, dan sejenisnya)','notice',7,'Tampil di tengah dengan huruf tebal. Pisahkan paragraf dengan satu baris kosong. Kosongkan kalau tidak diperlukan.')}
+   ${ta('Catatan kaki standar (opsional)','note',2)}
+   <div class="sec">Tanda tangan</div>
+   <label class="full" style="display:flex;gap:8px;align-items:center;color:var(--fg)"><input type="checkbox" style="width:auto" ${S.sigDefault?'checked':''} data-on-change="[&quot;setPOSSigDefault&quot;,&quot;@checked&quot;]"> Cetak tanda tangan digital secara default pada PO baru (matikan untuk tanda tangan basah)</label>
+   <div class="small muted full">Kosongkan "Judul" kalau kolom itu tidak dipakai. Gambar tanda tangan hanya tercetak kalau opsi digital dicentang di PO yang bersangkutan. Latar putih pada gambar tanda tangan dihapus otomatis.</div>
+   ${sg}
+  </div></div><div class="df"><button class="btn l" data-on-click="[&quot;printSamplePODoc&quot;]">Pratinjau</button><button class="btn" data-on-click="[&quot;closeM2&quot;]">Batal</button><button class="btn pri" data-on-click="[&quot;savePOS&quot;]">Simpan</button></div></div></div>`;
+}
+async function savePOS(){
+  const P=POS;P.tax=Number(P.tax)||0;P.sign=normSigners(P.sign);
+  if(!String(P.pattern||'').trim())P.pattern=DEFPO.pattern;
+  DB.settings.po=Object.assign({},DEFPO,P);DB.settings.settingsAt=Date.now();closeM2();await persist();render();toast('Template PO tersimpan');
+}
+
+/* ================= PENGATURAN ================= */
+function openSettings(){
+  CD=DB.settings.categories.map(c=>({name:c.name,color:c.color,orig:c.name}));
+  const S=DB.settings,ad=isAdmin(),viewer=isViewer();
+  const chk=(id,v,t,last)=>`<label style="display:flex;gap:8px;align-items:center;font-weight:400;color:var(--text);${last?'':'margin-bottom:6px'}"><input type="checkbox" id="${id}" style="width:auto;margin:0" ${v?'checked':''}> ${t}</label>`;
+  $('#modal').innerHTML=`<div class="ov"><div class="dlg sm"><div class="dh"><h3>Pengaturan</h3><button class="x" data-on-click="[&quot;closeModal&quot;]">✕</button></div><div class="db">
+    <h4 style="margin-top:0">Akun</h4>
+    <div class="small" style="margin-bottom:8px">Masuk sebagai <b>${esc(ME)}</b> (${ad?'admin':viewer?'viewer':isContributor()?'kontributor':'pengguna'}). Nama ini dicatat di riwayat perubahan.</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">${viewer?'':'<button class="btn sm" data-on-click="[&quot;openPin&quot;]">Ganti PIN saya</button>'}${ad?'<button class="btn sm" data-on-click="[&quot;openUsers&quot;]">Kelola pengguna</button> <button class="btn sm" data-on-click="[&quot;backupNow&quot;]">Backup sekarang</button>':''}</div>
+    ${canEdit()?`<h4>Template Stage${ad?' &amp; PO':''}</h4>
+    <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" data-on-click="[&quot;openTpl&quot;]">Kelola Template Stage (${(S.templates||[]).length})</button>${ad?'<button class="btn" data-on-click="[&quot;openPOS&quot;]">Template &amp; nomor PO</button>':''}</div>`:''}
+    ${ad?`<h4>Aplikasi</h4><label>Nama aplikasi (tampil di header dan tab browser)<input id="s_app" value="${esc(S.appName||'PI Project Management')}"></label>
+    <h4>Fitur</h4>
+    ${chk('s_ub',S.useBudget,'Pakai kolom budget (opsional, tidak tampil di Dashboard)')}
+    ${chk('s_ap',S.autoProgress!==false,'Progres project dihitung otomatis dari stage yang selesai')}
+    ${chk('s_ad',S.autoDates!==false,'Tanggal mulai dan target project mengikuti plan stage',true)}
+    <h4>Mata uang</h4><label><select id="s_cur">${Object.keys(SYMS).map(c=>`<option value="${c}" ${c===S.currency?'selected':''}>${c}</option>`).join('')}</select></label>
+    <h4>Klasifikasi / kategori project</h4><div id="catl"></div><button class="btn sm" data-on-click="[&quot;addCat&quot;]">+ Kategori</button>`:`<div class="small muted" style="margin-top:12px">Template PO, kategori, dan pengaturan sistem dikelola oleh admin.</div>`}
+    <h4>Tampilan</h4><label><select id="s_theme"><option value="light">Terang</option><option value="dark" ${document.documentElement.dataset.theme==='dark'?'selected':''}>Gelap</option></select></label>
+    <h4>Ekspor${ad?' / Impor':''}</h4>
+    <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn sm" data-on-click="[&quot;exportCSV&quot;]">Project (CSV)</button><button class="btn sm" data-on-click="[&quot;exportStages&quot;]">Stage Plan vs Actual (CSV)</button><button class="btn sm" data-on-click="[&quot;exportQ&quot;]">Quotation (CSV)</button><button class="btn sm" data-on-click="[&quot;exportPOcsv&quot;]">PO (CSV)</button><button class="btn sm" data-on-click="[&quot;exportJSON&quot;]">Backup (JSON)</button>${ad?'<label class="btn sm" style="margin:0;cursor:pointer;color:var(--text)">Impor JSON<input type="file" accept=".json" style="display:none" data-on-change="[&quot;importJSON&quot;,&quot;@el&quot;]"></label>':''}</div>
+    </div><div class="df"><button class="btn" data-on-click="[&quot;closeModal&quot;]">Tutup</button><button class="btn pri" data-on-click="[&quot;saveSettings&quot;]">Simpan</button></div></div></div>`;
+  if(ad)drawCats();
+}
+function drawCats(){
+  $('#catl').innerHTML=CD.map((c,i)=>`<div class="catrow"><input type="color" value="${c.color}" data-on-input="${ea(['setCDColor',i,'@value'])}"><input type="text" value="${esc(c.name)}" data-on-input="${ea(['setCDName',i,'@value'])}"><button class="btn sm bad" ${CD.length<2?'disabled title="Minimal satu kategori harus tersisa"':''} data-on-click="${ea(["removeCat",i])}">Hapus</button></div>`).join('');
+}
+function addCat(){CD.push({name:'',color:PALETTE[CD.length%PALETTE.length],orig:''});drawCats();}
+function removeCat(index){
+  const category=CD[index];if(!category)return;
+  if(CD.length<2){toast('Minimal satu kategori harus tersisa');return;}
+  const fallback=CD.find((item,i)=>i!==index&&item.name.trim());if(!fallback){toast('Isi nama kategori lain terlebih dahulu');return;}
+  const oldName=category.orig||category.name.trim(),count=DB.projects.filter(p=>p.category===oldName||p.category===category.name.trim()).length;
+  if(count&&!confirm('Hapus klasifikasi "'+category.name+'"? '+count+' project yang menggunakannya akan dipindahkan ke "'+fallback.name.trim()+'" saat pengaturan disimpan.'))return;
+  CD.splice(index,1);drawCats();
+}
+async function saveSettings(){
+  if(isAdmin()){
+    const cds=CD.filter(c=>c.name.trim());
+    if(!cds.length){toast('Minimal satu kategori');return;}
+    const now=Date.now();
+    const removed=DB.settings.categories.filter(old=>!CD.some(c=>c.orig===old.name)),fallback=cds[0].name.trim();
+    removed.forEach(old=>{
+      DB.projects.forEach(p=>{if(p.category===old.name){p.category=fallback;p.updatedAt=Math.max(now,(p.updatedAt||0)+1);p.updatedBy=ME;p.log=(p.log||[]).concat([{t:p.updatedAt,by:ME,items:['Klasifikasi '+old.name+' dihapus; dipindahkan ke '+fallback]}]);}});
+      (DB.settings.templates||[]).forEach(t=>{if(t.category===old.name)t.category=fallback;});
+    });
+    cds.forEach(c=>{if(c.orig&&c.orig!==c.name.trim()){
+      DB.projects.forEach(p=>{if(p.category===c.orig){p.category=c.name.trim();p.updatedAt=now;p.updatedBy=ME;}});
+      (DB.settings.templates||[]).forEach(t=>{if(t.category===c.orig)t.category=c.name.trim();});
+    }});
+    DB.settings.categories=cds.map(c=>({name:c.name.trim(),color:c.color}));
+    DB.settings.currency=$('#s_cur').value;DB.settings.settingsAt=now;
+    DB.settings.appName=($('#s_app').value||'').trim()||'PI Project Management';
+    DB.settings.useBudget=$('#s_ub').checked;DB.settings.autoProgress=$('#s_ap').checked;DB.settings.autoDates=$('#s_ad').checked;
+  }
+  const th=$('#s_theme').value;document.documentElement.dataset.theme=th;localStorage.setItem('pt_theme',th);
+  closeModal();await persist();render();toast('Pengaturan tersimpan');
+}
+/* ---- export / import ---- */
+function dl(name,text,type,bom){const b=new Blob([(bom?'\ufeff':'')+text],{type:type});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),3000);}
+function exportCSV(){
+  const ub=useBud();
+  const rows=[['Kode','Project','Klasifikasi','Prioritas','Status','PIC','Area','Mulai','Target','Progres %','Tahap saat ini','Stage selesai','Total stage','Stage terlambat','Vendor','No PO','Jumlah Quotation','Quotation Terendah','Quotation Terpilih'].concat(ub?['Budget','Aktual/PO','Status Budget']:[]).concat(['Deskripsi'])];
+  getL(false).forEach(p=>{const lq=lowQ(p),sq=selQ(p),cs=curStage(p);rows.push([p.code,p.name,p.category,p.priority,effStatus(p),p.pic,p.area,p.start,p.end,p.progress,cs?cs.txt:'',cs?cs.done:'',p.stages.length,p.stages.filter(s=>stEff(s)==='Delayed').length,p.vendor,p.pos.length?p.pos.map(o=>o.no).join('; '):p.po,quotes(p).length,lq?lq.amount:'',sq?sq.amount:''].concat(ub?[p.budget,p.actual,budgetState(p).label]:[]).concat([p.desc]));});
+  dl('projects.csv',rows.map(r=>r.map(csvCell).join(',')).join('\r\n'),'text/csv;charset=utf-8',true);
+}
+function exportStages(){
+  const rows=[['Kode','Project','No','Stage','PIC','Plan Mulai','Plan Selesai','Actual Mulai','Actual Selesai','Status','Deviasi Selesai (hari, + = terlambat)','Catatan']];
+  getL(false).forEach(p=>p.stages.forEach((s,i)=>{const dv=stDev(s);rows.push([p.code,p.name,i+1,s.name,s.pic,s.ps,s.pf,s.as,s.af,stEff(s),dv===null?'':dv,s.note]);}));
+  dl('stages-plan-actual.csv',rows.map(r=>r.map(csvCell).join(',')).join('\r\n'),'text/csv;charset=utf-8',true);
+}
+function exportPOcsv(){
+  const rows=[['No PO','Tanggal','Kode','Project','Vendor','Mata Uang','Ref Quotation','Payment','Lead Time','Subtotal','PPN %','PPN','Total','Dibuat oleh']];
+  getL(false).forEach(p=>p.pos.forEach(o=>{const T=poTotals(o);rows.push([o.no,o.date,p.code,p.name,o.vendor,o.currency||DB.settings.currency,o.qno,o.terms||'',o.leadTime||'',T.sub,o.tax,T.tax,T.total,o.by]);}));
+  dl('purchase-orders.csv',rows.map(r=>r.map(csvCell).join(',')).join('\r\n'),'text/csv;charset=utf-8',true);
+}
+function exportQ(){
+  const rows=[['Kode','Project','Vendor','No Quotation','Harga','Mata Uang','Tanggal Diterima','Berlaku s/d','Status','Link','File','Catatan']];
+  getL(false).forEach(p=>quotes(p).forEach(q=>rows.push([p.code,p.name,q.vendor,q.no,q.amount,q.currency||DB.settings.currency||'IDR',q.date,q.valid,q.status,q.link,q.fileName||q.file,q.note])));
+  dl('quotations.csv',rows.map(r=>r.map(csvCell).join(',')).join('\r\n'),'text/csv;charset=utf-8',true);
+}
+function exportJSON(){dl('tracker-backup-'+fd(new Date())+'.json',JSON.stringify(DB,null,1),'application/json',false);}
+function importJSON(input){
+  const f=input.files[0];if(!f)return;const r=new FileReader();
+  r.onload=async()=>{try{if(!isAdmin()){toast('Hanya admin yang dapat mengimpor data');return;}const o=normDB(JSON.parse(r.result));DB=mergeDB(DB,o);closeModal();await persist();render();toast('Data berhasil digabung dari file');}catch(e){toast('File tidak valid: '+e.message);}};
+  r.readAsText(f);
+}
+
+/* ================= SERVER (v4): login, sinkronisasi, real-time ================= */
+let CSRF_TOKEN='',PIN_MIN=10;
+const isAdmin=()=>!!(USER&&USER.role==='admin');
+const isViewer=()=>!!(USER&&USER.role==='viewer');
+const isContributor=()=>!!(USER&&USER.role==='contributor');
+const canEdit=()=>!!(USER&&(USER.role==='admin'||USER.role==='user'));
+const canModifyProj=p=>{
+  if(isAdmin())return true;
+  if(!canEdit())return false;
+  if(!p)return true;
+  const me=(ME||'').trim().toLowerCase();
+  if(!me)return false;
+  const pic=(p.pic||'').trim().toLowerCase();
+  if(!pic||pic===me)return true;
+  if(((p.createdBy||'').trim().toLowerCase())===me)return true;
+  if((p.stages||[]).some(s=>((s&&s.pic)||'').trim().toLowerCase()===me))return true;
+  return false;
+};
+const canDeleteProj=p=>{
+  if(isAdmin())return true;
+  if(!canEdit()||!p)return false;
+  const me=(ME||'').trim().toLowerCase();
+  if(!me)return false;
+  const pic=(p.pic||'').trim().toLowerCase();
+  if(pic&&pic===me)return true;
+  if(((p.createdBy||'').trim().toLowerCase())===me)return true;
+  if(!pic&&((p.updatedBy||'').trim().toLowerCase())===me)return true;
+  return false;
+};
+const canSubmitImprovement=()=>!!USER&&!isViewer();
+const canReviewImprovement=()=>canEdit();
+const canEditImprovement=()=>!!USER&&!isViewer()&&(IISNEW||(isContributor()&&!!(IDRAFT&&IDRAFT.submittedBy===ME)));
+const appName=()=>(DB&&DB.settings&&DB.settings.appName)||'PI Project Management';
+function apiURL(path){const base=location.pathname.replace(/\/+$/,'');const url=new URL(base+'/api.php',location.origin);url.searchParams.set('route',path);return url.toString();}
+async function api(path,opt){
+  opt=Object.assign({credentials:'same-origin'},opt||{});
+  const baseHdr={'X-PT':'1'};
+  if(CSRF_TOKEN)baseHdr['X-CSRF-Token']=CSRF_TOKEN;
+  opt.headers=Object.assign(baseHdr,opt.headers||{});
+  let r;
+  try{r=await fetch(apiURL(path),opt);}catch(e){const er=new Error('Server tidak dapat dihubungi');er.status=0;throw er;}
+  let j=null;try{j=await r.json();}catch(e){}
+  if(!r.ok){
+    const er=new Error((j&&j.error)||('Kesalahan server ('+r.status+')'));er.status=r.status;
+    if(r.status===401&&path!=='/api/me'&&path!=='/api/login'&&path!=='/api/setup'&&USER){USER=null;CSRF_TOKEN='';stopSSE();showLogin('Sesi berakhir, silakan masuk lagi.');}
+    throw er;
+  }
+  if(j&&j.csrfToken)CSRF_TOKEN=j.csrfToken;
+  return j;
+}
+function applyRemote(res){
+  if(!res||res.unchanged){if(res)REV=res.rev;return false;}
+  const before=sig(DB)+'|'+(DB.settings.settingsAt||0);
+  if(res.rejectedProjectAuth){
+    DB=normDB({settings:res.settings||DB.settings,projects:res.projects||[],improvements:res.improvements||DB.improvements,deleted:res.deleted||{}});
+    toast('Perubahan ditolak: Anda hanya dapat mengubah/menghapus project yang menjadi tanggung jawab (PIC) Anda.');
+  }else{
+    const remote=normDB({settings:res.settings||DB.settings,projects:res.projects||[],improvements:res.improvements||DB.improvements,deleted:res.deleted||{}});
+    DB=mergeDB(DB,remote);
+  }
+  if(res.settings&&res.forceSettings)DB.settings=normDB({settings:res.settings}).settings;
+  KNOWN={};(res.projects||[]).forEach(p=>{KNOWN[p.id]=p.updatedAt;});
+  KNOWNI={};(res.improvements||[]).forEach(x=>{KNOWNI[x.id]=x.updatedAt;});
+  KDEL=res.deleted||{};KSET=res.settingsAt||0;REV=res.rev;
+  return before!==sig(DB)+'|'+(DB.settings.settingsAt||0);
+}
+/* Kirim perubahan lokal ke server dan ambil perubahan terbaru. Mengembalikan true bila data berubah. */
+async function syncNow(){
+  if(!USER)return false;
+  if(PUSHING){AGAIN=true;return false;}
+  PUSHING=true;let changed=false;
+  try{
+    do{
+      AGAIN=false;
+      const push={projects:DB.projects.filter(p=>KNOWN[p.id]!==p.updatedAt),deleted:{}};
+      push.improvements=DB.improvements.filter(x=>KNOWNI[x.id]!==x.updatedAt);
+      for(const k in DB.deleted)if((KDEL[k]||0)<DB.deleted[k])push.deleted[k]=DB.deleted[k];
+      if(canEdit()&&(DB.settings.settingsAt||0)>KSET)push.settings=DB.settings;
+      const res=await api('/api/sync',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({rev:REV,sa:DB.settings.settingsAt||0,push:push})});
+      if(applyRemote(res))changed=true;
+    }while(AGAIN);
+    SYNCERR=null;lastSync=new Date();clearTimeout(RETRY);RETRY=null;
+  }catch(e){
+    SYNCERR=e.message||String(e);
+    if(USER&&!RETRY)RETRY=setTimeout(async()=>{RETRY=null;const ch=await syncNow();if(ch)render();},5000);
+  }finally{PUSHING=false;renderSync();}
+  return changed;
+}
+async function persist(){renderSync();await syncNow();if(SYNCERR)toast('Perubahan belum tersimpan di server: '+SYNCERR+'. Aplikasi mencoba lagi otomatis; jangan tutup halaman ini.');}
+function stopSSE(){if(SSE){try{SSE.close();}catch(e){}SSE=null;}ONLINE=[];}
+function startSSE(){
+  stopSSE();
+  if(typeof EventSource==='undefined')return;
+  const es=new EventSource(apiURL('/api/events'));SSE=es;
+  es.addEventListener('state',async e=>{
+    let d={};try{d=JSON.parse(e.data);}catch(_){}
+    if(d.online)ONLINE=d.online;
+    if(d.rev!==undefined&&d.rev!==REV){await new Promise(r=>setTimeout(r,Math.floor(Math.random()*2000)));const ch=await syncNow();if(ch){render();if(d.by&&d.by!==ME)toast('Data diperbarui oleh '+d.by);}}
+    renderSync();
+  });
+  es.onopen=async()=>{if(SYNCERR==='Koneksi ke server terputus')SYNCERR=null;const ch=await syncNow();if(ch)render();renderSync();};
+  es.onerror=async()=>{
+    ONLINE=[];if(!SYNCERR)SYNCERR='Koneksi ke server terputus';renderSync();
+    if(es.readyState===2){ // ditutup browser (mis. sesi habis): cek ulang
+      setTimeout(async()=>{try{await api('/api/me');if(USER)startSSE();}catch(er){if(er.status===401&&USER){USER=null;showLogin('Sesi berakhir, silakan masuk lagi.');}else if(USER)startSSE();}},5000);
+    }
+  };
+}
+function syncClick(){syncNow().then(ch=>{if(ch)render();toast(SYNCERR?('Gagal sinkron: '+SYNCERR):'Data dimuat ulang');});}
+function renderSync(){
+  const el=$('#sync');if(!el)return;
+  if(!USER){el.className='sync warn';el.innerHTML='<i></i><span>Belum masuk</span>';return;}
+  if(SYNCERR){el.className='sync err';el.innerHTML='<i></i><span>Belum tersimpan · '+esc(SYNCERR)+' · klik untuk coba lagi</span>';el.title=SYNCERR;return;}
+  el.className='sync ok';
+  el.innerHTML=`<i></i><span>Terhubung · online: <b>${Math.max(ONLINE.length,1)}</b>${lastSync?' · sinkron '+lastSync.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'}):''}</span>`;
+  el.title=(ONLINE.length?'Sedang online: '+ONLINE.join(', ')+'. ':'')+'Klik untuk memuat ulang data sekarang';
+}
+
+/* ---- login ---- */
+let LOGIN_MODE='edit';
+function loginLanguageOptions(){return `<select id="auth-language" data-no-translate aria-label="Bahasa aplikasi" data-on-change="[&quot;setLanguage&quot;,&quot;@value&quot;]"><option value="id">Indonesia</option><option value="en">English</option><option value="ko">한국어</option></select>`;}
+function authPage(title,subtitle,content,actions){
+  return `<div class="auth-page"><section class="auth-visual"><div class="auth-visual-copy"><h1>PIE Project Management</h1><p>Project operations</p></div><div class="auth-visual-foot">Indonesia · English · 한국어</div></section><section class="auth-pane"><div class="auth-card"><div class="auth-tools">${loginLanguageOptions()}</div><h2>${esc(title)}</h2><p class="auth-subtitle">${esc(subtitle)}</p>${content}${actions}</div></section></div>`;
+}
+function chooseLoginMode(mode){LOGIN_MODE=['viewer','contributor'].includes(mode)?mode:'edit';showLogin();}
+async function showLogin(msg){
+  document.body.classList.add('auth-mode');
+  let pub;
+  try{pub=await api('/api/public');}
+  catch(e){
+    $('#modal').innerHTML=authPage('Server tidak terhubung','Project operations',`<div class="auth-note">${esc(e.message)}. Pastikan server aktif dan Anda terhubung ke jaringan kantor atau VPN.</div>`,`<button class="auth-submit" data-on-click="[&quot;showLogin&quot;]">Coba lagi</button>`);applyLanguage();return;
+  }
+  if(pub.pinMinLength)PIN_MIN=pub.pinMinLength;
+  DB.settings.appName=pub.appName||DB.settings.appName;document.title=pub.appName||'PI Project Management';$('#appname').textContent=pub.appName||'PI Project Management';
+  const note=msg?`<div class="auth-note">${esc(msg)}</div>`:'';
+  let content,actions;
+  if(pub.needSetup){
+    if(pub.local){
+      content=`${note}<label>Nama admin<input id="lg_name" autocomplete="username"></label><label>PIN (minimal ${PIN_MIN} karakter)<input id="lg_pin" type="password" autocomplete="new-password"></label><label>Ulangi PIN<input id="lg_pin2" type="password" autocomplete="new-password" data-on-keydown="[&quot;handleSetupKey&quot;]"></label><div id="setup_err" class="auth-error"></div>`;
+      actions=`<button class="auth-submit" data-on-click="[&quot;doSetup&quot;]">Buat admin</button>`;
+    }else{
+      content=`${note}<div class="auth-note">Admin pertama belum dibuat. Buka aplikasi dari PC server untuk menyelesaikan pengaturan awal.</div>`;
+      actions=`<button class="auth-submit" data-on-click="[&quot;showLogin&quot;]">Muat ulang</button>`;
+    }
+  }else{
+    const accounts=LOGIN_MODE==='viewer'?(pub.viewers||[]):LOGIN_MODE==='contributor'?(pub.contributors||[]):(pub.users||[]);
+    const modeOptions=`<div class="auth-access-options"><button type="button" class="${LOGIN_MODE==='edit'?'active':''}" data-on-click="[&quot;chooseLoginMode&quot;,&quot;edit&quot;]">Akses edit</button><button type="button" class="${LOGIN_MODE==='contributor'?'active':''}" data-on-click="[&quot;chooseLoginMode&quot;,&quot;contributor&quot;]">Kontributor</button><button type="button" class="${LOGIN_MODE==='viewer'?'active':''}" data-on-click="[&quot;chooseLoginMode&quot;,&quot;viewer&quot;]">Viewer</button></div>`;
+    const viewerNote=LOGIN_MODE==='viewer'&&!accounts.length?'<div class="auth-note">Belum ada akun Viewer. Minta admin membuat akun Viewer melalui Pengaturan &gt; Kelola pengguna.</div>':'';
+    const contributorNote=LOGIN_MODE==='contributor'&&!accounts.length?'<div class="auth-note">Belum ada akun Kontributor. Minta admin membuat akun melalui Pengaturan &gt; Kelola pengguna.</div>':'';
+    content=`${note}${modeOptions}<label>Nama pengguna<input id="lg_name" autocomplete="username" placeholder="Masukkan nama pengguna"></label><label>PIN<input id="lg_pin" type="password" autocomplete="current-password" data-on-keydown="[&quot;handleLoginKey&quot;]"></label><div id="lg_err" class="auth-error"></div>`;
+    actions=`<button class="auth-submit" data-on-click="[&quot;doLogin&quot;]">${LOGIN_MODE==='viewer'?'Masuk sebagai Viewer':LOGIN_MODE==='contributor'?'Masuk sebagai Kontributor':'Masuk'}</button>`;
+  }
+  const screenTitle=pub.needSetup?'Buat admin':LOGIN_MODE==='viewer'?'Viewer':LOGIN_MODE==='contributor'?'Kontributor':'Masuk';
+  $('#modal').innerHTML=authPage(screenTitle,'Masuk untuk melanjutkan.',content,actions);
+  applyLanguage();
+  setTimeout(()=>{const nameInput=$('#lg_name'),last=localStorage.getItem('pt_last');if(nameInput&&last)nameInput.value=last;const focus=(nameInput&&!nameInput.value)?nameInput:($('#lg_pin')||nameInput);if(focus&&focus.focus)focus.focus();},60);
+}
+function loginErr(m){const e=$('#lg_err')||$('#setup_err');if(e)e.textContent=m;else toast(m);}
+async function doLogin(){
+  const name=($('#lg_name').value||'').trim(),pin=$('#lg_pin').value;
+  if(!name){loginErr('Isi nama pengguna');return;}
+  if(!pin){loginErr('Isi PIN');return;}
+  try{const r=await api('/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:name,pin:pin})});localStorage.setItem('pt_last',name);await enter(r);}
+  catch(e){loginErr(e.message);}
+}
+async function doSetup(){
+  const name=$('#lg_name').value.trim(),pin=$('#lg_pin').value,pin2=$('#lg_pin2').value;
+  if(name.length<2){loginErr('Nama minimal 2 karakter');return;}
+  if(pin.length<PIN_MIN){loginErr('PIN minimal '+PIN_MIN+' karakter');return;}
+  if(pin!==pin2){loginErr('Ulangi PIN tidak sama');return;}
+  try{const r=await api('/api/setup',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:name,pin:pin})});localStorage.setItem('pt_last',name);await enter(r);}
+  catch(e){loginErr(e.message);}
+}
+async function enter(r){
+  USER=r.user;ME=USER.name;if(r.csrfToken)CSRF_TOKEN=r.csrfToken;if(r.pinMinLength)PIN_MIN=r.pinMinLength;SKEW=r.serverTime?(Date.now()-r.serverTime):0;
+  document.body.classList.remove('auth-mode');
+  DB=normDB({});REV=-1;KNOWN={};KNOWNI={};KDEL={};KSET=-1;SYNCERR=null;
+  closeModal();
+  go('dash');
+  await syncNow();
+  render();startSSE();renderSync();
+  if(!DB.projects.length)toast('Belum ada project. Klik "+ Project" untuk memulai.');
+}
+async function logout(){
+  try{await api('/api/logout',{method:'POST'});}catch(e){}
+  USER=null;ME='';CSRF_TOKEN='';stopSSE();DB=normDB({});$('#main').innerHTML='';$('#who').textContent='';renderSync();showLogin();
+}
+async function openPin(){
+  $('#modal2').innerHTML=`<div class="ov"><div class="dlg sm"><div class="dh"><h3>Ganti PIN</h3><button class="x" data-on-click="[&quot;closeM2&quot;]">✕</button></div><div class="db"><label>PIN lama<input id="pn_old" type="password"></label><label>PIN baru (minimal ${PIN_MIN} karakter)<input id="pn_new" type="password"></label><label>Ulangi PIN baru<input id="pn_new2" type="password"></label></div><div class="df"><button class="btn" data-on-click="[&quot;closeM2&quot;]">Batal</button><button class="btn pri" data-on-click="[&quot;savePin&quot;]">Simpan</button></div></div></div>`;
+}
+async function savePin(){
+  const o=$('#pn_old').value,n=$('#pn_new').value,n2=$('#pn_new2').value;
+  if(n.length<PIN_MIN){toast('PIN baru minimal '+PIN_MIN+' karakter');return;}
+  if(n!==n2){toast('Ulangi PIN baru tidak sama');return;}
+  try{await api('/api/pin',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({old:o,pin:n})});closeM2();toast('PIN diganti');}
+  catch(e){toast(e.message);}
+}
+/* ---- kelola pengguna (admin) ---- */
+let ULIST=[];
+async function openUsers(){
+  if(!isAdmin())return;
+  try{ULIST=(await api('/api/users')).users;}catch(e){toast(e.message);return;}
+  drawUsers();
+}
+function drawUsers(){
+  const rows=ULIST.map(u=>`<div class="catrow" style="grid-template-columns:minmax(110px,1fr) 180px auto auto"><b>${esc(u.name)}</b>
+      <select data-on-change="${ea(['userRole',u.name,{$:'value'}])}" ${u.name===ME?'disabled':''}><option value="user" ${u.role==='user'?'selected':''}>Pengguna</option><option value="contributor" ${u.role==='contributor'?'selected':''}>Kontributor (akses terbatas)</option><option value="viewer" ${u.role==='viewer'?'selected':''}>Viewer (lihat saja)</option><option value="admin" ${u.role==='admin'?'selected':''}>Admin</option></select>
+      <button class="btn sm" data-on-click="${ea(['userReset',u.name])}">Reset PIN</button><button class="btn sm bad" ${u.name===ME?'disabled':''} data-on-click="${ea(['userDel',u.name])}">Hapus</button></div>`).join('');
+  $('#modal2').innerHTML=`<div class="ov"><div class="dlg sm"><div class="dh"><h3>Kelola pengguna</h3><button class="x" data-on-click="[&quot;closeM2&quot;]">✕</button></div><div class="db">${rows}
+    <h4>Tambah pengguna</h4>
+    <div class="catrow" style="grid-template-columns:1fr 1fr auto auto"><input id="nu_name" placeholder="Nama"><input id="nu_pin" type="text" placeholder="PIN awal"><select id="nu_role"><option value="user">Pengguna</option><option value="contributor">Kontributor (akses terbatas)</option><option value="viewer">Viewer (lihat saja)</option><option value="admin">Admin</option></select><button class="btn sm pri" data-on-click="[&quot;userAdd&quot;]">Tambah</button></div>
+    <div class="small muted">Beri tahu PIN awal ke yang bersangkutan; mereka bisa menggantinya di Pengaturan &gt; Ganti PIN saya.</div>
+  </div><div class="df"><button class="btn" data-on-click="[&quot;closeM2&quot;]">Tutup</button></div></div></div>`;
+}
+async function userCall(method,path,body){
+  try{const r=await api(path,{method:method,headers:{'Content-Type':'application/json'},body:body?JSON.stringify(body):undefined});ULIST=r.users||ULIST;drawUsers();return true;}
+  catch(e){toast(e.message);return false;}
+}
+async function userAdd(){const n=$('#nu_name').value.trim(),p=$('#nu_pin').value,r=$('#nu_role').value;if(n.length<2){toast('Nama minimal 2 karakter');return;}if(p.length<PIN_MIN){toast('PIN minimal '+PIN_MIN+' karakter');return;}if(await userCall('POST','/api/users',{name:n,pin:p,role:r}))toast('Pengguna ditambahkan');}
+async function userRole(n,r){await userCall('PUT','/api/users/'+encodeURIComponent(n),{role:r});}
+async function userReset(n){const p=prompt('PIN baru untuk '+n+' (minimal '+PIN_MIN+' karakter):');if(p===null)return;if(p.length<PIN_MIN){toast('PIN minimal '+PIN_MIN+' karakter');return;}if(await userCall('PUT','/api/users/'+encodeURIComponent(n),{pin:p}))toast('PIN '+n+' direset');}
+async function userDel(n){if(!confirm('Hapus pengguna "'+n+'"? Riwayat perubahan yang sudah tercatat tetap ada.'))return;if(await userCall('DELETE','/api/users/'+encodeURIComponent(n)))toast('Pengguna dihapus');}
+async function backupNow(){try{const r=await api('/api/backup',{method:'POST'});toast('Backup dibuat: '+r.files.join(', '));}catch(e){toast(e.message);}}
+
+/* ================= boot ================= */
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){if($('#modal2').innerHTML){closeM2();return;}if($('#modal').innerHTML&&USER)closeModal();}});
+window.addEventListener&&window.addEventListener('focus',()=>{if(USER)syncNow().then(ch=>{if(ch)render();});});
+['click','change','input','focus','blur','keydown'].forEach(ev => {
+  document.addEventListener(ev, e => ptDispatch(e, ev), true);
+});
+async function boot(){
+  const savedTheme=localStorage.getItem('pt_theme')||'dark';
+  document.documentElement.dataset.theme=savedTheme;
+  if($('#theme-toggle'))$('#theme-toggle').textContent=savedTheme==='dark'?'☀️':'🌙';
+  applyLanguage();
+  renderSync();
+  try{const m=await api('/api/me');await enter(m);}
+  catch(e){showLogin();}
+}
+boot();

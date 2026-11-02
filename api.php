@@ -4,6 +4,27 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/db.php';
 
+set_exception_handler(static function (Throwable $e): void {
+    try {
+        $pdo = db();
+        if ($pdo->inTransaction()) {
+            $pdo->rollBack();
+        }
+    } catch (Throwable $_) {
+    }
+
+    if ($e instanceof PDOException) {
+        header('Retry-After: 1');
+        jsonResponse(503, [
+            'error' => 'Layanan database sedang sibuk, silakan coba beberapa saat lagi',
+            'retry_after' => 1,
+        ]);
+    }
+
+    error_log((string)$e);
+    jsonResponse(500, ['error' => 'Internal server error']);
+});
+
 header('Cache-Control: no-store');
 header('X-Content-Type-Options: nosniff');
 header('X-Frame-Options: DENY');
@@ -56,7 +77,42 @@ function isValidUserName(string $name): bool
 function isValidPin(string $pin): bool
 {
     $len = strlen($pin);
-    return $len >= PIN_MIN_LENGTH && $len <= 64;
+    if ($len < PIN_MIN_LENGTH || $len > 64) {
+        return false;
+    }
+
+    // P0-4: Reject all-same-character (e.g. "aaaaaa", "111111", "0000000000")
+    if (count(array_unique(str_split($pin))) <= 1) {
+        return false;
+    }
+
+    // P0-4: Reject common weak PINs / passwords
+    $weakList = [
+        'password', 'password123', 'admin', 'admin123', 'administrator',
+        'qwerty', 'qwertyuiop', 'asdfghjkl', 'zxcvbnm',
+        '123456', '1234567', '12345678', '123456789', '1234567890',
+        '0123456789', '9876543210', 'letmein', 'welcome', 'changeme',
+    ];
+    if (in_array(strtolower($pin), $weakList, true)) {
+        return false;
+    }
+
+    // P0-4: Reject simple sequential ascending / descending characters
+    $isAsc = true;
+    $isDesc = true;
+    for ($i = 1; $i < $len; $i++) {
+        if (ord($pin[$i]) !== ord($pin[$i - 1]) + 1) {
+            $isAsc = false;
+        }
+        if (ord($pin[$i]) !== ord($pin[$i - 1]) - 1) {
+            $isDesc = false;
+        }
+    }
+    if ($isAsc || $isDesc) {
+        return false;
+    }
+
+    return true;
 }
 
 function validateAndCleanSettings(array $incoming): array
@@ -143,7 +199,6 @@ function readJsonSetting(string $key): ?array
 
 function readJsonSettingForUpdate(PDO $pdo, string $key): ?array
 {
-    $pdo->prepare('INSERT IGNORE INTO settings (key_name, value_json) VALUES (:key, NULL)')->execute([':key' => $key]);
     $stmt = $pdo->prepare('SELECT value_json FROM settings WHERE key_name = :key LIMIT 1 FOR UPDATE');
     $stmt->execute([':key' => $key]);
     $value = $stmt->fetchColumn();
@@ -226,8 +281,8 @@ function issueNewSession(PDO $pdo, string $userId): string
 {
     $token = bin2hex(random_bytes(32));
     $stmt = $pdo->prepare(
-        'INSERT INTO sessions (id, user_id, token_hash, expires_at, created_at)
-         VALUES (:id, :user_id, :token_hash, DATE_ADD(NOW(), INTERVAL :lifetime SECOND), NOW())'
+        'INSERT INTO sessions (id, user_id, token_hash, expires_at, last_seen_at, created_at)
+         VALUES (:id, :user_id, :token_hash, DATE_ADD(NOW(), INTERVAL :lifetime SECOND), NOW(), NOW())'
     );
     $stmt->execute([
         ':id' => uuid4(),
@@ -246,16 +301,14 @@ if ($requestPath === '/api/health') {
 if ($requestPath === '/api/public' && $method === 'GET') {
     try {
         $count = (int)db()->query("SELECT COUNT(*) FROM users WHERE role <> 'viewer'")->fetchColumn();
-        $users = db()->query("SELECT name FROM users WHERE role IN ('admin', 'user') ORDER BY name ASC")->fetchAll(PDO::FETCH_COLUMN);
-        $contributors = db()->query("SELECT name FROM users WHERE role = 'contributor' ORDER BY name ASC")->fetchAll(PDO::FETCH_COLUMN);
-        $viewers = db()->query("SELECT name FROM users WHERE role = 'viewer' ORDER BY name ASC")->fetchAll(PDO::FETCH_COLUMN);
         $settings = appSettings();
+        // P0-4: Do not expose user accounts or role groups without authentication
         jsonResponse(200, [
             'needSetup' => $count === 0,
             'local' => isLocalRequest(),
-            'users' => $users,
-            'contributors' => $contributors,
-            'viewers' => $viewers,
+            'users' => [],
+            'contributors' => [],
+            'viewers' => [],
             'appName' => (string)($settings['appName'] ?? APP_NAME),
             'version' => APP_VERSION,
             'pinMinLength' => PIN_MIN_LENGTH,
@@ -519,15 +572,53 @@ if ($requestPath === '/api/sync' && $method === 'POST') {
         jsonResponse(403, ['error' => 'Akses Kontributor hanya dapat mengubah Improvement']);
     }
 
-    $pdo = db();
-    $pdo->beginTransaction();
+    $hasPush = !empty($push['projects']) || !empty($push['improvements']) || !empty($push['deleted']) || isset($push['settings']);
 
-    $changed = false;
-    $rejectedSettings = isset($push['settings']) && $user['role'] !== 'admin';
-    $rejectedProjectAuth = false;
-    $serverNow = (int)round(microtime(true) * 1000);
+    // P0-2: A sync with no changes must not take write locks.
+    if (!$hasPush) {
+        $state = syncState();
+        $storedSettings = readJsonSetting('tracker');
+        $settings = $storedSettings ?? appSettings(null, false);
+        $revision = (int)($state['rev'] ?? 0);
+        $settingsAt = (int)($settings['settingsAt'] ?? 0);
+        if ((int)($payload['rev'] ?? -1) === $revision && (int)($payload['sa'] ?? 0) === $settingsAt) {
+            jsonResponse(200, ['rev' => $revision, 'unchanged' => true]);
+        }
+        $deleted = is_array($state['deleted'] ?? null) ? $state['deleted'] : [];
+        $improvements = [];
+        foreach (is_array($state['improvements'] ?? null) ? $state['improvements'] : [] as $item) {
+            if (is_array($item) && isset($item['id']) && isValidEntityId((string)$item['id'])) {
+                $improvements[(string)$item['id']] = $item;
+            }
+        }
+        $visibleImprovements = $user['role'] === 'contributor'
+            ? array_filter($improvements, static fn(array $item): bool => (string)($item['submittedBy'] ?? '') === (string)$user['name'])
+            : $improvements;
+        $response = [
+            'rev' => $revision,
+            'projects' => projectRows($user),
+            'improvements' => array_values($visibleImprovements),
+            'deleted' => $deleted,
+            'settingsAt' => $settingsAt,
+        ];
+        if ($settingsAt !== (int)($payload['sa'] ?? 0)) {
+            $response['settings'] = $settings;
+        }
+        jsonResponse(200, $response);
+    }
 
-    try {
+    // P0-2: Wrap transactions with changes in retry loop (max 3) for deadlock (1213/40001) / lock timeout (1205)
+    $maxAttempts = 3;
+    for ($attempt = 1; $attempt <= $maxAttempts; $attempt++) {
+        $pdo = db();
+        $pdo->beginTransaction();
+
+        $changed = false;
+        $rejectedSettings = isset($push['settings']) && $user['role'] !== 'admin';
+        $rejectedProjectAuth = false;
+        $serverNow = (int)round(microtime(true) * 1000);
+
+        try {
         // Baca state dan settings di dalam transaksi dengan row lock (FOR UPDATE)
         $state = syncState($pdo, true);
         $storedSettings = readJsonSettingForUpdate($pdo, 'tracker');
@@ -680,7 +771,8 @@ if ($requestPath === '/api/sync' && $method === 'POST') {
             }
             $id = (string)$item['id'];
             if (!isValidEntityId($id)) {
-                continue;
+                $pdo->rollBack();
+                jsonResponse(400, ['error' => 'ID improvement tidak valid']);
             }
             $updatedAt = (int)($item['updatedAt'] ?? 0);
             $existing = $improvements[$id] ?? null;
@@ -715,12 +807,18 @@ if ($requestPath === '/api/sync' && $method === 'POST') {
                 }
             }
 
+            try {
+                $item = normalizeImprovementPayload($item);
+            } catch (InvalidArgumentException $ve) {
+                $pdo->rollBack();
+                jsonResponse(400, ['error' => $ve->getMessage()]);
+            }
             $impStatus = (string)($item['status'] ?? 'Baru');
-            if (!in_array($impStatus, VALID_IMPROVEMENT_STATUSES, true)) {
+            if ($impStatus === '') {
                 $impStatus = 'Baru';
             }
             $impDecision = (string)($item['decision'] ?? 'Pending');
-            if (!in_array($impDecision, VALID_IMPROVEMENT_DECISIONS, true)) {
+            if ($impDecision === '') {
                 $impDecision = 'Pending';
             }
             $item['status'] = $impStatus;
@@ -779,12 +877,26 @@ if ($requestPath === '/api/sync' && $method === 'POST') {
             writeJsonSetting('tracker_state', $state, $pdo);
         }
         $pdo->commit();
+        break;
     } catch (Throwable $e) {
         if ($pdo->inTransaction()) {
             $pdo->rollBack();
         }
+        $isDeadlock = false;
+        if ($e instanceof PDOException) {
+            $sqlState = (string)$e->getCode();
+            $driverCode = isset($e->errorInfo[1]) ? (int)$e->errorInfo[1] : 0;
+            if ($sqlState === '40001' || $driverCode === 1213 || $driverCode === 1205) {
+                $isDeadlock = true;
+            }
+        }
+        if ($isDeadlock && $attempt < $maxAttempts) {
+            usleep(random_int(10000, 50000));
+            continue;
+        }
         throw $e;
     }
+}
 
     $revision = (int)($state['rev'] ?? 0);
     $settingsAt = (int)($settings['settingsAt'] ?? 0);
@@ -820,11 +932,28 @@ if ($requestPath === '/api/events' && $method === 'GET') {
     header('Cache-Control: no-cache, no-transform');
     header('Connection: keep-alive');
     header('X-Accel-Buffering: no');
+    echo "retry: 3000\n\n";
+
+    $revision = (int)(syncState()['rev'] ?? 0);
+    $event = json_encode(['rev' => $revision, 'online' => [$user['name']]], JSON_UNESCAPED_SLASHES);
+    echo "event: state\ndata: {$event}\n\n";
+    if (ob_get_level() > 0) {
+        ob_flush();
+    }
+    flush();
+
+    // Di PHP built-in webserver (php -S) yang berstatus single-threaded, jangan tahan loop sleep()
+    // agar request browser lain (login, sync, load data) tidak terblokir / antre hingga 25 detik.
+    // Apache / Nginx / FPM memiliki worker pool sehingga loop SSE berjalan multi-threaded.
+    if (php_sapi_name() === 'cli-server') {
+        exit;
+    }
+
     set_time_limit(30);
-    echo "retry: 2000\n\n";
-    $lastRevision = -1;
+    $lastRevision = $revision;
     $startTime = time();
     while (!connection_aborted() && (time() - $startTime) < 25) {
+        sleep(2);
         $revision = (int)(syncState()['rev'] ?? 0);
         if ($revision !== $lastRevision) {
             $event = json_encode(['rev' => $revision, 'online' => [$user['name']]], JSON_UNESCAPED_SLASHES);
@@ -837,7 +966,6 @@ if ($requestPath === '/api/events' && $method === 'GET') {
             ob_flush();
         }
         flush();
-        sleep(2);
     }
     exit;
 }
@@ -1027,14 +1155,26 @@ if (preg_match('#^/api/projects/([^/]+)$#', $requestPath, $matches) && $method =
 if ($requestPath === '/api/logs' && $method === 'GET') {
     requireProjectEditor($user);
     $projectId = trim((string)($_GET['project_id'] ?? ''));
-    if ($projectId !== '') {
-        $stmt = db()->prepare('SELECT * FROM project_logs WHERE project_id = :pid ORDER BY created_at DESC LIMIT 200');
-        $stmt->execute([':pid' => $projectId]);
-        $logs = $stmt->fetchAll();
-    } else {
+    if ($projectId === '') {
         requireAdmin($user);
         $logs = db()->query('SELECT * FROM project_logs ORDER BY created_at DESC LIMIT 500')->fetchAll();
+        jsonResponse(200, ['logs' => $logs]);
     }
+
+    // P0-3: project_id=AUTH and any id that is not an existing project -> admin only
+    if (strtoupper($projectId) === 'AUTH') {
+        requireAdmin($user);
+    } elseif ($user['role'] !== 'admin') {
+        $stmt = db()->prepare('SELECT id FROM projects WHERE id = :id LIMIT 1');
+        $stmt->execute([':id' => $projectId]);
+        if (!$stmt->fetch()) {
+            requireAdmin($user);
+        }
+    }
+
+    $stmt = db()->prepare('SELECT * FROM project_logs WHERE project_id = :pid ORDER BY created_at DESC LIMIT 200');
+    $stmt->execute([':pid' => $projectId]);
+    $logs = $stmt->fetchAll();
     jsonResponse(200, ['logs' => $logs]);
 }
 
@@ -1075,6 +1215,10 @@ if ($requestPath === '/api/pin' && $method === 'POST') {
 
 if ($requestPath === '/api/backup' && $method === 'POST') {
     requireAdmin($user);
+    // P0-5: Backup endpoint behind PT_ENABLE_APP_BACKUP config flag
+    if (!ENABLE_APP_BACKUP) {
+        jsonResponse(403, ['error' => 'Fitur backup aplikasi dinonaktifkan']);
+    }
     ensureStorageDirs();
     $pdo = db();
     $suffix = date('Y-m-d_His');
@@ -1129,6 +1273,10 @@ if ($requestPath === '/api/backup' && $method === 'POST') {
 
 if ($requestPath === '/api/restore' && $method === 'POST') {
     requireAdmin($user);
+    // P0-5: Restore endpoint behind PT_ENABLE_APP_BACKUP config flag
+    if (!ENABLE_APP_BACKUP) {
+        jsonResponse(403, ['error' => 'Fitur restore aplikasi dinonaktifkan']);
+    }
     ensureStorageDirs();
     $data = jsonBody();
 
@@ -1267,7 +1415,8 @@ if ($requestPath === '/api/files' && $method === 'POST') {
     $safeFile = "{$safePrefix}_{$fileToken}_{$baseWithoutExt}.{$ext}";
 
     $projectId = trim((string)($_POST['project_id'] ?? ''));
-    if (!$rawUpload && $projectId === '') {
+    $isImpUpload = str_starts_with($safePrefix, 'IMP-');
+    if (!$rawUpload && $projectId === '' && !$isImpUpload) {
         jsonResponse(400, ['error' => 'Pilih project untuk lampiran']);
     }
     if ($rawUpload && $projectId === '') {
@@ -1346,6 +1495,7 @@ if ($requestPath === '/api/files' && $method === 'POST') {
     }
 
     $pdo = db();
+    $fileProjectId = null;
     if ($projectId !== '') {
         $projectCheck = $pdo->prepare('SELECT * FROM projects WHERE id = :id LIMIT 1');
         $projectCheck->execute([':id' => $projectId]);
@@ -1355,20 +1505,22 @@ if ($requestPath === '/api/files' && $method === 'POST') {
                 @unlink($target);
                 jsonResponse(403, ['error' => 'Anda tidak memiliki akses ke project ini']);
             }
-            $insert = $pdo->prepare('INSERT INTO project_files (id, project_id, file_name, mime_type, size_bytes, stored_name, uploaded_at) VALUES (:id, :project_id, :file_name, :mime_type, :size_bytes, :stored_name, NOW())');
-            $insert->execute([
-                ':id' => uuid4(),
-                ':project_id' => $projectId,
-                ':file_name' => $filename,
-                ':mime_type' => $detectedMime,
-                ':size_bytes' => $size,
-                ':stored_name' => $safeFile,
-            ]);
+            $fileProjectId = $projectId;
         } elseif (!$rawUpload) {
             @unlink($target);
             jsonResponse(400, ['error' => 'Project tidak ditemukan']);
         }
     }
+
+    $insert = $pdo->prepare('INSERT INTO project_files (id, project_id, file_name, mime_type, size_bytes, stored_name, uploaded_at) VALUES (:id, :project_id, :file_name, :mime_type, :size_bytes, :stored_name, NOW())');
+    $insert->execute([
+        ':id' => uuid4(),
+        ':project_id' => $fileProjectId,
+        ':file_name' => $filename,
+        ':mime_type' => $detectedMime,
+        ':size_bytes' => $size,
+        ':stored_name' => $safeFile,
+    ]);
 
     recordAuditLog($pdo, $projectId !== '' ? $projectId : 'FILE', (string)$user['name'], "Mengunggah file {$safeFile} ({$size} bytes)");
     jsonResponse(200, ['name' => $safeFile, 'size' => $size, 'mime_type' => $detectedMime]);

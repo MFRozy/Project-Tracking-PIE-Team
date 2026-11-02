@@ -32,6 +32,7 @@ CREATE TABLE IF NOT EXISTS sessions (
     user_id CHAR(36) NOT NULL,
     token_hash VARCHAR(255) NOT NULL,
     expires_at DATETIME NOT NULL,
+    last_seen_at DATETIME NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (id),
     KEY idx_sessions_user (user_id),
@@ -134,5 +135,7 @@ CREATE TABLE IF NOT EXISTS settings (
 
 INSERT INTO settings (key_name, value_json) VALUES
 ('app', '{"appName":"PI Project Management","currency":"IDR","settingsAt":0}'),
-('categories', '{"items":[{"name":"Improvement","color":"#2563eb"},{"name":"New Machine","color":"#f97316"}]}')
+('categories', '{"items":[{"name":"Improvement","color":"#2563eb"},{"name":"New Machine","color":"#f97316"}]}'),
+('tracker', '{"appName":"PI Project Management","currency":"IDR","settingsAt":0}'),
+('tracker_state', '{"rev":0,"deleted":[],"improvements":[]}')
 ON DUPLICATE KEY UPDATE value_json = VALUES(value_json);

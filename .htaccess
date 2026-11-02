@@ -4,10 +4,11 @@ Options -Indexes
     Header always set X-Content-Type-Options "nosniff"
     Header always set X-Frame-Options "DENY"
     Header always set Referrer-Policy "same-origin"
+    Header always set Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'"
 </IfModule>
 
-# Blokir akses langsung ke file sensitif, konfigurasi, script database, dan dokumen sumber
-<FilesMatch "(^#.*#|\.(bak|conf|dist|env|fla|in[ci]|json|log|md|orig|psd|sh|sql|sw[op]|txt|xls|xlsx|bat|lock)$|^(config|db)\.php$)">
+# P0-6: Blokir akses HTTP langsung ke semua file konfigurasi, database, source code, dan script PHP di luar public/
+<FilesMatch "(^#.*#|\.(bak|conf|dist|env|fla|in[ci]|json|log|md|orig|psd|sh|sql|sw[op]|txt|xls|xlsx|bat|lock)$|^(config|db|api)\.php$)">
     <IfModule mod_authz_core.c>
         Require all denied
     </IfModule>
@@ -19,16 +20,22 @@ Options -Indexes
 
 RewriteEngine On
 
-# Blokir akses HTTP langsung ke direktori internal (storage, data, tests, legacy, .git)
-RewriteRule ^(storage|data|tests|legacy|\.git)(/|$) - [F,L,NC]
+# Blokir akses HTTP langsung ke direktori internal di luar public/
+RewriteRule ^(storage|data|tests|migrations|\.git)(/|$) - [F,L,NC]
 
-# Izinkan file statis di public/ serta entry point index.php dan api.php
+# Blokir akses HTTP langsung ke script PHP di luar public/
+RewriteRule ^(config|db|api)\.php$ - [F,L,NC]
+
+# Izinkan akses langsung ke file di dalam public/
 RewriteCond %{REQUEST_FILENAME} -f
-RewriteRule ^(index\.php|api\.php|public/.+)$ - [L]
+RewriteRule ^public/.+$ - [L]
 
-# Rute API dan antarmuka aplikasi (mendukung instalasi di root maupun subfolder /ProjectTracker)
-RewriteRule ^(?:ProjectTracker/)?api/(.*)$ api.php?route=/api/$1 [L,QSA]
-RewriteRule ^$ index.php [L,QSA]
+# Fallback aset statis jika diakses dari root dalam mode transisi legacy
+RewriteRule ^(shared\.js|app\.js|cosmax-mark\.svg)$ public/$1 [L]
+
+# Rute API dan antarmuka aplikasi ke router public/index.php
+RewriteRule ^(?:ProjectTracker/)?api/(.*)$ public/index.php?route=/api/$1 [L,QSA]
+RewriteRule ^$ public/index.php [L,QSA]
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
-RewriteRule . index.php [L,QSA]
+RewriteRule . public/index.php [L,QSA]

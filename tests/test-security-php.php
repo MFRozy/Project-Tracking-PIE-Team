@@ -8,37 +8,28 @@ declare(strict_types=1);
  */
 
 $rootDir = dirname(__DIR__);
-require_once $rootDir . '/config.php';
+// Hanya memakai kredensial database uji (PT_TEST_DB_*), bukan .env aplikasi, dan tanpa hak DROP/CREATE DATABASE.
+// Siapkan akun/DB sekali dengan tests/regression/setup-test-db.sql.
+require_once __DIR__ . '/regression/bootstrap.php';
 
-$testDbName = 'project_tracker_test';
 $testPort = 39188;
 $baseUrl = "http://127.0.0.1:{$testPort}";
 $tmpStorage = sys_get_temp_dir() . '/pt_security_test_' . bin2hex(random_bytes(4));
 mkdir($tmpStorage, 0750, true);
 
-// Siapkan schema pada database uji terisolasi
-$adminPdo = new PDO(
-    sprintf('mysql:host=%s;port=%d;charset=utf8mb4', DB_HOST, DB_PORT),
-    DB_USER,
-    DB_PASS,
-    [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
-);
-$adminPdo->exec("DROP DATABASE IF EXISTS `{$testDbName}`");
-$adminPdo->exec("CREATE DATABASE `{$testDbName}` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
-$adminPdo->exec("USE `{$testDbName}`");
-
-$schemaSql = (string)file_get_contents($rootDir . '/schema.sql');
-$schemaSql = preg_replace('/CREATE DATABASE IF NOT EXISTS.*?;/is', '', $schemaSql) ?? $schemaSql;
-$schemaSql = preg_replace('/USE\s+project_tracker\s*;/i', '', $schemaSql) ?? $schemaSql;
-$adminPdo->exec($schemaSql);
+// Siapkan schema pada database uji terisolasi (hanya tabel di dalam database *_test)
+$testEnv = new TestEnv();
+$testDbName = $testEnv->dbName;
+$adminPdo = $testEnv->pdo;
+$testEnv->resetSchema();
 
 $phpBin = PHP_BINARY;
 $envVars = array_merge($_ENV, [
-    'DB_HOST' => DB_HOST,
-    'DB_PORT' => (string)DB_PORT,
+    'DB_HOST' => getenv('PT_TEST_DB_HOST') ?: '127.0.0.1',
+    'DB_PORT' => getenv('PT_TEST_DB_PORT') ?: '3306',
     'DB_NAME' => $testDbName,
-    'DB_USER' => DB_USER,
-    'DB_PASS' => DB_PASS,
+    'DB_USER' => getenv('PT_TEST_DB_USER') ?: 'pt_test',
+    'DB_PASS' => getenv('PT_TEST_DB_PASS') !== false ? (string)getenv('PT_TEST_DB_PASS') : 'pt_test_local_only',
     'PT_SESSION_SECRET' => bin2hex(random_bytes(32)),
     'PT_STORAGE_DIR' => $tmpStorage,
     'PT_FILES_DIR' => $tmpStorage . '/files',
@@ -55,7 +46,7 @@ $descriptors = [
     1 => ['file', $nullDev, 'w'],
     2 => ['file', $nullDev, 'w'],
 ];
-$cmd = sprintf('"%s" -S 127.0.0.1:%d -t "%s"', $phpBin, $testPort, $rootDir);
+$cmd = [$phpBin, '-S', "127.0.0.1:{$testPort}", '-t', $rootDir];
 $proc = proc_open($cmd, $descriptors, $pipes, $rootDir, $envVars);
 if (!is_resource($proc)) {
     fwrite(STDERR, "Gagal menjalankan PHP test server\n");
@@ -172,10 +163,6 @@ function cleanupAndExit(int $code): never
     if (is_resource($proc)) {
         proc_terminate($proc);
         proc_close($proc);
-    }
-    try {
-        $adminPdo->exec("DROP DATABASE IF EXISTS `{$testDbName}`");
-    } catch (Throwable) {
     }
     if (is_dir($tmpStorage)) {
         $it = new RecursiveIteratorIterator(

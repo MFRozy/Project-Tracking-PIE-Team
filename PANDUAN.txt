@@ -14,21 +14,34 @@ Aplikasi ini berjalan menggunakan PHP 8, Apache, dan MySQL (Laragon / XAMPP).
 4. Isi DB_USER, DB_PASS, dan PT_SESSION_SECRET (64 karakter hex acak) pada file .env.
 5. Untuk lingkungan production, arahkan PT_STORAGE_DIR dan PT_BACKUP_DIR ke folder di luar webroot Apache.
 
-2. MENJALANKAN DENGAN HTTPS DI JARINGAN KANTOR
+2. KONFIGURASI APACHE VIRTUALHOST (DocumentRoot = public)
+--------------------------------------------------------
+Arahkan DocumentRoot web server HANYA ke direktori public/ (bukan root repository):
+<VirtualHost *:80>
+    ServerName project-tracker.local
+    DocumentRoot "c:/laragon/www/ProjectTracker/public"
+    <Directory "c:/laragon/www/ProjectTracker/public">
+        AllowOverride All
+        Require all granted
+    </Directory>
+</VirtualHost>
+
+3. MENJALANKAN DENGAN HTTPS DI JARINGAN KANTOR
 ----------------------------------------------
 1. Aktifkan modul SSL (HTTPS port 443) pada Apache (Laragon/XAMPP) menggunakan sertifikat internal perusahaan.
 2. Setel COOKIE_SECURE=true pada file .env agar cookie sesi selalu dikirim melalui jalur terenkripsi.
 3. Masa berlaku sesi default adalah 12 jam (PT_SESSION_HOURS=12) dan panjang minimal PIN adalah 6 karakter.
 
-3. HAK AKSES PENGGUNA (RBAC)
+4. HAK AKSES PENGGUNA (RBAC)
 ----------------------------
-- Admin       : Mengelola pengguna, pengaturan aplikasi, template, backup/restore, dan seluruh project.
+- Admin       : Mengelola pengguna, pengaturan aplikasi, template, ekspor/impor data, dan seluruh project.
 - Pengguna    : Membuat project serta mengubah/menghapus project yang menjadi tanggung jawabnya (PIC).
 - Kontributor : Mengirimkan dan memperbarui issue Improvement miliknya sendiri.
 - Viewer      : Hanya melihat dashboard dan data project (read-only).
 
-4. BACKUP, RESTORE, DAN PENGUJIAN
+5. EKSPOR/IMPOR DATA DAN PENGUJIAN
 ---------------------------------
-- Admin dapat membuat backup lengkap dari menu Pengaturan > Backup sekarang (tersimpan di BACKUP_DIR tanpa password hash).
+- Admin dapat mengekspor data proyek dari menu Pengaturan > Backup sekarang (tersimpan di BACKUP_DIR tanpa password hash).
+  Catatan: Fitur ini adalah utilitas ekspor data proyek (merge), bukan backup sistem penuh. Backup database dan file produksi harus dijalankan terjadwal oleh tim IT menggunakan database dump dan sinkronisasi berkas off-site.
 - Untuk menjalankan automated security & functional test:
   php tests/test-security-php.php

@@ -1,7 +1,7 @@
 PI PROJECT MANAGEMENT - PANDUAN INSTALASI & KEAMANAN (PHP 8 + MYSQL)
 ====================================================================
 
-Aplikasi ini berjalan menggunakan PHP 8, Apache, dan MySQL (Laragon / XAMPP).
+Aplikasi ini berjalan menggunakan PHP 8, Apache, dan MySQL (Laragon / XAMPP)
 
 1. KONFIGURASI KEAMANAN AWAL (.env & Database)
 ----------------------------------------------

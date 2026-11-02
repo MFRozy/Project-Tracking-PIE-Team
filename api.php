@@ -14,6 +14,7 @@ set_exception_handler(static function (Throwable $e): void {
     }
 
     if ($e instanceof PDOException) {
+        error_log((string)$e);
         header('Retry-After: 1');
         jsonResponse(503, [
             'error' => 'Layanan database sedang sibuk, silakan coba beberapa saat lagi',

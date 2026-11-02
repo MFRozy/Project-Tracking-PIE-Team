@@ -49,6 +49,7 @@ if ($html === false) {
 // When accessed through legacy root (/public/...), adjust script paths
 if (str_contains($requestUri, '/public')) {
     $html = str_replace(['src="/shared.js"', 'src="/app.js"'], ['src="public/shared.js"', 'src="public/app.js"'], $html);
+    $html = str_replace(["url('/cosmax-mark.svg')", 'href="/cosmax-mark.svg"'], ["url('public/cosmax-mark.svg')", 'href="public/cosmax-mark.svg"'], $html);
 }
 
 echo $html;

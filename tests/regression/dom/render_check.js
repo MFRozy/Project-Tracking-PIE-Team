@@ -112,6 +112,17 @@ vm.createContext(ctx);
 
 // ---------- load the real scripts in page order ----------
 const htmlSrc = fs.readFileSync(path.join(root, 'public', 'index.html'), 'utf8');
+check(
+    /class="tb-toggle"[^>]*aria-controls="nav"/.test(htmlSrc)
+        && htmlSrc.includes('body.sidebar-collapsed .app-sidebar')
+        && htmlSrc.includes('body.sb-open .app-sidebar'),
+    'hamburger menu consistently supports desktop collapse and mobile drawer'
+);
+check(
+    /function syncSidebarToggle\(\)/.test(fs.readFileSync(path.join(root, 'public', 'app.js'), 'utf8'))
+        && /function toggleSidebar\(\)[\s\S]*?syncSidebarToggle\(\)/.test(fs.readFileSync(path.join(root, 'public', 'app.js'), 'utf8')),
+    'hamburger toggle keeps its accessible expanded state in sync'
+);
 const scripts = [];
 const tagRe = /<script\b([^>]*)>([\s\S]*?)<\/script>/gi;
 let m;
@@ -172,9 +183,23 @@ const roles = [['t_admin', 'admin'], ['t_user1', 'user'], ['t_viewer', 'viewer']
             safe(w + ' view ' + v, `go(${JSON.stringify(v)})`);
             harvest(w + ':view:' + v);
         }
+        if ((fixture.projects || []).length) {
+            safe(w + ' project progress modal', `openProjectProgress(${JSON.stringify(fixture.projects[0].id)})`);
+            harvest(w + ':project-progress-modal');
+            safe(w + ' dashboard status modal', `openProjectStatus(${JSON.stringify(fixture.projects[0].status)})`);
+            harvest(w + ':dashboard-status-modal');
+        }
         for (const modal of ['openSettings()', 'openTpl()', 'openPOS()', 'closeModal()']) {
             safe(w + ' ' + modal, modal);
             harvest(w + ':' + modal);
+        }
+        if (role === 'admin' || role === 'user') {
+            safe(w + ' vendor manager', 'openVendorManager(false)');
+            harvest(w + ':vendor-manager');
+            safe(w + ' close vendor manager', 'closeVendorManager()');
+            harvest(w + ':close-vendor-manager');
+            safe(w + ' purchase order vendor form', `PD={id:'vendor-test',no:'PO-1',date:'2026-01-01',currency:'IDR',vendor:'Vendor A',attn:'',tel:'',email:'',addr:'',items:[],tax:0,terms:'',leadTime:'',delivery:'',note:'',useSig:false};POISNEW=true;drawPO()`);
+            harvest(w + ':purchase-order-vendor-form');
         }
         const projects = fixture.projects || [];
         for (const p of projects) {
@@ -214,6 +239,12 @@ const roles = [['t_admin', 'admin'], ['t_user1', 'user'], ['t_viewer', 'viewer']
         harvest(w + ':users');
     }
 
+    safe('vendor profile autofill', `DB=normDB(__fx);ME='t_user1';USER={name:'t_user1',role:'user'};PD={id:'vendor-test',no:'',date:'',currency:'IDR',vendor:'',attn:'',tel:'',email:'',addr:'',items:[],tax:0,terms:'',leadTime:'',delivery:'',note:'',useSig:false};setPOVendorProfile('V1')`);
+    check(
+        run(`PD.attn==='Attn'&&PD.tel==='021'&&PD.email==='a@b.c'&&PD.addr==='Alamat'`),
+        'selecting an existing vendor autofills PO contact details'
+    );
+
     // ---------- analysis ----------
     let rendered = 0;
     const raw = [], inlineData = [], badDesc = [];
@@ -252,10 +283,43 @@ const roles = [['t_admin', 'admin'], ['t_user1', 'user'], ['t_viewer', 'viewer']
     for (const v of ['dash', 'list', 'budget', 'improvements', 'gantt']) {
         check(allHtml.some((h) => h.where.endsWith(':view:' + v) && h.html.length > 200), 'view rendered: ' + v);
     }
+    const projectListView = allHtml.filter((h) => h.where.endsWith(':view:list')).map((h) => h.html).join('\n');
+    const projectListHeader = (projectListView.match(/<thead>[\s\S]*?<\/thead>/) || [''])[0];
+    check(
+        projectListView.includes('project-list-table')
+            && ['Project', 'Owner / PIC', 'Status', 'Progres', 'Mulai', 'Target'].every((label) => projectListHeader.includes(label)),
+        'project list shows core ownership, status, progress and schedule columns'
+    );
+    check(
+        !['PO', 'Tahap saat ini', 'Vendor', 'Quotation', 'Budget', 'Komitmen', 'Aksi'].some((label) => projectListHeader.includes(label)),
+        'optional PO and secondary details stay out of the compact project list'
+    );
+    check(projectListView.includes('openProjectProgress'), 'project progress control opens stage details on demand');
+    const progressModals = allHtml.filter((h) => h.where.endsWith(':project-progress-modal')).map((h) => h.html).join('\n');
+    check(
+        progressModals.includes('progress-stage-list')
+            && progressModals.includes('Progress Project')
+            && progressModals.includes('Catatan:')
+            && progressModals.includes('Dokumentasi')
+            && progressModals.includes('bukti.pdf'),
+        'progress modal renders project status, notes and stage documentation'
+    );
+    const statusModals = allHtml.filter((h) => h.where.endsWith(':dashboard-status-modal')).map((h) => h.html).join('\n');
+    check(statusModals.includes('dashboard-status-list') && statusModals.includes('openProjectProgress'), 'dashboard status opens a project list that leads to actual progress details');
+    const dashboardView = allHtml.filter((h) => h.where.endsWith(':view:dash')).map((h) => h.html).join('\n');
+    check(dashboardView.indexOf('dashboard-progress-board') >= 0, 'dashboard highlights the progress board');
+    const budgetView = allHtml.filter((h) => h.where.endsWith(':view:budget')).map((h) => h.html).join('\n');
+    check(budgetView.includes('q-project-details'), 'quotation list is grouped into project disclosure panels');
+    check(!budgetView.includes('Budget vs Komitmen per Project'), 'budget vs committed chart is hidden from the procurement page');
+    check(!/<details class="q-project-details"[^>]*\bopen(?:=|\s|>)/.test(budgetView), 'quotation details are collapsed by default');
     check(allHtml.some((h) => /:detail:/.test(h.where) && h.html.length > 200), 'project detail rendered');
     check(allHtml.some((h) => /:edit:/.test(h.where) && h.html.length > 200), 'project edit steps rendered');
     check(allHtml.some((h) => /:imp-detail:/.test(h.where) && h.html.length > 200), 'improvement detail rendered');
     check(allHtml.some((h) => /:po:/.test(h.where) || /document\.write|window\.open/.test(h.label)), 'PO editor / print document rendered');
+    const vendorManager = allHtml.filter((h) => h.where.endsWith(':vendor-manager')).map((h) => h.html).join('\n');
+    check(vendorManager.includes('Profil vendor baru') && vendorManager.includes('Alamat vendor'), 'vendor manager renders reusable vendor contact profiles');
+    const poVendorForms = allHtml.filter((h) => h.where.endsWith(':purchase-order-vendor-form')).map((h) => h.html).join('\n');
+    check(poVendorForms.includes('po-vendor-list') && poVendorForms.includes('Kelola profil vendor'), 'purchase order offers vendor selection and profile management');
     const markerSeen = allHtml.filter((h) => h.html.includes(MARKER_PREFIX)).length;
     check(markerSeen > 10, 'marker data reaches the rendered output (test is meaningful)', markerSeen);
 

@@ -180,6 +180,37 @@ function validateAndCleanSettings(array $incoming): array
         }
         $incoming['templates'] = $cleanTpls;
     }
+    if (isset($incoming['vendors']) && is_array($incoming['vendors'])) {
+        $cleanVendors = [];
+        $seenVendors = [];
+        foreach (array_slice($incoming['vendors'], 0, 500) as $vendor) {
+            if (!is_array($vendor)) {
+                continue;
+            }
+            $name = trim((string)($vendor['name'] ?? ''));
+            if ($name === '' || mb_strlen($name) > 255) {
+                continue;
+            }
+            $normalizedName = mb_strtolower($name);
+            if (isset($seenVendors[$normalizedName])) {
+                continue;
+            }
+            $seenVendors[$normalizedName] = true;
+            $id = trim((string)($vendor['id'] ?? ''));
+            if ($id === '' || !isValidEntityId($id)) {
+                $id = 'vendor_' . bin2hex(random_bytes(6));
+            }
+            $cleanVendors[] = [
+                'id' => $id,
+                'name' => $name,
+                'contact' => mb_substr(trim((string)($vendor['contact'] ?? '')), 0, 255),
+                'phone' => mb_substr(trim((string)($vendor['phone'] ?? '')), 0, 120),
+                'email' => mb_substr(trim((string)($vendor['email'] ?? '')), 0, 255),
+                'address' => mb_substr(trim((string)($vendor['address'] ?? '')), 0, 1000),
+            ];
+        }
+        $incoming['vendors'] = $cleanVendors;
+    }
     if (isset($incoming['appName'])) {
         $incoming['appName'] = substr(trim((string)$incoming['appName']) ?: APP_NAME, 0, 100);
     }
@@ -858,13 +889,20 @@ if ($requestPath === '/api/sync' && $method === 'POST') {
             $incoming = validateAndCleanSettings($push['settings']);
             $incomingAt = (int)($incoming['settingsAt'] ?? 0);
             $currentAt = (int)($settings['settingsAt'] ?? 0);
-            if (isset($incoming['templates']) && is_array($incoming['templates']) && ($storedSettings === null || $incomingAt > $currentAt)) {
-                $oldTemplates = $settings['templates'] ?? null;
-                if ($incoming['templates'] !== $oldTemplates) {
+            if (($storedSettings === null || $incomingAt > $currentAt)) {
+                $updatedSettingParts = [];
+                if (isset($incoming['templates']) && is_array($incoming['templates']) && $incoming['templates'] !== ($settings['templates'] ?? null)) {
                     $settings['templates'] = $incoming['templates'];
+                    $updatedSettingParts[] = 'template stage project';
+                }
+                if (isset($incoming['vendors']) && is_array($incoming['vendors']) && $incoming['vendors'] !== ($settings['vendors'] ?? [])) {
+                    $settings['vendors'] = $incoming['vendors'];
+                    $updatedSettingParts[] = 'daftar vendor';
+                }
+                if ($updatedSettingParts) {
                     $settings['settingsAt'] = max($serverNow, $incomingAt, $currentAt + 1);
                     writeJsonSetting('tracker', $settings, $pdo);
-                    recordAuditLog($pdo, 'SYSTEM', (string)$user['name'], 'Memperbarui template stage project');
+                    recordAuditLog($pdo, 'SYSTEM', (string)$user['name'], 'Memperbarui ' . implode(' dan ', $updatedSettingParts));
                     $changed = true;
                     $rejectedSettings = false;
                 }

@@ -37,13 +37,13 @@ Aplikasi manajemen project dan issue improvement lintas departemen untuk PIE Tea
    - Reset PIN oleh Admin maupun pergantian PIN oleh pengguna secara otomatis mencabut sesi lama di perangkat lain (*session revocation*).
 5. **RBAC Berbasis Kepemilikan Project & Concurrency Control**:
    - **Admin**: Akses penuh ke seluruh project, pengaturan, pengguna, dan utilitas ekspor/impor data proyek.
-   - **User**: Dapat membuat project baru serta mengubah/menghapus project yang menjadi tanggung jawabnya (sebagai PIC atau pembuat project). Tidak dapat mengubah atau menghapus project milik PIC/unit lain.
+   - **User**: Dapat membuat project baru serta mengubah/menghapus project yang menjadi tanggung jawabnya (sebagai PIC atau pembuat project). Project kategori Improvement, termasuk project lama dari Improvement Request, dapat dikelola Tim PI dan PIC-nya dapat diganti tanpa memberikan hak project kepada kontributor pengaju.
    - **Contributor**: Hanya dapat membuat dan memperbarui laporan Improvement miliknya sendiri serta mengunggah lampiran Improvement (`IMP-*`).
    - **Viewer**: Akses baca saja (*read-only*).
    - Endpoint `/api/sync` menggunakan transaksi database dengan row-level locking (`SELECT ... FOR UPDATE`) dan *server-side timestamping* untuk mencegah *race condition* atau *lost update*.
    - Seluruh aktivitas pembuatan, perubahan, penghapusan, autentikasi, dan ekspor/impor tercatat di tabel `project_logs` sebagai *audit trail*.
 6. **Alur Improvement Request & Terjemahan**:
-   - Keputusan PI `To Project` otomatis membuat Project PI dengan PIC Review PI sebagai PIC awal; project dapat dikelola seperti project lain oleh PIC tersebut.
+   - Keputusan PI `To Project` otomatis membuat Project PI dengan reviewer PI sebagai PIC awal; project masuk daftar project dan dapat dikelola oleh Tim PI. Tim PI dapat menentukan PIC project yang berbeda dari kontributor pengaju.
    - Request berstatus `Selesai` atau `Ditolak` diarsipkan dari daftar aktif, sementara riwayat feedback dan audit tetap tersedia melalui filter arsip.
    - PIC wajib diisi saat membuat project. Project lama tanpa PIC dapat diklaim oleh user dengan mengisi namanya sendiri sebagai PIC.
    - Terjemahan antarmuka dipisahkan ke `public/lib/i18n.js` dan digunakan bersama penerjemah yang sudah ada di frontend.

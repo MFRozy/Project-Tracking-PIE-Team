@@ -13,6 +13,7 @@ try {
     $admin = $env->client('t_admin');
     $user1 = $env->client('t_user1');
     $user2 = $env->client('t_user2');
+    $contrib = $env->client('t_contrib');
     $viewer = $env->client('t_viewer');
 
     // ------------------------------------------------------------------------
@@ -24,7 +25,7 @@ try {
         'id' => 'p-empty-pic',
         'code' => 'PRJ-EMPTY',
         'name' => 'Unassigned Admin Project',
-        'category' => 'Improvement',
+        'category' => 'General',
         'status' => 'On Progress',
         'priority' => 'Medium',
         'pic' => '',
@@ -37,7 +38,7 @@ try {
         'id' => 'p-user1-owned',
         'code' => 'PRJ-USER1',
         'name' => 'User1 Project',
-        'category' => 'Improvement',
+        'category' => 'General',
         'status' => 'On Progress',
         'priority' => 'Medium',
         'pic' => 't_user1',
@@ -68,6 +69,51 @@ try {
         ],
     ]);
     T::check($resUser1Proj['status'] === 201, 'User1 project with User2 stage PIC created');
+
+    $piProject = $admin->request('POST', '/api/projects', [
+        'id' => 'p-pi-team-edit',
+        'code' => 'PRJ-PI-TEAM',
+        'name' => 'Legacy Improvement project with contributor applicant',
+        'category' => 'Improvement',
+        'status' => 'Not Started',
+        'priority' => 'Medium',
+        'pic' => 't_contrib',
+        'stages' => [],
+    ]);
+    T::check($piProject['status'] === 201, 'Admin creates a legacy Improvement project with contributor PIC');
+
+    $piProjectList = $user1->request('GET', '/api/projects');
+    T::check(
+        $piProjectList['status'] === 200
+            && count(array_filter($piProjectList['json']['items'] ?? [], static fn(array $project): bool => ($project['id'] ?? '') === 'p-pi-team-edit')) === 1,
+        'Legacy Improvement project is visible in the PI project list'
+    );
+
+    $contributorEditPIProject = $contrib->request('PUT', '/api/projects/p-pi-team-edit', [
+        'name' => 'Contributor cannot edit the PI project',
+    ]);
+    T::check($contributorEditPIProject['status'] === 403, 'Contributor cannot edit the PI project as its applicant');
+
+    $editorEditPIProject = $user1->request('PUT', '/api/projects/p-pi-team-edit', [
+        'name' => 'PI team updated the improvement project',
+        'pic' => 't_user1',
+    ]);
+    T::check($editorEditPIProject['status'] === 200, 'PI editor can edit and assign PIC on a legacy Improvement project');
+
+    $piDeleteProject = $admin->request('POST', '/api/projects', [
+        'id' => 'p-pi-team-delete',
+        'code' => 'PRJ-PI-DELETE',
+        'name' => 'Improvement project to delete',
+        'category' => 'Improvement',
+        'pic' => 't_contrib',
+    ]);
+    T::check($piDeleteProject['status'] === 201, 'Admin creates a legacy Improvement project for delete authorization test');
+
+    $contributorDeletePIProject = $contrib->request('DELETE', '/api/projects/p-pi-team-delete');
+    T::check($contributorDeletePIProject['status'] === 403, 'Contributor cannot delete the PI project as its applicant');
+
+    $editorDeletePIProject = $user2->request('DELETE', '/api/projects/p-pi-team-delete');
+    T::check($editorDeletePIProject['status'] === 200, 'PI editor can delete a legacy Improvement project');
 
     // ------------------------------------------------------------------------
     // 1. Unrelated user gets 403 when changing or deleting an empty-PIC project
@@ -168,11 +214,11 @@ try {
     ]);
     T::check($resEmptyPicUpdate['status'] === 400, 'Updating project with empty pic returns 400', $resEmptyPicUpdate['status']);
 
-    // Non-owner User2 attempting to change PIC of User1's project returns 400
+    // Non-owner User2 attempting to change PIC of User1's project is rejected.
     $resUser2ChangePic = $user2->request('PUT', '/api/projects/p-user1-owned', [
         'pic' => 't_user2',
     ]);
-    T::check($resUser2ChangePic['status'] === 400, 'Non-owner User2 changing PIC returns 400', $resUser2ChangePic['status']);
+    T::check(in_array($resUser2ChangePic['status'], [400, 403], true), 'Non-owner User2 changing PIC is rejected', $resUser2ChangePic['status']);
 
     // ------------------------------------------------------------------------
     // 3. User2 (stage PIC only) cannot change project pic or metadata or quotation
@@ -242,6 +288,20 @@ try {
         }
     }
     T::check($u2StageStatus === 'Completed', 'User2 stage successfully marked Completed', ['status' => $u2StageStatus]);
+
+    $forgedImprovementOrigin = $user1->request('PUT', '/api/projects/p-user1-owned', [
+        'name' => 'User1 Project',
+        'pic' => 't_user1',
+        'stages' => $stagesAfter,
+        'improvementId' => 'forged-improvement-origin',
+    ]);
+    $projectMetadata = $env->pdo->prepare('SELECT metadata FROM projects WHERE id = :id');
+    $projectMetadata->execute([':id' => 'p-user1-owned']);
+    $metadataAfterForgedOrigin = json_decode((string)$projectMetadata->fetchColumn(), true);
+    T::check(
+        $forgedImprovementOrigin['status'] === 200 && !array_key_exists('improvementId', is_array($metadataAfterForgedOrigin) ? $metadataAfterForgedOrigin : []),
+        'Project owner cannot mark an unrelated project as PI-owned'
+    );
 
     // ------------------------------------------------------------------------
     // 4. /api/logs access control

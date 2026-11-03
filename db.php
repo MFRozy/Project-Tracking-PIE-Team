@@ -692,6 +692,13 @@ function normalizeProjectPayload(array $data, ?array $existingRow = null, ?array
             $existingMeta = $decodedMeta;
         }
     }
+    if ($existingRow !== null) {
+        if (array_key_exists('improvementId', $existingMeta)) {
+            $metadata['improvementId'] = $existingMeta['improvementId'];
+        } else {
+            unset($metadata['improvementId']);
+        }
+    }
 
     $rawId = trim((string)($data['id'] ?? ($existingRow['id'] ?? uuid4())));
     if (!isValidEntityId($rawId)) {
@@ -768,11 +775,15 @@ function normalizeProjectPayload(array $data, ?array $existingRow = null, ?array
     $existingPic = trim((string)($existingRow['pic'] ?? ''));
     $existingPicLower = strtolower($existingPic);
     $existingCreatedBy = is_array($existingMeta) ? strtolower(trim((string)($existingMeta['createdBy'] ?? ''))) : '';
+    $isPITeamProject = $actorRole === 'user'
+        && (trim((string)($existingMeta['improvementId'] ?? '')) !== ''
+            || strcasecmp(trim((string)($existingRow['category'] ?? '')), 'Improvement') === 0);
     $claimsUnassignedProject = $existingRow !== null
         && $existingPicLower === ''
         && $actorNameLower !== ''
         && strtolower(trim((string)($data['pic'] ?? ''))) === $actorNameLower;
     $isOwnerOrAdmin = ($actorRole === 'admin')
+        || $isPITeamProject
         || ($existingPicLower !== '' && $existingPicLower === $actorNameLower)
         || ($existingCreatedBy !== '' && $existingCreatedBy === $actorNameLower)
         || $claimsUnassignedProject;
@@ -893,6 +904,10 @@ function canModifyProject(array $user, ?array $existingRow, ?array $incoming = n
     if (!is_array($meta)) {
         $meta = [];
     }
+    if (trim((string)($meta['improvementId'] ?? '')) !== ''
+        || strcasecmp(trim((string)($existingRow['category'] ?? '')), 'Improvement') === 0) {
+        return true;
+    }
 
     $createdBy = strtolower(trim((string)($meta['createdBy'] ?? '')));
     if ($createdBy !== '' && $createdBy === $userName) {
@@ -929,6 +944,10 @@ function canDeleteProject(array $user, array $existingRow): bool
     }
 
     $meta = json_decode((string)($existingRow['metadata'] ?? '{}'), true);
+    if ((is_array($meta) && trim((string)($meta['improvementId'] ?? '')) !== '')
+        || strcasecmp(trim((string)($existingRow['category'] ?? '')), 'Improvement') === 0) {
+        return true;
+    }
     $createdBy = is_array($meta) ? strtolower(trim((string)($meta['createdBy'] ?? ''))) : '';
     if ($createdBy !== '' && $createdBy === $userName) {
         return true;

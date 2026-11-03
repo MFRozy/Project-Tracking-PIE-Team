@@ -1890,7 +1890,7 @@ async function saveImprovement(){
 function createProjectFromImprovement(x){
   const category=DB.settings.categories.find(c=>c.name.toLowerCase()==='improvement')?.name||DB.settings.categories[0]?.name||'Improvement';
   const template=(DB.settings.templates||[]).find(t=>t.category===category)|| (DB.settings.templates||[]).find(t=>/improvement/i.test(t.name));
-  const now=Date.now(),project=normP({id:uid(),code:nextCode(),name:x.title,category,status:'Not Started',priority:'Medium',pic:(x.piOwner||ME||x.submittedBy||'').trim(),createdBy:ME,improvementId:x.id,area:x.department,start:fd(today()),end:fd(addDays(today(),60)),desc:'Issue: '+x.issue+'\n\nBackground: '+x.background+'\n\nPurpose: '+x.purpose+'\n\nGoals: '+x.goals+'\n\nPI feedback: '+(x.piFeedback||'-')+'\n\nPI action: '+(x.piAction||'-'),stages:template?buildStages(template.stages,fd(today())):[],updatedAt:now,updatedBy:ME,log:[{by:ME,t:now,items:['Project PI dibuat dari improvement '+x.id]}]});
+  const now=Date.now(),project=normP({id:uid(),code:nextCode(),name:x.title,category,status:'Not Started',priority:'Medium',pic:ME.trim(),createdBy:ME,improvementId:x.id,area:x.department,start:fd(today()),end:fd(addDays(today(),60)),desc:'Issue: '+x.issue+'\n\nBackground: '+x.background+'\n\nPurpose: '+x.purpose+'\n\nGoals: '+x.goals+'\n\nPI feedback: '+(x.piFeedback||'-')+'\n\nPI action: '+(x.piAction||'-'),stages:template?buildStages(template.stages,fd(today())):[],updatedAt:now,updatedBy:ME,log:[{by:ME,t:now,items:['Project PI dibuat dari improvement '+x.id]}]});
   applyAuto(project);DB.projects.push(project);x.projectId=project.id;x.updatedAt=Math.max(now,(x.updatedAt||0)+1);x.updatedBy=ME;x.feedbackLog=(x.feedbackLog||[]).concat([{by:ME,at:x.updatedAt,status:x.status,decision:x.decision,feedback:x.piFeedback,action:'Project PI dibuat: '+project.code}]);
   return project;
 }
@@ -2411,11 +2411,21 @@ function addMs(){draft.milestones.push({id:uid(),name:'',date:'',done:false});dr
 function setMs(id,k,v){draft.milestones.find(m=>m.id===id)[k]=v;}
 function delMs(id){draft.milestones=draft.milestones.filter(m=>m.id!==id);drawTab();}
 function tLog(){
-  return (draft.log||[]).slice().reverse().map(l=>`<div class="logi"><b>${esc(l.by||'-')}</b> <small>${fmtDT(l.t)}</small><div>${l.items.map(i=>'• '+esc(i)).join('<br>')}</div></div>`).join('')||'<div class="empty">Belum ada riwayat perubahan.</div>';
+  const renderItem=item=>{
+    const text=String(item||''),markers=[' -> ',' \u2192 ',' \u00e2\u2020\u2019 ',' \u00e2\u0086\u0092 '];
+    for(const marker of markers){
+      const index=text.indexOf(marker),separator=text.indexOf(': ');
+      if(index>separator&&separator>0){
+        return `<div class="log-change"><span class="log-label">${esc(text.slice(0,separator))}</span><span class="log-from">${esc(text.slice(separator+2,index))}</span><span class="log-arrow">&rarr;</span><span class="log-to">${esc(text.slice(index+marker.length))}</span></div>`;
+      }
+    }
+    return `<div>• ${esc(text)}</div>`;
+  };
+  return (draft.log||[]).slice().reverse().map(l=>`<div class="logi"><b>${esc(l.by||'-')}</b> <small>${fmtDT(l.t)}</small>${(l.items||[]).map(renderItem).join('')}</div>`).join('')||'<div class="empty">Belum ada riwayat perubahan.</div>';
 }
 function diffLog(o,n){
   if(!o)return ['Project dibuat'];
-  const L=[],f=(lb,a,b,fm)=>{if(String(a==null?'':a)!==String(b==null?'':b)){fm=fm||(x=>x);L.push(lb+': '+(fm(a)||'-')+' → '+(fm(b)||'-'));}};
+  const L=[],f=(lb,a,b,fm)=>{if(String(a==null?'':a)!==String(b==null?'':b)){fm=fm||(x=>x);L.push(lb+': '+(fm(a)||'-')+' -> '+(fm(b)||'-'));}};
   f('Status',o.status,n.status);f('Progres',o.progress,n.progress,x=>x+'%');f('Mulai',o.start,n.start,fmtDate);f('Target',o.end,n.end,fmtDate);f('PIC',o.pic,n.pic);
   f('Vendor utama',o.vendor,n.vendor);f('Budget',o.budget,n.budget,money);f('Aktual/PO',o.actual,n.actual,money);f('No. PO',o.po,n.po);
   const so=selQ(o),sn=selQ(n);
@@ -2954,6 +2964,7 @@ const canModifyProj=p=>{
   if(isAdmin())return true;
   if(!canEdit())return false;
   if(!p)return true;
+  if(String(p.improvementId||'').trim()||(p.category||'').trim().toLowerCase()==='improvement')return true;
   const me=(ME||'').trim().toLowerCase();
   if(!me)return false;
   const pic=(p.pic||'').trim().toLowerCase();
@@ -2965,6 +2976,7 @@ const canModifyProj=p=>{
 const canDeleteProj=p=>{
   if(isAdmin())return true;
   if(!canEdit()||!p)return false;
+  if(String(p.improvementId||'').trim()||(p.category||'').trim().toLowerCase()==='improvement')return true;
   const me=(ME||'').trim().toLowerCase();
   if(!me)return false;
   const pic=(p.pic||'').trim().toLowerCase();

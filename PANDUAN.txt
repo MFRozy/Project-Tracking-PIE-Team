@@ -35,7 +35,7 @@ Arahkan DocumentRoot web server HANYA ke direktori public/ (bukan root repositor
 4. HAK AKSES PENGGUNA (RBAC)
 ----------------------------
 - Admin       : Mengelola pengguna, pengaturan aplikasi, template, ekspor/impor data, dan seluruh project.
-- Pengguna    : Membuat project serta mengubah/menghapus project yang menjadi tanggung jawabnya (PIC).
+- Pengguna    : Membuat project serta mengubah/menghapus project yang menjadi tanggung jawabnya (PIC). Project kategori Improvement, termasuk project lama dari Improvement Request, dapat dikelola Tim PI dan PIC-nya dapat diganti.
 - Kontributor : Mengirimkan dan memperbarui issue Improvement miliknya sendiri.
 - Viewer      : Hanya melihat dashboard dan data project (read-only).
 

@@ -31,6 +31,7 @@ try {
         'stages' => [],
     ]);
     T::check($resEmptyPic['status'] === 201, 'Admin successfully created empty-PIC project');
+    $env->pdo->prepare("UPDATE projects SET pic = '' WHERE id = :id")->execute([':id' => 'p-empty-pic']);
 
     $resUser1Proj = $admin->request('POST', '/api/projects', [
         'id' => 'p-user1-owned',
@@ -72,8 +73,7 @@ try {
     // 1. Unrelated user gets 403 when changing or deleting an empty-PIC project
     // ------------------------------------------------------------------------
     $resUser1EditEmpty = $user1->request('PUT', '/api/projects/p-empty-pic', [
-        'name' => 'User1 Takes Over Empty Project',
-        'pic' => 't_user1',
+        'name' => 'User1 Attempts Unassigned Project Without Claim',
     ]);
     T::check($resUser1EditEmpty['status'] === 403, 'User1 gets 403 modifying empty-PIC project', $resUser1EditEmpty['status']);
 
@@ -89,6 +89,55 @@ try {
         $resUser1SyncEditEmpty['status'] === 200 && ($resUser1SyncEditEmpty['json']['rejectedProjectAuth'] ?? false) === true,
         'User1 rejected via /api/sync when modifying empty-PIC project'
     );
+
+    $resClaimProject = $admin->request('POST', '/api/projects', [
+        'id' => 'p-claimable-empty',
+        'code' => 'PRJ-CLAIM',
+        'name' => 'Legacy project without PIC',
+        'pic' => '',
+    ]);
+    $env->pdo->prepare("UPDATE projects SET pic = '' WHERE id = :id")->execute([':id' => 'p-claimable-empty']);
+    T::check($resClaimProject['status'] === 201, 'Admin creates a project that can be assigned a PIC');
+
+    $resWrongClaim = $user1->request('PUT', '/api/projects/p-claimable-empty', [
+        'name' => 'Cannot assign another user',
+        'pic' => 't_user2',
+    ]);
+    T::check($resWrongClaim['status'] === 403, 'User cannot claim an unassigned project for another PIC');
+
+    $resPicClaim = $user1->request('PUT', '/api/projects/p-claimable-empty', [
+        'name' => 'User1 Claims Legacy Project',
+        'pic' => 't_user1',
+    ]);
+    T::check($resPicClaim['status'] === 200, 'User can assign an unassigned project to themselves');
+
+    $resPicEdit = $user1->request('PUT', '/api/projects/p-claimable-empty', [
+        'name' => 'User1 Edits Claimed Project',
+        'pic' => 't_user1',
+    ]);
+    T::check($resPicEdit['status'] === 200, 'Assigned PIC can edit the formerly unassigned project');
+
+    $resPicSyncEdit = $user1->request('POST', '/api/sync', [
+        'rev' => 0,
+        'push' => [
+            'projects' => [[
+                'id' => 'p-claimable-empty',
+                'name' => 'User1 Updates Claimed Project via Sync',
+                'pic' => 't_user1',
+                'updatedAt' => (int)round(microtime(true) * 1000) + 1000,
+            ]],
+        ],
+    ]);
+    T::check(
+        $resPicSyncEdit['status'] === 200 && !($resPicSyncEdit['json']['rejectedProjectAuth'] ?? false),
+        'Assigned PIC can edit the formerly unassigned project via sync'
+    );
+
+    $resOtherPicEdit = $user2->request('PUT', '/api/projects/p-claimable-empty', [
+        'name' => 'User2 Attempts Claimed Project',
+        'pic' => 't_user2',
+    ]);
+    T::check($resOtherPicEdit['status'] === 403, 'Another user cannot edit a project claimed by its PIC');
 
     $resUser1DeleteEmpty = $user1->request('DELETE', '/api/projects/p-empty-pic');
     T::check($resUser1DeleteEmpty['status'] === 403, 'User1 gets 403 deleting empty-PIC project', $resUser1DeleteEmpty['status']);

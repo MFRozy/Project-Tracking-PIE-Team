@@ -9,7 +9,7 @@ Aplikasi manajemen project dan issue improvement lintas departemen untuk PIE Tea
 - [`db.php`](db.php) – Koneksi PDO (`EMULATE_PREPARES = false`), proteksi CSRF, validasi input/workflow, RBAC kepemilikan project, sinkronisasi tabel relasional, dan audit trail
 - [`api.php`](api.php) – Endpoint REST API dengan transaction locking (`FOR UPDATE`), validasi upload ketat, serta utilitas ekspor & impor data proyek
 - [`public/index.php`](public/index.php) – Entry point antarmuka web dan front controller dengan security headers
-- [`public/index.html`](public/index.html) & [`public/shared.js`](public/shared.js) – Antarmuka pengguna (SPA) lengkap di dalam direktori `public/`
+- [`public/index.html`](public/index.html), [`public/shared.js`](public/shared.js), dan [`public/lib/i18n.js`](public/lib/i18n.js) – Antarmuka pengguna (SPA) dan pustaka terjemahan terpisah di dalam direktori `public/`
 - [`schema.sql`](schema.sql) – Skema database MySQL beserta panduan akun database *least privilege*
 - [`.htaccess`](.htaccess) & [`public/.htaccess`](public/.htaccess) – Konfigurasi routing Apache dan pemblokiran akses langsung ke file sensitif di luar webroot
 - [`tests/test-security-php.php`](tests/test-security-php.php) – Automated test suite untuk verifikasi Acceptance Gate P0, P1, dan P2
@@ -31,7 +31,7 @@ Aplikasi manajemen project dan issue improvement lintas departemen untuk PIE Tea
    - Menggunakan akun MySQL khusus (`pt_app`) dengan hak akses terbatas pada database `project_tracker`.
 4. **Session Hardening, PIN Policy & CSRF Protection**:
    - Masa aktif sesi dibatasi secara default menjadi **12 jam** (`PT_SESSION_HOURS=12`).
-   - Panjang minimal PIN ditingkatkan menjadi **6 karakter** (`PT_PIN_MIN_LENGTH=6`).
+   - Panjang minimal PIN adalah **10 karakter** (`PT_PIN_MIN_LENGTH=10`); konfigurasi lingkungan tidak dapat menurunkan batas ini.
    - Atribut cookie `HttpOnly=true`, `SameSite=Lax`, dan `Secure` otomatis aktif pada koneksi HTTPS (`COOKIE_SECURE=auto` / `true`).
    - Seluruh endpoint perubahan data (`POST`, `PUT`, `DELETE`) dilindungi validasi header `X-PT: 1`, pemeriksaan `Origin`/`Referer`, dan token **CSRF** berbasis HMAC (`X-CSRF-Token`).
    - Reset PIN oleh Admin maupun pergantian PIN oleh pengguna secara otomatis mencabut sesi lama di perangkat lain (*session revocation*).
@@ -42,6 +42,11 @@ Aplikasi manajemen project dan issue improvement lintas departemen untuk PIE Tea
    - **Viewer**: Akses baca saja (*read-only*).
    - Endpoint `/api/sync` menggunakan transaksi database dengan row-level locking (`SELECT ... FOR UPDATE`) dan *server-side timestamping* untuk mencegah *race condition* atau *lost update*.
    - Seluruh aktivitas pembuatan, perubahan, penghapusan, autentikasi, dan ekspor/impor tercatat di tabel `project_logs` sebagai *audit trail*.
+6. **Alur Improvement Request & Terjemahan**:
+   - Keputusan PI `To Project` otomatis membuat Project PI dengan PIC Review PI sebagai PIC awal; project dapat dikelola seperti project lain oleh PIC tersebut.
+   - Request berstatus `Selesai` atau `Ditolak` diarsipkan dari daftar aktif, sementara riwayat feedback dan audit tetap tersedia melalui filter arsip.
+   - PIC wajib diisi saat membuat project. Project lama tanpa PIC dapat diklaim oleh user dengan mengisi namanya sendiri sebagai PIC.
+   - Terjemahan antarmuka dipisahkan ke `public/lib/i18n.js` dan digunakan bersama penerjemah yang sudah ada di frontend.
 
 ## Persiapan & Deployment
 

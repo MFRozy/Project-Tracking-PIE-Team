@@ -768,7 +768,7 @@ const LANG_TEXT={
   'Ringkasan':{en:'Overview',ko:'요약'},
   'Pekerjaan Saya':{en:'My Work',ko:'내 작업'},
   'Project Baru':{en:'New Project',ko:'신규 프로젝트'},
-  'Daftar Improvement':{en:'Improvement List',ko:'개선 과제 목록'},
+  'Improvement Request List':{en:'Improvement Request List',ko:'개선 요청 목록'},
   'Tinjauan PI':{en:'PI Review',ko:'PI 검토'},
   'Ajukan Improvement':{en:'Submit Improvement',ko:'개선 과제 등록'},
   'Pengadaan & Laporan':{en:'Procurement & Reports',ko:'조달 및 보고서'},
@@ -919,7 +919,7 @@ function translatedText(value){
     });
     return value.replace(trimmed,mapped.join(' · '));
   }
-  return value;
+  return typeof PITranslator!=='undefined'?(PITranslator.translate(trimmed,APP_LANG)||value):value;
 }
 let APPLYING_LANG=false;
 function applyLanguage(){
@@ -1007,7 +1007,7 @@ let DB=normDB({}),ME='',USER=null;
 let VIEW='dash',PREV_VIEW='dash',F={cat:'',status:'',pic:'',q:''},SORT={k:'end',d:1},RPERIOD='day',PRIORITY_COLLAPSED=false;
 let GS='month',GGROUP=true,GJUMP=true;
 let REV=-1,KNOWN={},KNOWNI={},KDEL={},KSET=-1,SSE=null,ONLINE=[],SYNCERR=null,lastSync=null,PUSHING=false,AGAIN=false,RETRY=null,SKEW=0;
-let draft=null,baseAt=0,isNew=false,TAB='info',WIZ_STEP=1,DETAIL_TAB='overview',CD=[],IDRAFT=null,IBASE=null,IISNEW=false,IMP_WIZ_STEP=1,IMPFILTER='all',IMPQ='',PROJECT_READ_ONLY=false;
+let draft=null,baseAt=0,isNew=false,TAB='info',WIZ_STEP=1,DETAIL_TAB='overview',CD=[],IDRAFT=null,IBASE=null,IISNEW=false,IMP_WIZ_STEP=1,IMPFILTER='active',IMPQ='',PROJECT_READ_ONLY=false;
 
 /* ================= data ================= */
 function buildStages(defs,base){
@@ -1223,9 +1223,9 @@ function updateBreadcrumb(){
     project_detail:['Project','Daftar Project',draft?(draft.code+' · '+draft.name):'Detail Project'],
     project_form:['Project',isNew?'Project Baru':('Edit Project · '+(draft?draft.code:'')),`Langkah ${WIZ_STEP} dari 5`],
     budget:['Pengadaan & Laporan','Quotation & PO'],
-    improvements:['Improvement','Daftar Improvement'],
+    improvements:['Improvement','Improvement Request List'],
     imp_review:['Improvement','Tinjauan PI'],
-    imp_detail:['Improvement','Daftar Improvement',IDRAFT?(IDRAFT.title||'Detail Improvement'):'Detail Improvement'],
+    imp_detail:['Improvement','Improvement Request List',IDRAFT?(IDRAFT.title||'Detail Improvement'):'Detail Improvement'],
     imp_form:['Improvement',IISNEW?'Ajukan Improvement':'Edit Improvement',`Langkah ${IMP_WIZ_STEP} dari 3`],
     imp_review_form:['Improvement','Tinjauan PI','Keputusan & Feedback PI']
   };
@@ -1527,23 +1527,24 @@ function rBudget(){
 }
 /* ================= IMPROVEMENT (INPUT & OUTPUT TERPISAH) ================= */
 function improvementTypeLabel(type){return ({saving_mp:'Saving MP',quality:'Quality',efficiency:'Efisiensi proses',other:'Lainnya'})[type]||'Efisiensi proses';}
-function improvementStatusColor(status){return status==='Disetujui'?'#10b981':status==='Tidak Perlu Improvement'?'#64748b':status==='Review PI'?'var(--pri)':status==='Menunggu Data'?'#f59e0b':'#64748b';}
+function improvementStatusColor(status){return ['Disetujui','Selesai'].includes(status)?'#10b981':status==='Ditolak'?'#ef4444':status==='Tidak Perlu Improvement'?'#64748b':status==='Review PI'?'var(--pri)':status==='Menunggu Data'?'#f59e0b':'#64748b';}
 function rImprovements(){
-  const statuses=['Baru','Review PI','Menunggu Data','Disetujui','Tidak Perlu Improvement'];
+  const statuses=['Baru','Review PI','Menunggu Data','Disetujui','Tidak Perlu Improvement','Selesai','Ditolak'];
   const q=IMPQ.toLowerCase();
   const visible=(DB.improvements||[]).filter(x=>canReviewImprovement()||x.submittedBy===ME);
-  const rows=visible.filter(x=>(IMPFILTER==='all'||x.status===IMPFILTER)&&(!q||[x.title,x.department,x.submittedBy,x.issue,x.type].join(' ').toLowerCase().includes(q))).slice().sort((a,b)=>(b.updatedAt||0)-(a.updatedAt||0));
+  const archived=['Selesai','Ditolak','Tidak Perlu Improvement'];
+  const rows=visible.filter(x=>(IMPFILTER==='all'||(IMPFILTER==='active'?!archived.includes(x.status):x.status===IMPFILTER))&&(!q||[x.title,x.department,x.submittedBy,x.issue,x.type].join(' ').toLowerCase().includes(q))).slice().sort((a,b)=>(b.updatedAt||0)-(a.updatedAt||0));
   const count=s=>visible.filter(x=>x.status===s).length;
-  $('#main').innerHTML=`<div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px"><div style="flex:1"><h2 style="font-size:20px;margin:0;font-weight:800">Daftar Improvement</h2><div class="muted small">Usulan perbaikan lintas departemen, status tinjauan Tim PI, dan tindak lanjut project.</div></div>${canSubmitImprovement()?'<button class="btn pri" data-on-click="[&quot;newImprovement&quot;]">+ Ajukan Improvement</button>':''}</div>
+  $('#main').innerHTML=`<div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px"><div style="flex:1"><h2 style="font-size:20px;margin:0;font-weight:800">Improvement Request List</h2><div class="muted small">Usulan perbaikan lintas departemen, status tinjauan Tim PI, dan tindak lanjut project.</div></div>${canSubmitImprovement()?'<button class="btn pri" data-on-click="[&quot;newImprovement&quot;]">+ Ajukan Improvement</button>':''}</div>
   <div class="grid kpis"><div class="kpi static"><i style="background:#64748b"></i><b>${count('Baru')}</b><span>Baru</span><small>Menunggu tinjauan</small></div><div class="kpi static"><i style="background:var(--pri)"></i><b>${count('Review PI')}</b><span>Review PI</span><small>Sedang ditinjau</small></div><div class="kpi static"><i style="background:#10b981"></i><b>${count('Disetujui')}</b><span>Disetujui</span><small>Lanjut ke project</small></div><div class="kpi static"><i style="background:#64748b"></i><b>${count('Tidak Perlu Improvement')}</b><span>Saran Alternatif</span><small>Solusi langsung</small></div></div>
-  <div class="stbar"><input style="min-width:220px" placeholder="Cari judul, departemen, pelapor..." value="${esc(IMPQ)}" data-on-input="[&quot;setImpq&quot;,&quot;@value&quot;]"><select data-on-change="[&quot;setImpfilter&quot;,&quot;@value&quot;]"><option value="all">Semua status</option>${statuses.map(s=>`<option value="${s}" ${IMPFILTER===s?'selected':''}>${s}</option>`).join('')}</select><span class="muted small">${rows.length} dari ${visible.length} usulan</span></div>
+  <div class="stbar"><input style="min-width:220px" placeholder="Cari judul, departemen, pelapor..." value="${esc(IMPQ)}" data-on-input="[&quot;setImpq&quot;,&quot;@value&quot;]"><select data-on-change="[&quot;setImpfilter&quot;,&quot;@value&quot;]"><option value="active" ${IMPFILTER==='active'?'selected':''}>Request aktif</option><option value="all" ${IMPFILTER==='all'?'selected':''}>Semua status (termasuk arsip)</option>${statuses.map(s=>`<option value="${s}" ${IMPFILTER===s?'selected':''}>${s}</option>`).join('')}</select><span class="muted small">${rows.length} dari ${visible.length} usulan</span></div>
   <div class="card">${rows.map(x=>`<div class="imp-row" data-on-click="${ea(["viewImprovement",x.id])}"><div><b>${esc(x.title)}</b><div class="imp-desc">${esc(x.department||'-')} · ${esc(x.submittedBy||'-')} · ${improvementTypeLabel(x.type)}</div></div><div class="imp-desc">${esc(x.issue)}</div><span class="badge" style="background:${improvementStatusColor(x.status)}">${esc(x.status)}</span><span class="small muted">${x.projectId?'Project '+esc((byId(x.projectId)||{}).code||'terkait'):x.updatedAt?fmtDT(x.updatedAt):fmtDate(fd(new Date(x.submittedAt||Date.now())))}</span><div style="display:flex;gap:6px" data-on-click="${ea(["!ptStop"])}"><button class="btn sm" data-on-click="${ea(["viewImprovement",x.id])}">Detail</button>${canReviewImprovement()?`<button class="btn sm pri" data-on-click="${ea(["reviewImprovement",x.id])}">Tinjau PI</button>`:(canSubmitImprovement()&&x.submittedBy===ME&&!x.projectId?`<button class="btn sm pri" data-on-click="${ea(["editImprovement",x.id])}">Edit</button>`:'')}</div></div>`).join('')||'<div class="empty">Belum ada usulan improvement.</div>'}</div>`;
 }
 function rImpReviewQueue(){
   if(!canReviewImprovement()){go('improvements');return;}
   const all=(DB.improvements||[]).slice().sort((a,b)=>(b.updatedAt||0)-(a.updatedAt||0));
   const pending=all.filter(x=>['Baru','Review PI','Menunggu Data'].includes(x.status));
-  const decided=all.filter(x=>!['Baru','Review PI','Menunggu Data'].includes(x.status));
+  const decided=all.filter(x=>!['Baru','Review PI','Menunggu Data','Selesai','Ditolak','Tidak Perlu Improvement'].includes(x.status));
   $('#main').innerHTML=`
     <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:14px;flex-wrap:wrap">
       <div><h2 style="font-size:20px;margin:0;font-weight:800">Antrean Perlu Ditinjau (Tim PI)</h2><div class="muted small">Daftar pengajuan improvement dari kontributor yang memerlukan analisa, keputusan, atau konversi ke Project oleh Tim PI.</div></div>
@@ -1644,14 +1645,21 @@ async function openImprovementLink(id){
 }
 function setImprovementDecision(value){
   IDRAFT.decision=value;
+  if(value==='To Project')IDRAFT.status='Disetujui';
   if(value!=='Suggestion Only'){IDRAFT.piSuggestion='';IDRAFT.piReason='';}
+  refreshImpView();
+}
+function setImprovementStatus(value){
+  if(!IDRAFT)return;
+  IDRAFT.status=value;
   refreshImpView();
 }
 function rImpDetail(){
   if(!IDRAFT){go('improvements');return;}
   const x=IDRAFT,canReview=canReviewImprovement(),canEditReq=canSubmitImprovement()&&(canReview||x.submittedBy===ME)&&!x.projectId;
   const proj=x.projectId?byId(x.projectId):null;
-  const stepIdx=x.projectId?4:(x.status==='Disetujui'||x.status==='Tidak Perlu Improvement')?3:(x.status==='Review PI'||x.status==='Menunggu Data')?2:1;
+  const finalReview=['Disetujui','Selesai','Ditolak','Tidak Perlu Improvement'].includes(x.status);
+  const stepIdx=x.projectId?4:finalReview?3:(x.status==='Review PI'||x.status==='Menunggu Data')?2:1;
   const stages=[
     {n:1,title:'Diajukan Kontributor',sub:esc(x.submittedBy||'-')+' · '+esc(x.department||'-')},
     {n:2,title:'Tinjauan Tim PI',sub:x.piOwner?'PIC: '+esc(x.piOwner):'Analisa kelayakan'},
@@ -1659,7 +1667,7 @@ function rImpDetail(){
     {n:4,title:'Tindak Lanjut Project',sub:proj?esc(proj.code)+' ('+proj.progress+'%)':'Belum dikonversi'}
   ];
   const stepper=`<div class="wiz-stepper">${stages.map(s=>{
-    const st=s.n<stepIdx?'done':s.n===stepIdx?(x.projectId||x.status==='Disetujui'?'done':'active'):'';
+    const st=s.n<stepIdx?'done':s.n===stepIdx?(x.projectId||finalReview?'done':'active'):'';
     return `<div class="wiz-node ${st}" style="cursor:default"><div class="wiz-circle">${st==='done'?'✓':s.n}</div><div class="wiz-label">${s.title}<br><span style="font-weight:400;font-size:10px">${s.sub}</span></div></div>`;
   }).join('')}</div>`;
   const history=(x.feedbackLog||[]).slice().reverse().map(h=>`<div class="logi"><b>${esc(h.by||'-')}</b> <small>${fmtDT(h.at)}</small><div>Status: <b>${esc(h.status||'')}</b> · Keputusan: <b>${esc(h.decision||'-')}</b></div><div>${esc(h.feedback||h.suggestion||h.reason||h.action||'-')}</div></div>`).join('')||'<div class="muted small">Belum ada riwayat keputusan PI.</div>';
@@ -1676,7 +1684,8 @@ function rImpDetail(){
           <button class="btn" data-on-click="${ea(['go',PREV_VIEW||'improvements'])}">← Kembali</button>
           ${canEditReq?`<button class="btn" data-on-click="${ea(["editImprovement",x.id])}">Edit Pengajuan</button>`:''}
           ${canReview?`<button class="btn pri" data-on-click="${ea(["reviewImprovement",x.id])}">Tinjau &amp; Keputusan PI</button>`:''}
-          ${canReview&&x.decision==='To Project'&&!x.projectId?`<button class="btn pri" data-on-click="[&quot;promoteImprovement&quot;]">+ Konversi ke Project</button>`:''}
+          ${canReview&&x.decision==='To Project'&&x.status==='Disetujui'&&!x.projectId?`<button class="btn pri" data-on-click="[&quot;promoteImprovement&quot;]">+ Buat Project PI</button>`:''}
+          ${canReview&&!['Selesai','Ditolak','Tidak Perlu Improvement'].includes(x.status)?`<button class="btn" data-on-click="${ea(['closeImprovement',x.id])}">Tandai selesai</button><button class="btn bad" data-on-click="${ea(['askRejectImprovement',x.id])}">Tolak usulan</button>`:''}
         </div>
       </div>
       <div class="out-section">
@@ -1805,7 +1814,7 @@ function rImpReviewForm(){
   if(!IDRAFT||!canReviewImprovement()){go('improvements');return;}
   const x=IDRAFT;
   const opts=(values,value)=>values.map(v=>`<option value="${v[0]}" ${value===v[0]?'selected':''}>${v[1]}</option>`).join('');
-  const statusOptions=['Baru','Review PI','Menunggu Data','Disetujui','Tidak Perlu Improvement'];
+  const statusOptions=['Baru','Review PI','Menunggu Data','Disetujui','Tidak Perlu Improvement','Selesai','Ditolak'];
   $('#main').innerHTML=`
     <div class="wiz-wrap">
       <div class="wiz-head">
@@ -1835,19 +1844,20 @@ function rImpReviewForm(){
         <h4>Form Keputusan &amp; Feedback Tim PI</h4>
         <div class="fg">
           <label>Keputusan Tindak Lanjut<select data-on-change="[&quot;setImprovementDecision&quot;,&quot;@value&quot;]">${opts([['Pending','Belum diputuskan'],['To Project','Proses menjadi Project Improvement'],['Suggestion Only','Tidak diproses (Berikan Saran Alternatif)']],x.decision)}</select></label>
-          <label>Status Review<select data-on-change="[&quot;setIDraftField&quot;,&quot;status&quot;,&quot;@value&quot;]">${opts(statusOptions.map(s=>[s,s]),x.status)}</select></label>
+          <label>Status Review<select data-on-change="[&quot;setImprovementStatus&quot;,&quot;@value&quot;]">${opts(statusOptions.map(s=>[s,s]),x.status)}</select></label>
           <label class="full">PIC Review Tim PI<input value="${esc(x.piOwner||ME)}" placeholder="Nama PIC PI yang meninjau" data-on-input="[&quot;setIDraftField&quot;,&quot;piOwner&quot;,&quot;@value&quot;]"></label>
           <label class="full">Feedback Analisa Tim PI *<textarea rows="3" placeholder="Tuliskan hasil analisa kelayakan oleh Tim PI..." data-on-input="[&quot;setIDraftField&quot;,&quot;piFeedback&quot;,&quot;@value&quot;]">${esc(x.piFeedback||'')}</textarea></label>
           ${x.decision==='Suggestion Only'?`
             <label class="full">Suggestion / Alternatif Solusi *<textarea rows="3" placeholder="Saran tindakan tanpa perlu membuka project baru..." data-on-input="[&quot;setIDraftField&quot;,&quot;piSuggestion&quot;,&quot;@value&quot;]">${esc(x.piSuggestion||'')}</textarea></label>
             <label class="full">Alasan Tidak Dilanjutkan sebagai Project *<textarea rows="2" placeholder="Alasan mengapa issue cukup diselesaikan dengan saran alternatif..." data-on-input="[&quot;setIDraftField&quot;,&quot;piReason&quot;,&quot;@value&quot;]">${esc(x.piReason||'')}</textarea></label>
           `:''}
+          ${x.status==='Ditolak'&&x.decision!=='Suggestion Only'?`<label class="full">Alasan penolakan *<textarea rows="2" placeholder="Jelaskan alasan usulan ditolak..." data-on-input="[&quot;setIDraftField&quot;,&quot;piReason&quot;,&quot;@value&quot;]">${esc(x.piReason||'')}</textarea></label>`:''}
           <label class="full">Action Plan / Langkah Berikutnya<textarea rows="2" placeholder="Rencana tindak lanjut yang perlu dilakukan..." data-on-input="[&quot;setIDraftField&quot;,&quot;piAction&quot;,&quot;@value&quot;]">${esc(x.piAction||'')}</textarea></label>
         </div>
       </div>
       <div class="wiz-foot">
         <button class="btn" data-on-click="${ea(["viewImprovement",x.id])}">Kembali ke Detail Output</button>
-        ${x.decision==='To Project'&&!x.projectId?`<button class="btn" style="border-color:var(--ok);color:var(--ok)" data-on-click="[&quot;promoteImprovement&quot;]">Simpan &amp; Konversi ke Project Baru</button>`:''}
+        ${x.decision==='To Project'&&x.status==='Disetujui'&&!x.projectId?`<button class="btn" style="border-color:var(--ok);color:var(--ok)" data-on-click="[&quot;promoteImprovement&quot;]">Simpan &amp; Buat Project PI</button>`:''}
         <button class="btn pri" data-on-click="[&quot;saveImprovement&quot;]">Simpan Keputusan PI</button>
       </div>
     </div>`;
@@ -1857,8 +1867,9 @@ async function saveImprovement(){
   const x=IDRAFT;if(!x)return;
   if(!canEditImprovement()&&!canReviewImprovement()){toast('Anda tidak memiliki akses untuk mengubah improvement ini.');return;}
   if(!x.title.trim()||!x.department.trim()||!x.issue.trim()||!x.background.trim()||!x.purpose.trim()||!x.goals.trim()){toast('Lengkapi judul, departemen, issue, background, purpose, dan goals.');return;}
+  if(canReviewImprovement()&&x.decision==='To Project')x.status='Disetujui';
   if(x.decision==='Suggestion Only'&&(!x.piReason.trim()||!x.piSuggestion.trim())){toast('Isi alasan dan saran alternatif untuk keputusan tanpa project.');return;}
-  if(x.status==='Tidak Perlu Improvement'&&!x.piReason.trim()){toast('Isi alasan tidak dilanjutkan sebagai improvement.');return;}
+  if(['Tidak Perlu Improvement','Ditolak'].includes(x.status)&&!x.piReason.trim()){toast('Isi alasan keputusan terlebih dahulu.');return;}
   const now=Math.max(Date.now(),(x.updatedAt||0)+1);x.updatedAt=now;x.updatedBy=ME;
   if(IISNEW){x.submittedBy=canReviewImprovement()?(x.submittedBy.trim()||ME):ME;x.submittedAt=now;}
   if(canReviewImprovement()&&IBASE&&VIEW==='imp_review_form'){
@@ -1870,19 +1881,50 @@ async function saveImprovement(){
   }
   const changedReview=canReviewImprovement()&&(!IBASE||['status','decision','piOwner','piFeedback','piSuggestion','piAction','piReason'].some(k=>String(IBASE[k]||'')!==String(x[k]||'')));
   if(changedReview)x.feedbackLog=(x.feedbackLog||[]).concat([{by:ME,at:now,status:x.status,decision:x.decision,feedback:x.piFeedback,suggestion:x.piSuggestion,action:x.piAction,reason:x.piReason}]);
+  const project=canReviewImprovement()&&x.status==='Disetujui'&&x.decision==='To Project'&&!x.projectId?createProjectFromImprovement(x):null;
   const index=DB.improvements.findIndex(v=>v.id===x.id);if(index<0)DB.improvements.push(x);else DB.improvements[index]=x;
-  closeM2();await persist();viewImprovement(x.id);toast('Improvement tersimpan');
+  closeM2();await persist();
+  if(project){viewP(project.id);toast('Improvement disetujui dan dibuat sebagai Project PI '+project.code);}
+  else{viewImprovement(x.id);toast('Improvement tersimpan');}
+}
+function createProjectFromImprovement(x){
+  const category=DB.settings.categories.find(c=>c.name.toLowerCase()==='improvement')?.name||DB.settings.categories[0]?.name||'Improvement';
+  const template=(DB.settings.templates||[]).find(t=>t.category===category)|| (DB.settings.templates||[]).find(t=>/improvement/i.test(t.name));
+  const now=Date.now(),project=normP({id:uid(),code:nextCode(),name:x.title,category,status:'Not Started',priority:'Medium',pic:(x.piOwner||ME||x.submittedBy||'').trim(),createdBy:ME,improvementId:x.id,area:x.department,start:fd(today()),end:fd(addDays(today(),60)),desc:'Issue: '+x.issue+'\n\nBackground: '+x.background+'\n\nPurpose: '+x.purpose+'\n\nGoals: '+x.goals+'\n\nPI feedback: '+(x.piFeedback||'-')+'\n\nPI action: '+(x.piAction||'-'),stages:template?buildStages(template.stages,fd(today())):[],updatedAt:now,updatedBy:ME,log:[{by:ME,t:now,items:['Project PI dibuat dari improvement '+x.id]}]});
+  applyAuto(project);DB.projects.push(project);x.projectId=project.id;x.updatedAt=Math.max(now,(x.updatedAt||0)+1);x.updatedBy=ME;x.feedbackLog=(x.feedbackLog||[]).concat([{by:ME,at:x.updatedAt,status:x.status,decision:x.decision,feedback:x.piFeedback,action:'Project PI dibuat: '+project.code}]);
+  return project;
 }
 async function promoteImprovement(){
   if(!canReviewImprovement()){toast('Akun ini tidak memiliki akses untuk meneruskan improvement ke project.');return;}
-  const x=IDRAFT;if(!x||x.decision!=='To Project'){toast('Pilih keputusan Lanjut ke Project terlebih dahulu.');return;}
+  const x=IDRAFT;if(!x||x.decision!=='To Project'||x.status!=='Disetujui'){toast('Simpan keputusan PI sebagai Disetujui terlebih dahulu.');return;}
   if(x.projectId){const p=byId(x.projectId);if(p)viewP(p.id);return;}
-  const category=DB.settings.categories.find(c=>c.name.toLowerCase()==='improvement')?.name||DB.settings.categories[0]?.name||'Improvement';
-  const template=(DB.settings.templates||[]).find(t=>t.category===category)|| (DB.settings.templates||[]).find(t=>/improvement/i.test(t.name));
-  const project=normP({id:uid(),code:nextCode(),name:x.title,category,status:'Not Started',priority:'Medium',pic:x.submittedBy||ME,area:x.department,start:fd(today()),end:fd(addDays(today(),60)),desc:'Issue: '+x.issue+'\n\nBackground: '+x.background+'\n\nPurpose: '+x.purpose+'\n\nGoals: '+x.goals+'\n\nPI feedback: '+(x.piFeedback||'-')+'\n\nPI action: '+(x.piAction||'-'),stages:template?buildStages(template.stages,fd(today())):[],updatedAt:Date.now(),updatedBy:ME,log:[{by:ME,t:Date.now(),items:['Project dibuat dari improvement '+x.id]}]});
-  applyAuto(project);DB.projects.push(project);x.projectId=project.id;x.status='Disetujui';x.updatedAt=Math.max(Date.now(),(x.updatedAt||0)+1);x.updatedBy=ME;x.feedbackLog=(x.feedbackLog||[]).concat([{by:ME,at:x.updatedAt,status:x.status,decision:'To Project',feedback:x.piFeedback,suggestion:x.piSuggestion,action:x.piAction,reason:x.piReason}]);
+  const project=createProjectFromImprovement(x);
   const improvementIndex=DB.improvements.findIndex(v=>v.id===x.id);if(improvementIndex>=0)DB.improvements[improvementIndex]=x;
   closeM2();await persist();viewP(project.id);toast('Improvement dilanjutkan menjadi '+project.code);
+}
+async function closeImprovement(id){
+  if(!canReviewImprovement()){toast('Hanya Tim PI yang dapat menutup improvement.');return;}
+  const x=(DB.improvements||[]).find(item=>item.id===id);if(!x)return;
+  if(!confirm('Tandai improvement "'+x.title+'" sebagai selesai? Riwayat akan tetap tersimpan.'))return;
+  const now=Math.max(Date.now(),(x.updatedAt||0)+1);x.status='Selesai';x.updatedAt=now;x.updatedBy=ME;
+  x.feedbackLog=(x.feedbackLog||[]).concat([{by:ME,at:now,status:x.status,decision:x.decision||'Pending',feedback:x.piFeedback||'',action:'Improvement request ditutup sebagai selesai'}]);
+  await persist();viewImprovement(id);toast('Improvement ditutup. Riwayat tetap tersimpan.');
+}
+function askRejectImprovement(id){
+  if(!canReviewImprovement()){toast('Hanya Tim PI yang dapat menolak improvement.');return;}
+  const x=(DB.improvements||[]).find(item=>item.id===id);if(!x)return;
+  const projectNote=x.projectId?'<div class="banner warn">Project yang sudah terbentuk tidak akan dihapus atau diubah.</div>':'';
+  $('#modal2').innerHTML=`<div class="ov"><div class="dlg sm"><div class="dh"><h3>Tolak Improvement</h3><button class="x" data-on-click="[&quot;closeM2&quot;]">✕</button></div><div class="db"><p>Anda akan menolak <b>${esc(x.title)}</b>. Riwayat keputusan tetap tersimpan.</p>${projectNote}<label>Alasan penolakan *<textarea id="improvement_reject_reason" rows="4" placeholder="Tuliskan alasan penolakan..."></textarea></label></div><div class="df"><button class="btn" data-on-click="[&quot;closeM2&quot;]">Batal</button><button class="btn bad" data-on-click="${ea(['rejectImprovement',id])}">Tolak usulan</button></div></div></div>`;
+  $('#improvement_reject_reason').focus();
+}
+async function rejectImprovement(id){
+  if(!canReviewImprovement()){toast('Hanya Tim PI yang dapat menolak improvement.');return;}
+  const x=(DB.improvements||[]).find(item=>item.id===id);if(!x)return;
+  const reason=$('#improvement_reject_reason').value;
+  if(!reason.trim()){toast('Alasan penolakan wajib diisi.');return;}
+  const now=Math.max(Date.now(),(x.updatedAt||0)+1);x.status='Ditolak';x.piReason=reason.trim();x.updatedAt=now;x.updatedBy=ME;
+  x.feedbackLog=(x.feedbackLog||[]).concat([{by:ME,at:now,status:x.status,decision:x.decision||'Pending',feedback:x.piFeedback||'',reason:x.piReason,action:'Improvement request ditolak'}]);
+  closeM2();await persist();viewImprovement(id);toast('Improvement ditolak. Riwayat tetap tersimpan.');
 }
 function printSaved(pid,oid){const p=byId(pid),o=p&&p.pos.find(x=>x.id===oid);if(o)openDoc(poHTML(o,p,true));}
 
@@ -2261,7 +2303,7 @@ function tInfo(){
   const sel=(l,k,opts,id)=>`<label>${l}<select ${id?'id="'+id+'"':''} data-on-change="${ea(['setDChange',k,'@value'])}">${opts.map(o=>`<option value="${esc(o)}" ${o===d[k]?'selected':''}>${esc(o)}</option>`).join('')}</select></label>`;
   return `${hasS&&(lockD||lockP)?`<div class="banner info" style="margin-bottom:12px"><span>Project ini memiliki <b>${d.stages.length} task/tahapan</b>. ${lockD?'Tanggal mulai & target mengikuti jadwal task. ':''}${lockP?'Total progres dihitung otomatis dari progres tiap task.':''}</span><button type="button" class="btn sm pri" data-on-click="[&quot;setWizStep&quot;,2]">Isi Progres per Task →</button></div>`:''}<div class="fg">${inp('Kode Project','code')}${inp('Nama Project *','name')}
     ${sel('Klasifikasi','category',DB.settings.categories.map(c=>c.name))}${sel('Prioritas','priority',['High','Medium','Low'])}
-    ${sel('Status','status',sts,'f_status')}${inp('PIC Utama','pic','text','list="plist"')}${inp('Area / Line','area')}<span></span>
+    ${sel('Status','status',sts,'f_status')}${inp('PIC Utama *','pic','text','list="plist" required')}${inp('Area / Line','area')}<span></span>
     ${inp('Tanggal Mulai *','start','date',lockD?'disabled':'')}${inp('Target Selesai *','end','date',lockD?'disabled':'')}
     <label class="full">Progres Keseluruhan (%) ${lockP?`<span class="muted small" style="font-weight:400">(otomatis dari ${d.stages.length} task — klik langkah 2 untuk mengubah progres per task)</span>`:''}<div class="prow"><input type="range" id="pr" min="0" max="100" value="${d.progress}" ${lockP?'disabled':''} data-on-input="[&quot;setProg&quot;,&quot;@value&quot;]"><input type="number" id="pn" min="0" max="100" value="${d.progress}" ${lockP?'disabled':''} data-on-input="[&quot;setProg&quot;,&quot;@value&quot;]" style="margin-top:0">${hasS?`<button type="button" class="btn sm" data-on-click="[&quot;setWizStep&quot;,2]">Atur Progres Task</button>`:''}</div></label>
     <label class="full">Deskripsi / Catatan Project<textarea rows="3" data-on-input="[&quot;setDescField&quot;,&quot;@value&quot;]">${esc(d.desc)}</textarea></label></div>
@@ -2402,6 +2444,7 @@ async function saveProject(){
   if(!canEdit()){toast('Akses Viewer hanya dapat melihat data');return;}
   const d=draft;
   if(!d.name.trim()){setWizStep(1);toast('Nama project wajib diisi');return;}
+  if(!String(d.pic||'').trim()){setWizStep(1);toast('PIC utama wajib diisi');return;}
   applyAuto(d);
   if(!d.start||!d.end){setWizStep(1);toast('Tanggal mulai dan target wajib diisi');return;}
   if(d.end<d.start){setWizStep(1);toast('Target selesai tidak boleh sebelum tanggal mulai');return;}

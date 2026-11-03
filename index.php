@@ -14,5 +14,5 @@ if ($html === false) {
     exit('Gagal memuat antarmuka aplikasi.');
 }
 
-$html = str_replace('src="/shared.js"', 'src="public/shared.js"', $html);
+$html = str_replace(['src="/shared.js"', 'src="/lib/i18n.js"', 'src="/app.js"'], ['src="public/shared.js"', 'src="public/lib/i18n.js"', 'src="public/app.js"'], $html);
 echo $html;

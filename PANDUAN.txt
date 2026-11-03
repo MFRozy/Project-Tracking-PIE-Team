@@ -30,7 +30,7 @@ Arahkan DocumentRoot web server HANYA ke direktori public/ (bukan root repositor
 ----------------------------------------------
 1. Aktifkan modul SSL (HTTPS port 443) pada Apache (Laragon/XAMPP) menggunakan sertifikat internal perusahaan.
 2. Setel COOKIE_SECURE=true pada file .env agar cookie sesi selalu dikirim melalui jalur terenkripsi.
-3. Masa berlaku sesi default adalah 12 jam (PT_SESSION_HOURS=12) dan panjang minimal PIN adalah 6 karakter.
+3. Masa berlaku sesi default adalah 12 jam (PT_SESSION_HOURS=12) dan panjang minimal PIN adalah 10 karakter.
 
 4. HAK AKSES PENGGUNA (RBAC)
 ----------------------------

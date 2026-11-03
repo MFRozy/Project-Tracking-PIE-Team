@@ -107,7 +107,7 @@ define('SESSION_LIFETIME', max(300, (int)env('PT_SESSION_HOURS', 12) * 3600));
 define('SESSION_IDLE_TIMEOUT', max(1, (int)env('PT_SESSION_IDLE_MINUTES', 30) * 60));
 define('TRUSTED_PROXIES', array_filter(array_map('trim', explode(',', (string)env('PT_TRUSTED_PROXIES', '')))));
 define('COOKIE_SECURE_MODE', (string)env('COOKIE_SECURE', 'auto'));
-define('PIN_MIN_LENGTH', max(6, (int)env('PT_PIN_MIN_LENGTH', 10)));
+define('PIN_MIN_LENGTH', max(10, (int)env('PT_PIN_MIN_LENGTH', 10)));
 define('ENABLE_APP_BACKUP', filter_var(env('PT_ENABLE_APP_BACKUP', false), FILTER_VALIDATE_BOOLEAN));
 define('MAX_UPLOAD_MB', max(1, (int)env('PT_MAX_UPLOAD_MB', 100)));
 define('MAX_UPLOAD_BYTES', MAX_UPLOAD_MB * 1024 * 1024);

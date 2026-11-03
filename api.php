@@ -684,7 +684,7 @@ if ($requestPath === '/api/sync' && $method === 'POST') {
                 if ($clientUpdatedAt > 0 && $clientUpdatedAt < (int)$existingOutput['updatedAt']) {
                     continue;
                 }
-                if (!canModifyProject($user, $row)) {
+                if (!canModifyProject($user, $row, $item)) {
                     $rejectedProjectAuth = true;
                     continue;
                 }
@@ -1051,12 +1051,12 @@ if (preg_match('#^/api/projects/([^/]+)$#', $requestPath, $matches) && $method =
             $pdo->rollBack();
             jsonResponse(404, ['error' => 'Project tidak ditemukan']);
         }
-        if (!canModifyProject($user, $existingRow)) {
+        $payloadInput = is_array($data['project'] ?? null) ? $data['project'] : $data;
+        if (!canModifyProject($user, $existingRow, $payloadInput)) {
             $pdo->rollBack();
             jsonResponse(403, ['error' => 'Anda hanya dapat mengubah project yang menjadi tanggung jawab (PIC) Anda']);
         }
 
-        $payloadInput = is_array($data['project'] ?? null) ? $data['project'] : $data;
         $payloadInput['id'] = $projectId;
         $projectData = normalizeProjectPayload($payloadInput, $existingRow, $user);
         $projectData['metadata']['updatedAt'] = (int)round(microtime(true) * 1000);

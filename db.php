@@ -6,7 +6,7 @@ require_once __DIR__ . '/config.php';
 
 const VALID_PROJECT_STATUSES = ['Not Started', 'On Progress', 'On Hold', 'Completed', 'Delayed'];
 const VALID_PROJECT_PRIORITIES = ['Low', 'Medium', 'High'];
-const VALID_IMPROVEMENT_STATUSES = ['Baru', 'Review PI', 'Menunggu Data', 'Disetujui', 'Tidak Perlu Improvement'];
+const VALID_IMPROVEMENT_STATUSES = ['Baru', 'Review PI', 'Menunggu Data', 'Disetujui', 'Tidak Perlu Improvement', 'Selesai', 'Ditolak'];
 const VALID_IMPROVEMENT_DECISIONS = ['Pending', 'To Project', 'Suggestion Only'];
 
 const ALLOWED_UPLOAD_MIMES = [
@@ -768,9 +768,14 @@ function normalizeProjectPayload(array $data, ?array $existingRow = null, ?array
     $existingPic = trim((string)($existingRow['pic'] ?? ''));
     $existingPicLower = strtolower($existingPic);
     $existingCreatedBy = is_array($existingMeta) ? strtolower(trim((string)($existingMeta['createdBy'] ?? ''))) : '';
+    $claimsUnassignedProject = $existingRow !== null
+        && $existingPicLower === ''
+        && $actorNameLower !== ''
+        && strtolower(trim((string)($data['pic'] ?? ''))) === $actorNameLower;
     $isOwnerOrAdmin = ($actorRole === 'admin')
         || ($existingPicLower !== '' && $existingPicLower === $actorNameLower)
-        || ($existingCreatedBy !== '' && $existingCreatedBy === $actorNameLower);
+        || ($existingCreatedBy !== '' && $existingCreatedBy === $actorNameLower)
+        || $claimsUnassignedProject;
 
     // P0-3: Only admin or current PIC may change PIC. An update that sets an empty pic is rejected with 400.
     if ($existingRow !== null) {
@@ -858,7 +863,7 @@ function normalizeProjectPayload(array $data, ?array $existingRow = null, ?array
     ];
 }
 
-function canModifyProject(array $user, ?array $existingRow): bool
+function canModifyProject(array $user, ?array $existingRow, ?array $incoming = null): bool
 {
     $role = (string)($user['role'] ?? '');
     if ($role === 'admin') {
@@ -877,8 +882,10 @@ function canModifyProject(array $user, ?array $existingRow): bool
     }
 
     $pic = strtolower(trim((string)($existingRow['pic'] ?? '')));
-    // P0-3: Empty PIC (pic === '') means admin only. Only matching non-empty PIC can modify.
     if ($pic !== '' && $pic === $userName) {
+        return true;
+    }
+    if ($pic === '' && strtolower(trim((string)($incoming['pic'] ?? ''))) === $userName) {
         return true;
     }
 

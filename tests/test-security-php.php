@@ -208,39 +208,39 @@ try {
     $r = $admin->request('POST', '/api/setup', ['name' => 'Andi', 'pin' => '123456'], [], false, false);
     check($r['status'] === 403, 'POST tanpa header X-PT ditolak (403)');
 
-    $r = $admin->request('POST', '/api/setup', ['name' => 'Andi', 'pin' => '1234']);
-    check($r['status'] === 400, 'PIN kurang dari 6 karakter ditolak sesuai kebijakan keamanan');
+    $r = $admin->request('POST', '/api/setup', ['name' => 'Andi', 'pin' => '123456789']);
+    check($r['status'] === 400, 'PIN kurang dari 10 karakter ditolak sesuai kebijakan keamanan');
 
-    $r = $admin->request('POST', '/api/setup', ['name' => 'Andi', 'pin' => 'Admin#123']);
+    $r = $admin->request('POST', '/api/setup', ['name' => 'Andi', 'pin' => 'Admin#12345']);
     check($r['status'] === 200 && ($r['json']['user']['role'] ?? '') === 'admin' && $admin->csrfToken !== '', 'Setup admin pertama berhasil & menerima CSRF token');
 
     // Uji pengiriman POST terautentikasi tanpa CSRF token -> wajib ditolak 403
-    $r = $admin->request('POST', '/api/users', ['name' => 'Budi', 'pin' => 'Budi#123', 'role' => 'user'], [], true, false);
+    $r = $admin->request('POST', '/api/users', ['name' => 'Budi', 'pin' => 'Budi#12345', 'role' => 'user'], [], true, false);
     check($r['status'] === 403, 'Endpoint perubahan tanpa X-CSRF-Token ditolak (403 CSRF Protection)');
 
     // Buat akun Budi (user), Citra (user), Dina (contributor), Vino (viewer)
-    $r = $admin->request('POST', '/api/users', ['name' => 'Budi', 'pin' => 'Budi#123', 'role' => 'user']);
+    $r = $admin->request('POST', '/api/users', ['name' => 'Budi', 'pin' => 'Budi#12345', 'role' => 'user']);
     check($r['status'] === 200, 'Admin membuat akun User (Budi) dengan CSRF token valid');
-    $admin->request('POST', '/api/users', ['name' => 'Citra', 'pin' => 'Citra#123', 'role' => 'user']);
-    $admin->request('POST', '/api/users', ['name' => 'Dina', 'pin' => 'Dina#123', 'role' => 'contributor']);
-    $admin->request('POST', '/api/users', ['name' => 'Vino', 'pin' => 'Vino#123', 'role' => 'viewer']);
+    $admin->request('POST', '/api/users', ['name' => 'Citra', 'pin' => 'Citra#12345', 'role' => 'user']);
+    $admin->request('POST', '/api/users', ['name' => 'Dina', 'pin' => 'Dina#12345', 'role' => 'contributor']);
+    $admin->request('POST', '/api/users', ['name' => 'Vino', 'pin' => 'Vino#12345', 'role' => 'viewer']);
 
     // Uji brute-force lock
     $attacker = new TestHttpClient($baseUrl);
     for ($i = 0; $i < 5; $i++) {
         $attacker->request('POST', '/api/login', ['name' => 'Budi', 'pin' => 'Salah' . $i]);
     }
-    $r = $attacker->request('POST', '/api/login', ['name' => 'Budi', 'pin' => 'Budi#123']);
+    $r = $attacker->request('POST', '/api/login', ['name' => 'Budi', 'pin' => 'Budi#12345']);
     check($r['status'] === 429, 'Brute-force: akun terkunci 5 menit setelah 5x salah PIN');
 
     // Reset lock untuk pengujian berikutnya
     $adminPdo->exec("DELETE FROM `{$testDbName}`.login_attempts");
 
-    $r = $userB->request('POST', '/api/login', ['name' => 'Budi', 'pin' => 'Budi#123']);
+    $r = $userB->request('POST', '/api/login', ['name' => 'Budi', 'pin' => 'Budi#12345']);
     check($r['status'] === 200 && $userB->csrfToken !== '', 'Login Budi berhasil');
-    $userC->request('POST', '/api/login', ['name' => 'Citra', 'pin' => 'Citra#123']);
-    $contrib->request('POST', '/api/login', ['name' => 'Dina', 'pin' => 'Dina#123']);
-    $viewer->request('POST', '/api/login', ['name' => 'Vino', 'pin' => 'Vino#123']);
+    $userC->request('POST', '/api/login', ['name' => 'Citra', 'pin' => 'Citra#12345']);
+    $contrib->request('POST', '/api/login', ['name' => 'Dina', 'pin' => 'Dina#12345']);
+    $viewer->request('POST', '/api/login', ['name' => 'Vino', 'pin' => 'Vino#12345']);
 
     echo "=== 2. P0: File Upload Hardening & Proteksi Eksekusi ===\n";
     $r = $userB->request('POST', '/api/files', 'dummy php content', [

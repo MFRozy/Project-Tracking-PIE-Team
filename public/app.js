@@ -1007,6 +1007,8 @@ let DB=normDB({}),ME='',USER=null;
 let VIEW='dash',PREV_VIEW='dash',F={cat:'',status:'',pic:'',q:''},SORT={k:'end',d:1},RPERIOD='day',PRIORITY_COLLAPSED=false;
 let GS='month',GGROUP=true,GJUMP=true;
 let REV=-1,KNOWN={},KNOWNI={},KDEL={},KSET=-1,SSE=null,ONLINE=[],SYNCERR=null,lastSync=null,PUSHING=false,AGAIN=false,RETRY=null,SKEW=0;
+let ATT_UNSAVED=false;
+window.addEventListener('beforeunload',e=>{if(ATT_UNSAVED&&VIEW==='project_form'){e.preventDefault();e.returnValue='';}});
 let draft=null,baseAt=0,isNew=false,TAB='info',WIZ_STEP=1,DETAIL_TAB='overview',CD=[],IDRAFT=null,IBASE=null,IISNEW=false,IMP_WIZ_STEP=1,IMPFILTER='active',IMPQ='',PROJECT_READ_ONLY=false;
 
 /* ================= data ================= */
@@ -1189,6 +1191,7 @@ function toast(m){const t=$('#toast');t.textContent=m;t.style.display='block';cl
 function badge(st){return `<span class="badge" style="background:${ST_COLOR[st]}">${esc(st)}</span>`;}
 function chip(c){return `<span class="chip" style="background:${catColor(c)}">${esc(c)}</span>`;}
 function go(v){
+  if(ATT_UNSAVED&&VIEW==='project_form'&&v!==VIEW){if(!confirm('Lampiran/dokumentasi yang baru diunggah belum tersimpan ke project. Keluar tanpa menyimpan? (File sudah ada di server, tapi tidak akan tertaut ke project)'))return;ATT_UNSAVED=false;}
   if(['dash','gantt','my_projects','list','budget','improvements','imp_review'].includes(VIEW))PREV_VIEW=VIEW;
   VIEW=v;
   if(v==='gantt')GJUMP=true;
@@ -1941,7 +1944,7 @@ function viewP(id,tab){
   if(!['project_detail','project_form'].includes(VIEW))PREV_VIEW=VIEW;
   PROJECT_READ_ONLY=!canModifyProj(p);
   draft=JSON.parse(JSON.stringify(p));
-  baseAt=p.updatedAt;isNew=false;
+  baseAt=p.updatedAt;isNew=false;ATT_UNSAVED=false;
   DETAIL_TAB=normDetailTab(tab);
   TAB=tab||'info';SBASE='';
   VIEW='project_detail';
@@ -1953,7 +1956,7 @@ function editP(id,step){
   if(!['project_detail','project_form'].includes(VIEW))PREV_VIEW=VIEW;
   PROJECT_READ_ONLY=false;
   draft=JSON.parse(JSON.stringify(p));
-  baseAt=p.updatedAt;isNew=false;
+  baseAt=p.updatedAt;isNew=false;ATT_UNSAVED=false;
   WIZ_STEP=step||1;
   TAB=(['info','stage','budget','ms','info'])[WIZ_STEP-1]||'info';
   SBASE='';
@@ -1965,7 +1968,7 @@ function newP(cat){
   if(!['project_detail','project_form'].includes(VIEW))PREV_VIEW=VIEW;
   PROJECT_READ_ONLY=false;
   draft=normP({id:uid(),code:nextCode(),category:cat||DB.settings.categories[0].name,start:fd(today()),end:fd(addDays(today(),60)),pic:ME,createdBy:ME});
-  baseAt=0;isNew=true;
+  baseAt=0;isNew=true;ATT_UNSAVED=false;
   WIZ_STEP=1;TAB='info';SBASE='';
   VIEW='project_form';
   render();
@@ -2473,7 +2476,7 @@ async function saveProject(){
   d.updatedAt=Math.max(Date.now(),(cur?cur.updatedAt:0)+1);d.updatedBy=ME||'-';
   if(cur)DB.projects[DB.projects.indexOf(cur)]=d;else DB.projects.push(d);
   if(!DB.settings.categories.some(c=>c.name===d.category))DB.settings.categories.push({name:d.category,color:PALETTE[DB.settings.categories.length%PALETTE.length]});
-  closeModal();await persist();viewP(d.id);
+  ATT_UNSAVED=false;closeModal();await persist();viewP(d.id);
   const dp=dupPOs();
   toast(dp.length?'Tersimpan, tetapi ada nomor PO ganda: '+dp.join(', ')+'. Perbaiki nomor PO tersebut.':(renum?'Tersimpan. Nomor PO diganti karena sudah dipakai: '+renum:'Tersimpan'));
 }
@@ -2564,7 +2567,7 @@ function drawStageDocsViewer(){
 }
 function drawStageDocs(){
   const stage=draft&&draft.stages.find(s=>s.id===STAGE_DOC_ID);if(!stage){closeStageDocs();return;}
-  const files=stageDocsMarkup(stage,true);
+  const files=(ATT_UNSAVED&&VIEW==='project_form'?'<div class="small" style="color:#f59e0b;margin-bottom:8px">⚠ Lampiran belum tersimpan ke project. Tutup dialog ini lalu tekan <b>Simpan project</b>.</div>':'')+stageDocsMarkup(stage,true);
   const upload=canEdit()?(isNew?'<div class="small muted">Simpan project terlebih dahulu sebelum mengunggah dokumentasi.</div>':'<label class="btn sm pri stage-doc-upload">Tambah file<input type="file" accept="image/*,video/mp4,video/webm,video/quicktime,.m4v,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.csv,.txt" multiple data-on-change="[&quot;uploadStageDocs&quot;,&quot;@el&quot;]"></label>'):'';
   const linkForm=canEdit()?`<div class="fg" style="margin-top:14px"><label>Nama link (opsional)<input id="stage_doc_link_title" placeholder="Contoh: Report FAT"></label><label class="full">Tempel link OneDrive / SharePoint<input id="stage_doc_link_url" type="url" placeholder="https://..." data-on-keydown="[&quot;handleDocLinkKey&quot;]"></label><div><button class="btn sm" data-on-click="[&quot;addStageDocLink&quot;]">+ Tambah link</button></div></div>`:'';
   $('#modal2').innerHTML=`<div class="ov"><div class="dlg wide"><div class="dh"><h3>Dokumentasi · ${esc(stage.name||'Stage')}</h3><button class="x" data-on-click="[&quot;closeStageDocs&quot;]">✕</button></div><div class="db"><div style="display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin-bottom:12px">${upload}<span class="small muted">Foto, video, dan dokumen · Maksimal 100 MB per file</span></div><div class="stage-doc-list">${files||'<div class="empty">Belum ada dokumentasi untuk stage ini.</div>'}</div><h4 style="margin:18px 0 0">Link dokumentasi</h4>${linkForm}</div><div class="df"><button class="btn" data-on-click="[&quot;closeStageDocs&quot;]">Tutup</button></div></div></div>`;
@@ -2575,6 +2578,7 @@ async function syncStageDocsIfDetail(){
     const i=DB.projects.findIndex(x=>x.id===draft.id);
     if(i>=0){DB.projects[i]=clone(draft);await persist();render();}
   }else if(VIEW==='project_form'){
+    ATT_UNSAVED=true;toast('Perubahan lampiran BELUM tersimpan ke project. Tekan Simpan project agar tersimpan.');
     drawTab();
   }
 }

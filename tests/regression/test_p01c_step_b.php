@@ -17,7 +17,7 @@ $client = $env->client();
 $resp = $client->get('/index.php');
 $csp = $resp['headers']['content-security-policy'] ?? '';
 
-$expectedCsp = "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'";
+$expectedCsp = "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'";
 
 T::check($csp !== '', 'CSP header is present on index.php response', $resp['headers']);
 T::check($csp === $expectedCsp, 'CSP matches the exact required policy without unsafe-inline for scripts', $csp);

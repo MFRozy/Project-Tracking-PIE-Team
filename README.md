@@ -47,6 +47,9 @@ Aplikasi manajemen project dan issue improvement lintas departemen untuk PIE Tea
    - Request berstatus `Selesai` atau `Ditolak` diarsipkan dari daftar aktif, sementara riwayat feedback dan audit tetap tersedia melalui filter arsip.
    - PIC wajib diisi saat membuat project. Project lama tanpa PIC dapat diklaim oleh user dengan mengisi namanya sendiri sebagai PIC.
    - Terjemahan antarmuka dipisahkan ke `public/lib/i18n.js` dan digunakan bersama penerjemah yang sudah ada di frontend.
+7. **Pratinjau Dokumentasi Stage**:
+   - PDF ditampilkan langsung di kartu dokumentasi; DOCX dirender secara lokal di browser tanpa mengirim dokumen ke layanan eksternal. File Word lama berformat `.doc` perlu dikonversi ke `.docx` atau PDF.
+   - Untuk membangun ulang renderer lokal DOCX setelah dependency berubah, jalankan `npm ci` lalu `npm run build:docx-preview`. Deployment runtime tetap memakai file statis di `public/lib/` dan tidak membutuhkan Node.js.
 
 ## Persiapan & Deployment
 

@@ -17,6 +17,7 @@ config.local.php
 # Legacy Node.js data & internal source documents (jangan pernah di-commit ke repo)
 /data/
 /legacy/
+/node_modules/
 *.xlsx
 *.xls
 legacy-projects-import.json

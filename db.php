@@ -571,12 +571,13 @@ function attachmentSpec(): array
     return [
         'id' => ['t' => 'id'], 'name' => ['t' => 'text', 'max' => 255], 'file' => ['t' => 'file'], 'size' => ['t' => 'num', 'hi' => 1e12],
         'type' => ['t' => 'mime'], 'uploadedAt' => ['t' => 'int'], 'uploadedBy' => ['t' => 'text', 'max' => 100],
+        'description' => ['t' => 'mtext', 'max' => 2000],
     ];
 }
 
 function linkSpec(): array
 {
-    return ['id' => ['t' => 'id'], 'title' => ['t' => 'text', 'max' => 255], 'url' => ['t' => 'url']];
+    return ['id' => ['t' => 'id'], 'title' => ['t' => 'text', 'max' => 255], 'url' => ['t' => 'url'], 'description' => ['t' => 'mtext', 'max' => 2000]];
 }
 
 function nestedProjectSpecs(): array

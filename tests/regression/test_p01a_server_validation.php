@@ -47,8 +47,9 @@ function p01_project(string $id): array
             'attachments' => [[
                 'id' => 'xid-a1', 'name' => 'bukti.pdf', 'file' => 'PRJ-001_mv0t4qjc_bbc3fe_bukti.pdf', 'size' => 12,
                 'type' => 'application/pdf', 'uploadedAt' => 1767225600000, 'uploadedBy' => 't_user1',
+                'description' => 'Bukti hasil FAT sebelum perbaikan',
             ]],
-            'docLinks' => [['id' => 'xid-d1', 'title' => 'Doc', 'url' => 'https://example.com/doc']],
+            'docLinks' => [['id' => 'xid-d1', 'title' => 'Doc', 'url' => 'https://example.com/doc', 'description' => 'Laporan verifikasi lengkap']],
         ]],
         'pos' => [[
             'id' => 'xid-po1', 'no' => '001/PO/PI/I/2026', 'date' => '2026-01-05', 'qid' => 'xid-q1', 'vendor' => 'V1', 'currency' => 'USD',
@@ -182,7 +183,8 @@ $textPaths = [
     'name', 'code', 'category', 'area', 'vendor', 'po', 'desc',
     'quotations.0.vendor', 'quotations.0.no', 'quotations.0.note', 'quotations.0.fileName',
     'milestones.0.name',
-    'stages.0.name', 'stages.0.pic', 'stages.0.note', 'stages.0.attachments.0.name', 'stages.0.attachments.0.uploadedBy', 'stages.0.docLinks.0.title',
+    'stages.0.name', 'stages.0.pic', 'stages.0.note', 'stages.0.attachments.0.name', 'stages.0.attachments.0.uploadedBy',
+    'stages.0.attachments.0.description', 'stages.0.docLinks.0.title', 'stages.0.docLinks.0.description',
     'pos.0.no', 'pos.0.vendor', 'pos.0.addr', 'pos.0.attn', 'pos.0.qno', 'pos.0.subject', 'pos.0.terms', 'pos.0.delivery', 'pos.0.note', 'pos.0.by',
     'pos.0.shipName', 'pos.0.shipAddr', 'pos.0.shipTel', 'pos.0.shipAttn', 'pos.0.leadTime', 'pos.0.tel', 'pos.0.email',
     'pos.0.items.0.desc', 'pos.0.items.0.unit',

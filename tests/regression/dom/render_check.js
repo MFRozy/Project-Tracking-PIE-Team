@@ -108,6 +108,8 @@ const ctx = {
     innerWidth: 1280, innerHeight: 800, devicePixelRatio: 1,
 };
 ctx.window = ctx; ctx.self = ctx; ctx.globalThis = ctx; ctx.top = ctx; ctx.parent = ctx;
+ctx.__getCaptured = () => captured;
+ctx.__resetCaptured = () => { captured = []; };
 vm.createContext(ctx);
 
 // ---------- load the real scripts in page order ----------
@@ -176,6 +178,54 @@ const roles = [['t_admin', 'admin'], ['t_user1', 'user'], ['t_viewer', 'viewer']
 (async () => {
     await sleep();
     ctx.__fx = fixture;
+    try {
+        const dateChecks = run(`(()=>{
+            const previous={DB,DASH_PERIOD,DASH_START,DASH_END,F};
+            DB={projects:[
+                {id:'spans-period',name:'Spans period',category:'',pic:'',status:'On Progress',progress:20,start:'2026-03-15',end:'2026-05-01',quotations:[],pos:[],stages:[]},
+                {id:'within-period',name:'Within period',category:'',pic:'',status:'On Progress',progress:40,start:'2026-04-10',end:'2026-04-20',quotations:[],pos:[],stages:[]},
+                {id:'outside-period',name:'Outside period',category:'',pic:'',status:'On Progress',progress:10,start:'2026-05-01',end:'2026-05-31',quotations:[],pos:[],stages:[]},
+                {id:'missing-dates',name:'Missing dates',category:'',pic:'',status:'On Progress',progress:0,start:'',end:'',quotations:[],pos:[],stages:[]}
+            ]};
+            F={cat:'',status:'',pic:'',q:''};
+            DASH_PERIOD='custom';DASH_START='2026-04-01';DASH_END='2026-04-30';
+            const overlap=dashboardProjects(true).map(p=>p.id).sort().join(',');
+            DASH_START='2026-05-01';DASH_END='2026-04-30';
+            const reversed=dashboardProjects(true).length;
+            DASH_PERIOD='all';
+            const all=dashboardProjects(true).length;
+            DB=previous.DB;DASH_PERIOD=previous.DASH_PERIOD;DASH_START=previous.DASH_START;DASH_END=previous.DASH_END;F=previous.F;
+            return {overlap:overlap,reversed:reversed,all:all};
+        })()`);
+        check(dateChecks.overlap === 'spans-period,within-period', 'dashboard date filter includes overlapping project schedules only');
+        check(dateChecks.reversed === 0, 'dashboard date filter rejects reversed custom ranges');
+        check(dateChecks.all === 4, 'dashboard all-dates selection preserves all projects');
+    } catch (e) {
+        check(false, 'dashboard date filter behavior', String(e && e.stack || e).slice(0, 400));
+    }
+        const originalApi = ctx.api;
+        try {
+            ctx.api = async () => ({ name: 'proof.png', size: 1, mime_type: 'image/png' });
+            run(`DB=normDB(__fx);ME='t_admin';USER={name:'t_admin',role:'admin'};draft=structuredClone(DB.projects[0]);STAGE_DOC_ID=draft.stages[0].id;VIEW='project_form';isNew=false;ATT_UNSAVED=false;`);
+            await run(`uploadStageDocs({files:[{name:'proof.png',size:1,type:'image/png'}],value:''})`);
+            const uploadState = run(`(()=>{const stage=draft.stages.find(s=>s.id===STAGE_DOC_ID);return {file:stage.attachments[stage.attachments.length-1],unsaved:ATT_UNSAVED};})()`);
+            const uploadedWithoutDescription = uploadState.file && uploadState.file.name === 'proof.png' && uploadState.file.description === '' && uploadState.unsaved;
+            if (uploadedWithoutDescription) {
+                run(`setStageDocDescription('file',${JSON.stringify(uploadState.file.id)},'Deskripsi ditambahkan setelah unggah')`);
+                await run(`saveStageDocDescription('file',${JSON.stringify(uploadState.file.id)})`);
+            }
+            const savedDescription = run(`(()=>{const stage=draft.stages.find(s=>s.id===STAGE_DOC_ID);return stage.attachments.find(f=>f.id===${JSON.stringify(uploadState.file && uploadState.file.id)}).description;})()`);
+            check(uploadedWithoutDescription && savedDescription === 'Deskripsi ditambahkan setelah unggah',
+                'stage file can be uploaded first and described afterward');
+        } catch (e) {
+            check(false, 'stage file upload can precede its description', String(e && e.stack || e).slice(0, 400));
+        } finally {
+            ctx.api = originalApi;
+            run(`DB=normDB(__fx);draft=null;STAGE_DOC_ID='';VIEW='dash';isNew=false;ATT_UNSAVED=false`);
+        }
+        safe('custom date range controls', `DB=normDB(__fx);ME='t_admin';USER={name:'t_admin',role:'admin'};DASH_PERIOD='custom';DASH_START='2026-04-01';DASH_END='2026-04-30';VIEW='dash';render()`);
+    harvest('dashboard:custom-date-controls');
+    safe('reset dashboard date range', `DASH_PERIOD='all';DASH_START='';DASH_END='';DB=normDB(__fx)`);
     for (const [name, role] of roles) {
         const w = role;
         safe('state ' + role, `DB=normDB(__fx);ME=${JSON.stringify(name)};USER={name:${JSON.stringify(name)},role:${JSON.stringify(role)}};VIEW='dash';`);
@@ -186,6 +236,12 @@ const roles = [['t_admin', 'admin'], ['t_user1', 'user'], ['t_viewer', 'viewer']
         if ((fixture.projects || []).length) {
             safe(w + ' project progress modal', `openProjectProgress(${JSON.stringify(fixture.projects[0].id)})`);
             harvest(w + ':project-progress-modal');
+            if ((fixture.projects[0].stages || []).length) {
+                safe(w + ' stage documentation viewer', `viewStageDocs(${JSON.stringify(fixture.projects[0].id)},${JSON.stringify(fixture.projects[0].stages[0].id)})`);
+                harvest(w + ':stage-documentation-viewer');
+                    safe(w + ' expandable project stage', `toggleProgressStage(${JSON.stringify(fixture.projects[0].id)},${JSON.stringify(fixture.projects[0].stages[0].id)})`);
+                    harvest(w + ':project-progress-expanded-stage');
+                }
             safe(w + ' dashboard status modal', `openProjectStatus(${JSON.stringify(fixture.projects[0].status)})`);
             harvest(w + ':dashboard-status-modal');
         }
@@ -295,19 +351,88 @@ const roles = [['t_admin', 'admin'], ['t_user1', 'user'], ['t_viewer', 'viewer']
         'optional PO and secondary details stay out of the compact project list'
     );
     check(projectListView.includes('openProjectProgress'), 'project progress control opens stage details on demand');
+    const projectStageViews = allHtml.filter((h) => h.where.includes(':detail:') && h.where.endsWith(':stage')).map((h) => h.html).join('\n');
+    check(
+        projectStageViews.includes('project-stage-card')
+            && projectStageViews.includes('project-stage-date-fields')
+            && projectStageViews.includes('Lihat keterangan'),
+        'project stage details use responsive cards with actual dates and documentation controls'
+    );
     const progressModals = allHtml.filter((h) => h.where.endsWith(':project-progress-modal')).map((h) => h.html).join('\n');
     check(
         progressModals.includes('progress-stage-list')
             && progressModals.includes('Progress Project')
-            && progressModals.includes('Catatan:')
-            && progressModals.includes('Dokumentasi')
-            && progressModals.includes('bukti.pdf'),
-        'progress modal renders project status, notes and stage documentation'
+            && progressModals.includes('Buka detail & dokumentasi'),
+        'progress modal presents expandable project stage cards'
+    );
+    const stageDocViewers = allHtml.filter((h) => h.where.endsWith(':stage-documentation-viewer')).map((h) => h.html).join('\n');
+    check(
+        stageDocViewers.includes('stage-doc-purpose')
+            && stageDocViewers.includes('Keterangan / kondisi')
+            && stageDocViewers.includes('bukti.pdf')
+            && stageDocViewers.includes('stage-doc-rich')
+            && stageDocViewers.includes('Unduh'),
+        'stage documentation popup shows clear media cards and download controls'
+    );
+    const expandedStages = allHtml.filter((h) => h.where.endsWith(':project-progress-expanded-stage')).map((h) => h.html).join('\n');
+    check(
+        expandedStages.includes('Dokumentasi &amp; kondisi')
+            && expandedStages.includes('stage-doc-rich')
+            && expandedStages.includes('Unduh'),
+        'expanded project stage contains inline documentation cards and media previews'
+    );
+    const mediaState = run(`(()=>{const stage={id:'media-stage',name:'Stage media',attachments:[{id:'media-image',name:'proof.png',file:'proof.png',description:'Foto hasil pemeriksaan'},{id:'media-video',name:'proof.mp4',file:'proof.mp4',description:'Video hasil pemeriksaan'},{id:'media-pdf',name:'report.pdf',file:'report.pdf',description:'Laporan PDF'},{id:'media-docx',name:'report.docx',file:'report.docx',description:'Laporan Word'}],docLinks:[]};const project={id:'media-project',code:'TEST',name:'Media test',category:'Improvement',pic:'t_user1',status:'On Progress',progress:50,start:'2026-01-01',end:'2026-01-31',stages:[stage]};DB=normDB({projects:[project]});openProjectProgress(project.id);toggleProgressStage(project.id,stage.id);const expanded=$('#modal2').innerHTML;__resetCaptured();openStageMediaViewer(project.id,stage.id,'media-image');const imageViewer=__getCaptured().filter(x=>x.label==='#modal2').map(x=>x.html).join('');__resetCaptured();zoomStageMedia(.25);const zoom=STAGE_MEDIA_VIEW.zoom;closeStageMediaViewer();openStageMediaViewer(project.id,stage.id,'media-video');const videoViewer=__getCaptured().filter(x=>x.label==='#modal2').map(x=>x.html).join('');__resetCaptured();closeM2();DB=normDB(__fx);return {expanded,imageViewer,videoViewer,zoom};})()`);
+    check(
+        mediaState.expanded.includes('stage-doc-image-open')
+            && mediaState.expanded.includes('stage-doc-video')
+            && mediaState.expanded.includes('stage-doc-speed')
+            && mediaState.expanded.includes('class="stage-pdf-preview"')
+            && mediaState.expanded.includes('data-pdf-src=')
+            && mediaState.expanded.includes('stage-docx-preview')
+            && mediaState.expanded.includes('data-docx-src='),
+        'inline stage cards render image, video, scrollable PDF and local DOCX previews'
+    );
+    check(
+        mediaState.imageViewer.includes('stage-media-image')
+            && mediaState.imageViewer.includes('zoomStageMedia')
+            && mediaState.imageViewer.includes('Unduh')
+            && mediaState.zoom === 1.25,
+        'image viewer supports in-app zoom and download',
+        { imageViewer: mediaState.imageViewer.slice(0, 500), zoom: mediaState.zoom }
+    );
+    check(
+        mediaState.videoViewer.includes('stage-media-player')
+            && mediaState.videoViewer.includes('setStageVideoSpeed')
+            && mediaState.videoViewer.includes('Unduh'),
+        'video viewer supports native playback, speed selection and download',
+        { videoViewer: mediaState.videoViewer.slice(0, 500) }
+    );
+    const stageEditor = allHtml.filter((h) => h.where.includes(':edit:') && h.where.endsWith(':2')).map((h) => h.html).join('\n');
+    check(
+        stageEditor.includes('stage-manage-list')
+            && !stageEditor.includes('class="stt"'),
+        'manage stage renders responsive cards instead of a horizontally scrolling table'
+    );
+    const stageDocEditors = allHtml.filter((h) => h.where.includes(':stage-docs-edit:')).map((h) => h.html).join('\n');
+    check(
+        stageDocEditors.includes('stage_doc_description')
+            && stageDocEditors.includes('ditambahkan pada kartu file setelah unggah')
+            && stageDocEditors.includes('stage_doc_link_description')
+            && stageDocEditors.includes('Simpan keterangan'),
+        'manage stage documentation editor collects and updates per-document explanations'
     );
     const statusModals = allHtml.filter((h) => h.where.endsWith(':dashboard-status-modal')).map((h) => h.html).join('\n');
     check(statusModals.includes('dashboard-status-list') && statusModals.includes('openProjectProgress'), 'dashboard status opens a project list that leads to actual progress details');
     const dashboardView = allHtml.filter((h) => h.where.endsWith(':view:dash')).map((h) => h.html).join('\n');
     check(dashboardView.indexOf('dashboard-progress-board') >= 0, 'dashboard highlights the progress board');
+    const customDateControls = allHtml.filter((h) => h.where === 'dashboard:custom-date-controls').map((h) => h.html).join('\n');
+    check(
+        customDateControls.includes('dashboard-date-toolbar')
+            && customDateControls.includes('type="date"')
+            && customDateControls.includes('Dari tanggal')
+            && customDateControls.includes('Sampai tanggal'),
+        'custom dashboard period renders date controls in the compact filter toolbar'
+    );
     const budgetView = allHtml.filter((h) => h.where.endsWith(':view:budget')).map((h) => h.html).join('\n');
     check(budgetView.includes('q-project-details'), 'quotation list is grouped into project disclosure panels');
     check(!budgetView.includes('Budget vs Komitmen per Project'), 'budget vs committed chart is hidden from the procurement page');

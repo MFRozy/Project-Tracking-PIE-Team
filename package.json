@@ -1,0 +1,13 @@
+{
+  "private": true,
+  "scripts": {
+    "build:docx-preview": "node scripts/build-docx-preview.mjs"
+  },
+  "dependencies": {
+    "docx-preview": "0.4.1",
+    "pdfjs-dist": "^5.4.624"
+  },
+  "devDependencies": {
+    "esbuild": "0.28.2"
+  }
+}

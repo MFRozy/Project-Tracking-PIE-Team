@@ -168,6 +168,19 @@ const LANG_TEXT={
   'Hari ini':{en:'Today',ko:'오늘'},
   'Minggu ini':{en:'This week',ko:'이번 주'},
   'Bulan ini':{en:'This month',ko:'이번 달'},
+  'Semua tanggal':{en:'All dates',ko:'전체 날짜'},
+  'Semua tanggal project':{en:'All project dates',ko:'전체 프로젝트 날짜'},
+  'Kuartal ini':{en:'This quarter',ko:'이번 분기'},
+  'Tahun ini':{en:'This year',ko:'올해'},
+  'Rentang kustom':{en:'Custom range',ko:'사용자 지정 기간'},
+  'Filter periode project':{en:'Project date filter',ko:'프로젝트 기간 필터'},
+  'Periode project':{en:'Project period',ko:'프로젝트 기간'},
+  'Dari tanggal':{en:'Start date',ko:'시작일'},
+  'Sampai tanggal':{en:'End date',ko:'종료일'},
+  'Project yang jadwalnya bersinggungan dengan periode ini ditampilkan.':{en:'Projects whose schedules overlap this period are shown.',ko:'이 기간과 일정이 겹치는 프로젝트가 표시됩니다.'},
+  'Project tanpa tanggal mulai dan target yang valid tidak disertakan.':{en:'Projects without valid start and target dates are excluded.',ko:'시작일과 목표일이 유효하지 않은 프로젝트는 제외됩니다.'},
+  'Pilih tanggal mulai dan akhir untuk menerapkan rentang kustom.':{en:'Choose both a start and end date to apply a custom range.',ko:'사용자 지정 기간을 적용하려면 시작일과 종료일을 모두 선택하세요.'},
+  'Tanggal mulai harus sama dengan atau sebelum tanggal akhir.':{en:'The start date must be on or before the end date.',ko:'시작일은 종료일과 같거나 이전이어야 합니다.'},
   'Sembunyikan daftar':{en:'Hide list',ko:'목록 숨기기'},
   'Tampilkan daftar':{en:'Show list',ko:'목록 표시'},
   'Target project':{en:'Project target',ko:'프로젝트 목표일'},
@@ -1019,6 +1032,7 @@ function poDate(iso,fmt,lang){const d=pd(iso);if(!d)return '';const dd=String(d.
 /* ================= state ================= */
 let DB=normDB({}),ME='',USER=null;
 let VIEW='dash',PREV_VIEW='dash',F={cat:'',status:'',pic:'',q:''},SORT={k:'end',d:1},RPERIOD='day',PRIORITY_COLLAPSED=false;
+let DASH_PERIOD='all',DASH_START='',DASH_END='';
 let GS='month',GGROUP=true,GJUMP=true;
 let REV=-1,KNOWN={},KNOWNI={},KDEL={},KSET=-1,SSE=null,ONLINE=[],SYNCERR=null,lastSync=null,PUSHING=false,AGAIN=false,RETRY=null,SKEW=0;
 let ATT_UNSAVED=false;
@@ -1200,6 +1214,63 @@ function getL(ignoreStatus){
     return true;
   });
 }
+function dashboardDate(value){
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(String(value||'')))return null;
+  const date=pd(value);
+  return date&&fd(date)===value?date:null;
+}
+function dashboardPresetRange(period){
+  const now=today(),year=now.getFullYear(),month=now.getMonth();
+  if(period==='month')return {start:new Date(year,month,1),end:new Date(year,month+1,0)};
+  if(period==='quarter'){
+    const firstMonth=Math.floor(month/3)*3;
+    return {start:new Date(year,firstMonth,1),end:new Date(year,firstMonth+3,0)};
+  }
+  if(period==='year')return {start:new Date(year,0,1),end:new Date(year,11,31)};
+  return null;
+}
+function dashboardDateRange(){
+  if(DASH_PERIOD==='all')return {all:true,valid:true,start:null,end:null};
+  if(DASH_PERIOD==='custom'){
+    const start=dashboardDate(DASH_START),end=dashboardDate(DASH_END);
+    if(!start||!end)return {all:false,valid:false,incomplete:true,start:start,end:end};
+    if(start>end)return {all:false,valid:false,incomplete:false,start:start,end:end};
+    return {all:false,valid:true,start:start,end:end};
+  }
+  const range=dashboardPresetRange(DASH_PERIOD);
+  return range?{all:false,valid:true,start:range.start,end:range.end}:{all:false,valid:false,incomplete:true,start:null,end:null};
+}
+function dashboardProjects(ignoreStatus){
+  const projects=getL(ignoreStatus),range=dashboardDateRange();
+  if(range.all)return projects;
+  if(!range.valid)return [];
+  return projects.filter(p=>{
+    const start=dashboardDate(p.start),end=dashboardDate(p.end);
+    return !!start&&!!end&&start<=end&&start<=range.end&&end>=range.start;
+  });
+}
+function setDashboardPeriod(period){
+  if(!['all','month','quarter','year','custom'].includes(period))return;
+  DASH_PERIOD=period;
+  if(period==='all'){DASH_START='';DASH_END='';}
+  else if(period==='custom'){
+    if(!DASH_START||!DASH_END){
+      const now=today();
+      DASH_START=fd(new Date(now.getFullYear(),now.getMonth(),1));
+      DASH_END=fd(now);
+    }
+  }else{
+    const range=dashboardPresetRange(period);
+    DASH_START=fd(range.start);DASH_END=fd(range.end);
+  }
+  render();
+}
+function setDashboardDate(key,value){
+  if(key==='start')DASH_START=value;
+  else if(key==='end')DASH_END=value;
+  else return;
+  render();
+}
 
 /* ================= UI umum ================= */
 function toast(m){const t=$('#toast');t.textContent=m;t.style.display='block';clearTimeout(toast._t);toast._t=setTimeout(()=>{t.style.display='none';},3500);}
@@ -1224,20 +1295,27 @@ function renderFilters(){
   const vs=new Set();DB.projects.forEach(p=>{if(p.vendor)vs.add(p.vendor);quotes(p).forEach(q=>q.vendor&&vs.add(q.vendor));});
   $('#vlist').innerHTML=[...vs].sort().map(v=>`<option value="${esc(v)}">`).join('');
 }
+let PROGRESS_STAGE_OPEN=null;
 function openProjectProgress(id){
   const p=byId(id);if(!p)return;
   const cs=curStage(p),stages=p.stages||[];
   const rows=stages.map((s,i)=>{
-    const status=stEff(s),progress=stProg(s),files=s.attachments||[],links=s.docLinks||[];
-    const docs=files.map(file=>`<button class="progress-doc" type="button" title="${esc(file.name)}" data-on-click="${ea(['openStageDocFile',file.file])}">${/\.(png|jpe?g|gif|webp)$/i.test(file.name||'')?`<img src="${esc(apiURL('/api/files/'+encodeURIComponent(file.file)))}" alt="">`:`<span class="progress-doc-type">${esc(((file.name||'FILE').split('.').pop()||'FILE').toUpperCase())}</span>`}<span>${esc(file.name)}</span></button>`).join('');
-    const linked=links.map(link=>`<button class="progress-doc-link" type="button" data-on-click="${ea(['openProjectStageDocLink',p.id,s.id,link.id])}">↗ ${esc(link.title||link.url)}</button>`).join('');
+    const status=stEff(s),progress=stProg(s),docCount=(s.attachments||[]).length+(s.docLinks||[]).length;
     const note=s.note?`<div class="progress-stage-note"><b>Catatan:</b> ${esc(s.note)}</div>`:'';
-    const docsBlock=docs||linked?`<div class="progress-stage-docs"><b>Dokumentasi</b><div>${docs}${linked}</div></div>`:'';
-    return `<article class="progress-stage"><div class="progress-stage-head"><b>${i+1}. ${esc(s.name||'-')}</b>${badge(status)}</div><div class="progress-stage-bar"><span style="width:${progress}%;background:${ST_COLOR[status]}"></span></div><div class="progress-stage-meta"><span>${progress}%</span><span>Plan: ${fmtDate(s.ps)} – ${fmtDate(s.pf)}</span>${s.as?`<span>Aktual: ${fmtDate(s.as)}${s.af?' – '+fmtDate(s.af):' – berjalan'}</span>`:''}${s.pic?`<span>PIC: ${esc(s.pic)}</span>`:''}</div>${note}${docsBlock}</article>`;
+    const expanded=PROGRESS_STAGE_OPEN&&PROGRESS_STAGE_OPEN.projectId===p.id&&PROGRESS_STAGE_OPEN.stageId===s.id;
+    const detail=expanded?`<div class="progress-stage-detail">${note||''}<div class="progress-stage-detail-meta"><span>Rencana: ${fmtDate(s.ps)} – ${fmtDate(s.pf)}</span><span>Aktual: ${s.as?`${fmtDate(s.as)}${s.af?' – '+fmtDate(s.af):' – berjalan'}`:'Belum dimulai'}</span><span>PIC: ${esc(s.pic||p.pic||'-')}</span></div><h4>Dokumentasi &amp; kondisi (${docCount})</h4><div class="stage-doc-list">${stageDocsMarkup(s,false,{projectId:p.id,preview:true})||'<div class="empty">Belum ada dokumentasi untuk stage ini.</div>'}</div></div>`:'';
+    return `<article class="progress-stage ${expanded?'expanded':''}"><div class="progress-stage-head"><button type="button" class="progress-stage-toggle" aria-expanded="${!!expanded}" data-on-click="${ea(['toggleProgressStage',p.id,s.id])}"><span class="progress-stage-title">${i+1}. ${esc(s.name||'-')}</span><span class="progress-stage-open-hint">${expanded?'Tutup detail':'Buka detail & dokumentasi'}</span></button>${badge(status)}</div><div class="progress-stage-bar"><span style="width:${progress}%;background:${ST_COLOR[status]}"></span></div><div class="progress-stage-meta"><span>${progress}%</span><span>Plan: ${fmtDate(s.ps)} – ${fmtDate(s.pf)}</span>${s.as?`<span>Aktual: ${fmtDate(s.as)}${s.af?' – '+fmtDate(s.af):' – berjalan'}</span>`:''}${s.pic?`<span>PIC: ${esc(s.pic)}</span>`:''}${docCount?`<span>📎 ${docCount} dokumentasi</span>`:''}</div>${detail}</article>`;
   }).join('');
   const late=stages.filter(s=>stEff(s)==='Delayed').length;
   const header=`<div class="progress-project-summary"><div class="progress-project-title"><div><span class="mode-pill output">RINGKASAN &amp; PROGRES PROJECT</span><h2>${esc(p.code)} · ${esc(p.name)}</h2><div class="small muted">${chip(p.category)} · Owner/PIC: <b>${esc(p.pic||'-')}</b>${p.area?' · '+esc(p.area):''}</div></div>${badge(effStatus(p))}</div><div class="progress-summary-cards"><div><small>Progres aktual</small><b>${p.progress}%</b><div class="pbar"><div style="width:${p.progress}%"></div></div></div><div><small>Tahap saat ini</small><b>${cs?esc(cs.txt):'Belum ada tahap'}</b><span>${cs?`${cs.done}/${cs.total} tahap selesai`:''}</span></div><div><small>Jadwal project</small><b>${fmtDate(p.start)} → ${fmtDate(p.end)}</b><span>${late?late+' tahap terlambat · ':''}Target ${fmtDate(p.end)}</span></div></div></div>`;
   $('#modal2').innerHTML=`<div class="ov"><div class="dlg wide progress-dashboard-modal"><div class="dh"><h3>Progress Project</h3><button class="x" aria-label="Tutup" data-on-click="[&quot;closeM2&quot;]">✕</button></div><div class="db">${header}<section class="progress-stage-list"><h3>Tahapan &amp; update aktual (${stages.length})</h3>${rows||'<div class="empty">Belum ada tahapan untuk project ini.</div>'}</section></div><div class="df"><button class="btn" data-on-click="[&quot;closeM2&quot;]">Tutup</button><button class="btn pri" data-on-click="${ea(['openProgressProjectDetail',p.id])}">Buka pengelolaan project</button></div></div></div>`;
+  renderStagePdfPreviews();
+  renderStageDocxPreviews();
+}
+function toggleProgressStage(projectId,stageId){
+  if(PROGRESS_STAGE_OPEN&&PROGRESS_STAGE_OPEN.projectId===projectId&&PROGRESS_STAGE_OPEN.stageId===stageId)PROGRESS_STAGE_OPEN=null;
+  else PROGRESS_STAGE_OPEN={projectId,stageId};
+  openProjectProgress(projectId);
 }
 function openProgressProjectDetail(id){closeM2();viewP(id,'stage');}
 function openProjectStageDocLink(projectId,stageId,linkId){
@@ -1246,7 +1324,7 @@ function openProjectStageDocLink(projectId,stageId,linkId){
   try{const url=new URL(link.url);if(!['http:','https:'].includes(url.protocol)||url.username||url.password)throw new Error();window.open(url.href,'_blank','noopener,noreferrer');}catch(e){toast('Link dokumentasi tidak valid.');}
 }
 function openProjectStatus(status){
-  const projects=getL(true).filter(p=>!status||effStatus(p)===status).sort((a,b)=>a.name.localeCompare(b.name));
+  const projects=dashboardProjects(true).filter(p=>!status||effStatus(p)===status).sort((a,b)=>a.name.localeCompare(b.name));
   const title=status?'Project · '+status:'Semua Project';
   const rows=projects.map(p=>{const cs=curStage(p);return `<button class="dashboard-status-project" type="button" data-on-click="${ea(['openProjectProgress',p.id])}"><span class="dot" style="background:${ST_COLOR[effStatus(p)]}"></span><span class="dashboard-status-project-info"><b>${esc(p.name)}</b><small>${esc(p.code)} · Owner/PIC: ${esc(p.pic||'-')}${cs?' · Tahap: '+esc(cs.txt):''}</small></span><span class="dashboard-status-project-progress"><b>${p.progress}%</b>${badge(effStatus(p))}</span></button>`;}).join('');
   $('#modal2').innerHTML=`<div class="ov"><div class="dlg wide dashboard-status-modal"><div class="dh"><h3>${esc(title)} <span class="muted small">(${projects.length})</span></h3><button class="x" aria-label="Tutup" data-on-click="[&quot;closeM2&quot;]">✕</button></div><div class="db"><p class="muted small">Pilih project untuk melihat progres aktual, current stage, catatan, dan dokumentasi.</p><div class="dashboard-status-list">${rows||'<div class="empty">Tidak ada project pada status ini.</div>'}</div></div><div class="df"><button class="btn" data-on-click="[&quot;closeM2&quot;]">Tutup</button></div></div></div>`;
@@ -1297,7 +1375,9 @@ function render(){
   const createButton=$('#new-project-button');if(createButton)createButton.hidden=!canEdit()||['project_form','imp_form','imp_review_form'].includes(VIEW);
   const showFilters=['dash','gantt','list','budget'].includes(VIEW);
   const filters=$('.filters');if(filters)filters.hidden=!showFilters;
-  $('#cnt').textContent=['improvements','imp_review'].includes(VIEW)?DB.improvements.length+' improvement':getL(false).length+' dari '+DB.projects.length+' project';
+  const dashboardDateSlot=$('#dashboard-date-slot');if(dashboardDateSlot){dashboardDateSlot.innerHTML='';dashboardDateSlot.hidden=true;}
+  const visibleProjects=VIEW==='dash'?dashboardProjects(false):getL(false);
+  $('#cnt').textContent=['improvements','imp_review'].includes(VIEW)?DB.improvements.length+' improvement':visibleProjects.length+' dari '+DB.projects.length+' project';
   updateBreadcrumb();
   const views={dash:rDash,gantt:rGantt,my_projects:rMyProjects,list:rList,project_detail:rProjectDetail,project_form:rProjectForm,budget:rBudget,improvements:rImprovements,imp_review:rImpReviewQueue,imp_detail:rImpDetail,imp_form:rImpForm,imp_review_form:rImpReviewForm};
   (views[VIEW]||rDash)();
@@ -1346,7 +1426,11 @@ function priorityReminders(projects){
 function setReminderPeriod(period){RPERIOD=period;rDash();applyLanguage();}
 function togglePriorityReminders(){PRIORITY_COLLAPSED=!PRIORITY_COLLAPSED;rDash();applyLanguage();}
 function rDash(){
-  const all=getL(true),L=getL(false);
+  const all=dashboardProjects(true),L=dashboardProjects(false),dateRange=dashboardDateRange();
+  const unlistedDates=dateRange.all?0:getL(true).filter(p=>{
+    const start=dashboardDate(p.start),end=dashboardDate(p.end);
+    return !start||!end||start>end;
+  }).length;
   const reminders=priorityReminders(L);
   const cnt=s=>all.filter(p=>effStatus(p)===s).length;
   const avg=all.length?Math.round(all.reduce((a,p)=>a+p.progress,0)/all.length):0;
@@ -1362,6 +1446,8 @@ function rDash(){
   const catData=DB.settings.categories.map(c=>({l:c.name,v:L.filter(p=>p.category===c.name).length,c:c.color}));
   const att=attention(L);
   const periodNames={day:'Harian',week:'Mingguan',month:'Bulanan'};
+  const rangeLabel=dateRange.valid?(dateRange.all?'Semua tanggal project':fmtDate(fd(dateRange.start))+' – '+fmtDate(fd(dateRange.end))):dateRange.incomplete?'Pilih tanggal mulai dan akhir': 'Tanggal mulai harus sebelum tanggal akhir';
+  const datePeriod=`<div class="dashboard-date-toolbar" title="Project yang jadwalnya bersinggungan dengan periode ini ditampilkan."><div class="dashboard-date-controls"><select aria-label="Periode project" data-on-change="${ea(['setDashboardPeriod','@value'])}"><option value="all" ${DASH_PERIOD==='all'?'selected':''}>Semua tanggal</option><option value="month" ${DASH_PERIOD==='month'?'selected':''}>Bulan ini</option><option value="quarter" ${DASH_PERIOD==='quarter'?'selected':''}>Kuartal ini</option><option value="year" ${DASH_PERIOD==='year'?'selected':''}>Tahun ini</option><option value="custom" ${DASH_PERIOD==='custom'?'selected':''}>Rentang kustom</option></select><div class="dashboard-date-range"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"></rect><path d="M16 3v4M8 3v4M3 10h18"></path></svg><span>${esc(rangeLabel)}</span></div>${DASH_PERIOD==='custom'?`<label class="dashboard-date-input"><span>Dari tanggal</span><input aria-label="Dari tanggal" type="date" value="${esc(DASH_START)}" data-on-change="${ea(['setDashboardDate','start','@value'])}"></label><label class="dashboard-date-input"><span>Sampai tanggal</span><input aria-label="Sampai tanggal" type="date" value="${esc(DASH_END)}" data-on-change="${ea(['setDashboardDate','end','@value'])}"></label>`:''}</div>${!dateRange.valid||unlistedDates?`<div class="dashboard-date-note">${!dateRange.valid?rangeLabel+'. ':''}${unlistedDates?unlistedDates+' project tanpa tanggal mulai dan target yang valid tidak disertakan.':''}</div>`:''}</div>`;
   const reminderRows=reminders.map(x=>{const label=x.days<0?'Terlambat '+Math.abs(x.days)+' hari':x.days===0?'Hari ini':x.days+' hari lagi';return `<div class="ai" data-on-click="${ea(["openP",x.p.id,x.tab])}"><span class="tag" style="background:${x.days<0?'#ef4444':x.days<=2?'#f59e0b':'#3b82f6'}">${label}</span><div><b>${esc(x.label)} · ${esc(x.p.name)}</b><div class="small muted">${esc(x.p.code)} · ${fmtDate(x.date)}${x.p.pic?' · '+esc(x.p.pic):''}</div></div></div>`;}).join('')||'<div class="muted">Tidak ada prioritas terjadwal pada periode ini.</div>';
   const reminderPanel=`<div class="card deadline-reminders ${reminders.some(x=>x.days<0)?'has-overdue':''}"><div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap"><h3 style="margin:0;flex:1">Prioritas ${periodNames[RPERIOD]} <span class="muted small" style="font-weight:400">(${reminders.length})</span></h3><div class="priority-controls"><div class="reminder-period">${[['day','Hari ini'],['week','Minggu ini'],['month','Bulan ini']].map(x=>`<button class="${RPERIOD===x[0]?'on':''}" data-on-click="${ea(["setReminderPeriod",x[0]])}">${x[1]}</button>`).join('')}</div><button class="btn sm" type="button" aria-controls="priority-reminder-content" aria-expanded="${!PRIORITY_COLLAPSED}" data-on-click="[&quot;togglePriorityReminders&quot;]">${PRIORITY_COLLAPSED?'Tampilkan daftar':'Sembunyikan daftar'}</button></div></div><div id="priority-reminder-content" ${PRIORITY_COLLAPSED?'hidden':''}>${reminderRows}</div></div>`;
   const board=L.slice().sort((a,b)=>ST_ORDER.indexOf(effStatus(a))-ST_ORDER.indexOf(effStatus(b))||(a.end>b.end?1:-1)).map(p=>{
@@ -1372,6 +1458,7 @@ function rDash(){
         <div class="small muted" style="margin-top:4px">${fmtDate(p.start)} → ${fmtDate(p.end)}${cs?' · Tahap: <b style="color:var(--text)">'+esc(cs.txt)+'</b> ('+cs.done+'/'+cs.total+' selesai)':''}${late&&st!=='Completed'?' · <span style="color:var(--bad);font-weight:600">'+late+' stage terlambat</span>':''}</div></div>
       <div style="text-align:right"><b>${p.progress}%</b> ${badge(st)}${atRisk(p)?' <span class="tag" style="background:#f97316">BERISIKO</span>':''}</div></button>`;
   }).join('')||'<div class="empty">Tidak ada project.</div>';
+  const dashboardDateSlot=$('#dashboard-date-slot');if(dashboardDateSlot){dashboardDateSlot.innerHTML=datePeriod;dashboardDateSlot.hidden=false;}
   $('#main').innerHTML=ban+`
   <div class="grid kpis">${kp('','Total Project')}${kp('On Progress','On Progress')}${kp('Completed','Completed')}${kp('Delayed','Delayed')}${kp('On Hold','On Hold')}${kp('Not Started','Not Started')}
     <div class="kpi static"><i style="background:var(--pri)"></i><b>${avg}%</b><span>Rata-rata progres</span><div class="mini"><div style="width:${avg}%"></div></div></div></div>
@@ -1998,8 +2085,8 @@ function newP(cat){
   VIEW='project_form';
   render();
 }
-function closeModal(){STAGE_DOC_ID='';STAGE_DOC_VIEW=null;$('#modal').innerHTML='';$('#modal2').innerHTML='';PD=null;}
-function closeM2(){if(VRETURNPO&&PD){VRETURNPO=false;VFORM=null;VEDIT='';drawPO();return;}$('#modal2').innerHTML='';STAGE_DOC_ID='';STAGE_DOC_VIEW=null;PD=null;}
+function closeModal(){STAGE_DOC_ID='';STAGE_DOC_VIEW=null;STAGE_MEDIA_VIEW=null;PROGRESS_STAGE_OPEN=null;$('#modal').innerHTML='';$('#modal2').innerHTML='';PD=null;}
+function closeM2(){if(VRETURNPO&&PD){VRETURNPO=false;VFORM=null;VEDIT='';drawPO();return;}$('#modal2').innerHTML='';STAGE_DOC_ID='';STAGE_DOC_VIEW=null;STAGE_MEDIA_VIEW=null;PROGRESS_STAGE_OPEN=null;PD=null;}
 function setDetailTab(t){DETAIL_TAB=normDetailTab(t);render();}
 function setWizStep(n){
   WIZ_STEP=Math.max(1,Math.min(5,n));
@@ -2105,6 +2192,7 @@ function rProjectDetail(){
       const e=stEff(s),sp=stProg(s),dv=stDev(s);
       const dtxt=e==='Delayed'?`<span style="color:var(--bad);font-weight:700">Telat +${dv} hr</span>`:dv===null?'<span class="muted">-</span>':dv>0?`<span style="color:var(--bad);font-weight:700">+${dv} hr</span>`:dv<0?`<span style="color:var(--ok);font-weight:700">${dv} hr</span>`:'<span style="color:var(--ok)">Tepat waktu</span>';
       const docCount=(s.attachments||[]).length+(s.docLinks||[]).length;
+      const missingDescription=[...(s.attachments||[]),...(s.docLinks||[])].filter(item=>!String(item.description||'').trim()).length;
       const progCell=canMod?`
         <div class="task-prog-box">
           <input type="range" min="0" max="100" step="5" value="${sp}" data-on-change="${ea(["quickStage",p.id,s.id,"prog","@value"])}" data-on-input="[&quot;setProg&quot;,&quot;@value&quot;]">
@@ -2117,22 +2205,19 @@ function rProjectDetail(){
           <button type="button" class="done-btn" data-on-click="${ea(["quickStage",p.id,s.id,"prog",100])}">✓ Selesai</button>
         </div>`:`<div><span class="pbar"><div style="width:${sp}%"></div></span><b>${sp}%</b></div>`;
       const statusCell=canMod?`<select style="padding:5px 8px;border:1px solid var(--line);border-radius:6px;background:var(--card);font-size:12px;font-weight:600" data-on-change="${ea(["quickStage",p.id,s.id,"status","@value"])}">${STG_ST.map(o=>`<option value="${o}" ${o===s.status?'selected':''}>${o}</option>`).join('')}</select><div style="margin-top:4px">${badge(e)} · ${dtxt}</div>`:`${badge(e)}<div>${dtxt}</div>`;
-      const actualCell=canMod?`<div style="display:grid;gap:4px;min-width:135px">
-        <div style="display:flex;align-items:center;gap:4px"><span class="muted small" style="width:42px">Mulai:</span><input type="date" style="padding:3px 6px;border:1px solid var(--line);border-radius:6px;background:var(--card);font-size:11.5px" value="${esc(s.as)}" data-on-change="${ea(["quickStage",p.id,s.id,"as","@value"])}"></div>
-        <div style="display:flex;align-items:center;gap:4px"><span class="muted small" style="width:42px">Selesai:</span><input type="date" style="padding:3px 6px;border:1px solid var(--line);border-radius:6px;background:var(--card);font-size:11.5px" value="${esc(s.af)}" data-on-change="${ea(["quickStage",p.id,s.id,"af","@value"])}"></div>
+      const actualCell=canMod?`<div class="project-stage-date-fields">
+        <label>Mulai<input type="date" value="${esc(s.as)}" data-on-change="${ea(["quickStage",p.id,s.id,"as","@value"])}"></label>
+        <label>Selesai<input type="date" value="${esc(s.af)}" data-on-change="${ea(["quickStage",p.id,s.id,"af","@value"])}"></label>
       </div>`:`${s.as||s.af?`${fmtDate(s.as)} → ${fmtDate(s.af)}`:'<span class="muted">Belum mulai</span>'}`;
       const noteCell=canMod?`<input style="padding:5px 8px;border:1px solid var(--line);border-radius:6px;background:var(--card);font-size:12px;width:100%;min-width:130px" placeholder="Tulis catatan task..." value="${esc(s.note||'')}" data-on-change="${ea(["quickStage",p.id,s.id,"note","@value"])}">`:esc(s.note||'-');
-      const docBtn=canMod?`<button class="btn sm" data-on-click="${ea(['openStageDocsEdit',s.id])}">${docCount?'📎 Bukti ('+docCount+')':'+ Bukti'}</button>`:(docCount?`<button class="btn sm" data-on-click="${ea(["viewStageDocs",p.id,s.id])}">📎 Lihat (${docCount})</button>`:'<span class="muted small">-</span>');
-      return `<tr>
-        <td class="muted">${i+1}</td>
-        <td style="white-space:normal;min-width:160px"><b>${esc(s.name||'-')}</b><div class="small muted">PIC: ${esc(s.pic||p.pic||'-')}</div></td>
-        <td><div class="small">${fmtDate(s.ps)} → ${fmtDate(s.pf)}</div><div class="small muted">${stageDays(s)} hari</div></td>
-        <td>${progCell}</td>
-        <td>${statusCell}</td>
-        <td>${actualCell}</td>
-        <td>${noteCell}</td>
-        <td class="r">${docBtn}</td>
-      </tr>`;
+      const docBtn=canMod?`<button class="btn sm ${missingDescription?'doc-incomplete':''}" data-on-click="${ea(['openStageDocsEdit',s.id])}">📎 ${docCount?'Dokumentasi ('+docCount+')':'+ Tambah dokumentasi'}${missingDescription?' · '+missingDescription+' perlu keterangan':''}</button>`:(docCount?`<button class="btn sm" data-on-click="${ea(["viewStageDocs",p.id,s.id])}">📎 Dokumentasi (${docCount}) · Lihat keterangan</button>`:'<span class="muted small">Belum ada dokumentasi</span>');
+      return `<article class="project-stage-card">
+        <div class="project-stage-card-head"><span class="stage-manage-number">${i+1}</span><div><b>${esc(s.name||'-')}</b><div class="small muted">PIC: ${esc(s.pic||p.pic||'-')}</div></div><div class="project-stage-card-status">${statusCell}</div></div>
+        <div class="project-stage-card-schedule"><div><small>Rencana</small><b>${fmtDate(s.ps)} → ${fmtDate(s.pf)}</b><span>${stageDays(s)} hari</span></div><div><small>Realisasi aktual</small>${actualCell}</div><div><small>Deviasi jadwal</small>${dtxt}</div></div>
+        <div class="project-stage-card-progress"><div><small>Progres task</small>${progCell}</div></div>
+        <div class="project-stage-card-note"><small>Catatan task</small>${noteCell}</div>
+        <div class="project-stage-card-docs">${docBtn}</div>
+      </article>`;
     }).join('');
     tabContent=`<div class="out-section">
       <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px;flex-wrap:wrap">
@@ -2142,7 +2227,7 @@ function rProjectDetail(){
         </div>
         ${canMod?`<button class="btn sm pri" data-on-click="${ea(["editP",p.id,2])}">Atur Jadwal / Tambah Task</button>`:''}
       </div>
-      ${p.stages.length?`<div class="tw" style="border:1px solid var(--line);border-radius:10px"><table><thead><tr><th>#</th><th>Task / Tahapan</th><th>Rencana (Plan)</th><th>Progres Task</th><th>Status &amp; Deviasi</th><th>Realisasi (Actual)</th><th>Catatan</th><th class="r">Dokumentasi</th></tr></thead><tbody>${stgRows}</tbody></table></div>`:`<div class="empty">Belum ada tahapan task.${canMod?` Klik <b>Atur Jadwal / Tambah Task</b> untuk memuat template atau menambah task baru.`:''}</div>`}
+      ${p.stages.length?`<div class="project-stage-list">${stgRows}</div>`:`<div class="empty">Belum ada tahapan task.${canMod?` Klik <b>Atur Jadwal / Tambah Task</b> untuk memuat template atau menambah task baru.`:''}</div>`}
     </div>`;
   }else if(DETAIL_TAB==='budget'){
     const qRows=quotes(p).map(q=>{
@@ -2516,6 +2601,7 @@ async function delP(){
 let SBASE='';
 let STAGE_DOC_ID='';
 let STAGE_DOC_VIEW=null;
+let STAGE_MEDIA_VIEW=null;
 function tStage(){
   const d=draft,rawTp=DB.settings.templates||[];
   if(!SBASE)SBASE=d.start||fd(today());
@@ -2543,59 +2629,220 @@ function tStage(){
   const rows=d.stages.map((s,i)=>{
     const e=stEff(s),dv=stDev(s),sp=stProg(s);
     const dtxt=e==='Delayed'?`<span style="color:var(--bad);font-weight:700">Terlambat +${dv}h</span>`:dv===null?'<span class="muted">-</span>':dv>0?`<span style="color:var(--bad);font-weight:700">+${dv}h</span>`:dv<0?`<span style="color:var(--ok);font-weight:700">${dv}h</span>`:'<span style="color:var(--ok)">Tepat</span>';
-    const docCount=(s.attachments||[]).length+(s.docLinks||[]).length,docButton=PROJECT_READ_ONLY?(docCount?`<button class="btn sm" data-on-click="${ea(['viewStageDocs',d.id,s.id])}">Bukti (${docCount})</button> `:''):`<button class="btn sm" data-on-click="${ea(['openStageDocs',s.id])}">${docCount?'Bukti ('+docCount+')':'+ Bukti'}</button> `;
-    return `<tr><td class="muted">${i+1}</td>
-    <td style="min-width:155px"><input value="${esc(s.name)}" placeholder="Nama task / tahap" data-on-input="${ea(["setS",s.id,"name","@value",1])}"></td>
-    <td style="width:90px"><input value="${esc(s.pic)}" placeholder="PIC" list="plist2" data-on-input="${ea(["setS",s.id,"pic","@value",1])}"></td>
-    <td><input type="date" value="${esc(s.ps)}" data-on-change="${ea(["setS",s.id,"ps","@value"])}"></td>
-    <td><input type="date" value="${esc(s.pf)}" data-on-change="${ea(["setS",s.id,"pf","@value"])}"></td>
-    <td style="width:74px">
-      <input type="number" min="1" value="${s.ps&&s.pf?stageDays(s):''}" style="width:52px" data-on-change="${ea(["setS",s.id,"days","@value"])}">
-      ${i>0?`<label style="display:flex;gap:3px;align-items:center;font-size:10px;margin-top:2px;font-weight:400" title="Jalan bersamaan (paralel) dengan task sebelumnya saat jadwal disusun ulang"><input type="checkbox" style="width:auto;margin:0" ${s.par?'checked':''} data-on-change="${ea(["setS",s.id,"par","@checked"])}">Paralel</label>`:''}
-    </td>
-    <td style="min-width:155px">
-      <div class="task-prog-box">
-        <input type="range" min="0" max="100" step="5" value="${sp}" data-on-change="${ea(["setS",s.id,"prog","@value"])}">
-        <input type="number" min="0" max="100" value="${sp}" style="width:52px;padding:3px 5px;text-align:right;font-weight:700" data-on-change="${ea(["setS",s.id,"prog","@value"])}"><span class="small muted">%</span>
-        ${sp<100?`<button type="button" class="btn sm ok" style="padding:2px 6px" title="Tandai 100% Selesai" data-on-click="${ea(["setS",s.id,"prog",100])}">✓</button>`:''}
-      </div>
-    </td>
-    <td style="width:110px"><select data-on-change="${ea(["setS",s.id,"status","@value"])}">${STG_ST.map(o=>`<option value="${o}" ${o===s.status?'selected':''}>${o}</option>`).join('')}</select></td>
-    <td><input type="date" value="${esc(s.as)}" data-on-change="${ea(["setS",s.id,"as","@value"])}"></td>
-    <td><input type="date" value="${esc(s.af)}" data-on-change="${ea(["setS",s.id,"af","@value"])}"></td>
-    <td>${dtxt}</td>
-    <td style="min-width:115px"><input value="${esc(s.note)}" placeholder="catatan" data-on-input="${ea(["setS",s.id,"note","@value",1])}"></td>
-    <td style="white-space:nowrap">${docButton}${PROJECT_READ_ONLY?'':`<button class="btn sm" data-on-click="${ea(["moveS",s.id,-1])}">▲</button> <button class="btn sm" data-on-click="${ea(["moveS",s.id,1])}">▼</button> <button class="btn sm bad" data-on-click="${ea(["delS",s.id])}">✕</button>`}</td></tr>`;
+    const docCount=(s.attachments||[]).length+(s.docLinks||[]).length;
+    const missingDescription=[...(s.attachments||[]),...(s.docLinks||[])].filter(item=>!String(item.description||'').trim()).length;
+    const docButton=PROJECT_READ_ONLY?(docCount?`<button class="btn sm" data-on-click="${ea(['viewStageDocs',d.id,s.id])}">📎 Dokumentasi (${docCount})</button>`:'<span class="muted small">Belum ada dokumentasi</span>'):`<button class="btn sm ${missingDescription?'doc-incomplete':''}" data-on-click="${ea(['openStageDocs',s.id])}">📎 ${docCount?'Dokumentasi ('+docCount+')':'+ Tambah dokumentasi'}${missingDescription?' · '+missingDescription+' perlu keterangan':''}</button>`;
+    const actions=PROJECT_READ_ONLY?'':`<div class="stage-card-actions"><button class="btn sm" title="Pindah ke atas" aria-label="Pindah ${esc(s.name||'stage')} ke atas" data-on-click="${ea(["moveS",s.id,-1])}">▲</button><button class="btn sm" title="Pindah ke bawah" aria-label="Pindah ${esc(s.name||'stage')} ke bawah" data-on-click="${ea(["moveS",s.id,1])}">▼</button><button class="btn sm bad" title="Hapus stage" aria-label="Hapus ${esc(s.name||'stage')}" data-on-click="${ea(["delS",s.id])}">✕</button></div>`;
+    return `<article class="stage-manage-card">
+      <div class="stage-manage-head"><span class="stage-manage-number">${i+1}</span><label>Task / Tahapan<input value="${esc(s.name)}" placeholder="Nama task / tahap" data-on-input="${ea(["setS",s.id,"name","@value",1])}"></label><label>PIC<input value="${esc(s.pic)}" placeholder="PIC" list="plist2" data-on-input="${ea(["setS",s.id,"pic","@value",1])}"></label>${actions}</div>
+      <div class="stage-manage-schedule"><div class="stage-manage-group"><b>Jadwal rencana</b><div class="stage-manage-fields"><label>Mulai<input type="date" value="${esc(s.ps)}" data-on-change="${ea(["setS",s.id,"ps","@value"])}"></label><label>Selesai<input type="date" value="${esc(s.pf)}" data-on-change="${ea(["setS",s.id,"pf","@value"])}"></label><label>Hari<input type="number" min="1" value="${s.ps&&s.pf?stageDays(s):''}" data-on-change="${ea(["setS",s.id,"days","@value"])}"></label></div>${i>0?`<label class="stage-manage-parallel" title="Jalan bersamaan (paralel) dengan task sebelumnya saat jadwal disusun ulang"><input type="checkbox" ${s.par?'checked':''} data-on-change="${ea(["setS",s.id,"par","@checked"])}">Jadwal paralel dengan task sebelumnya</label>`:''}</div>
+      <div class="stage-manage-group"><b>Realisasi aktual</b><div class="stage-manage-fields"><label>Mulai<input type="date" value="${esc(s.as)}" data-on-change="${ea(["setS",s.id,"as","@value"])}"></label><label>Selesai<input type="date" value="${esc(s.af)}" data-on-change="${ea(["setS",s.id,"af","@value"])}"></label><div class="stage-manage-deviation"><span>Deviasi</span>${dtxt}</div></div></div></div>
+      <div class="stage-manage-progress"><label>Progres · ${sp}%<input type="range" min="0" max="100" step="5" value="${sp}" data-on-change="${ea(["setS",s.id,"prog","@value"])}"></label><input aria-label="Persentase progres ${esc(s.name||'stage')}" type="number" min="0" max="100" value="${sp}" data-on-change="${ea(["setS",s.id,"prog","@value"])}"><span class="small muted">%</span>${sp<100?`<button type="button" class="btn sm ok" title="Tandai 100% Selesai" data-on-click="${ea(["setS",s.id,"prog",100])}">✓ Selesai</button>`:''}<label class="stage-manage-status">Status<select data-on-change="${ea(["setS",s.id,"status","@value"])}">${STG_ST.map(o=>`<option value="${o}" ${o===s.status?'selected':''}>${o}</option>`).join('')}</select></label><span class="stage-manage-effective">${badge(e)}</span></div>
+      <div class="stage-manage-footer"><label>Catatan task<input value="${esc(s.note)}" placeholder="Catatan progres, kendala, atau tindak lanjut" data-on-input="${ea(["setS",s.id,"note","@value",1])}"></label><div>${docButton}</div></div>
+    </article>`;
   }).join('');
   return bar+`<datalist id="plist2">${[...new Set(DB.projects.map(p=>p.pic).concat([ME,d.pic]).filter(Boolean))].map(x=>`<option value="${esc(x)}">`).join('')}</datalist>
   <div class="qh"><h4>Tahapan & Progres Task (${d.stages.length})${cs?' <span class="muted small" style="font-weight:400">· selesai '+cs.done+', saat ini: '+esc(cs.txt)+' · Total '+d.progress+'%</span>':''}</h4><button class="btn sm pri" data-on-click="[&quot;addStage&quot;]">+ Tambah Task Manual</button></div>
-  ${d.stages.length?`<div class="tw" style="border:1px solid var(--line);border-radius:8px"><table class="stt"><thead><tr><th>#</th><th>Task / Tahap</th><th>PIC</th><th>Plan Mulai</th><th>Plan Selesai</th><th>Hari</th><th>Progres (%)</th><th>Status</th><th>Actual Mulai</th><th>Actual Selesai</th><th>Deviasi</th><th>Catatan</th><th>Bukti & Urutan</th></tr></thead><tbody>${rows}</tbody></table></div>
+  ${d.stages.length?`<div class="stage-manage-list">${rows}</div>
   <div class="small muted" style="margin-top:8px"><b>Fleksibel per Project / PIC:</b> Anda bebas menambah, menghapus, mengubah urutan (▲/▼), atau memodifikasi tahapan sesuai kebutuhan project ini, lalu klik <b>Simpan Jadi Template</b> bila ingin menjadikannya template andalan Anda berikutnya.</div>`:'<div class="empty">Belum ada tahapan task. Pilih template lalu klik <b>Muat Template</b>, atau klik <b>+ Tambah Task Manual</b> untuk menyusun tahapan sesuai kebutuhan Anda.</div>'}`;
 }
 function openStageDocs(id){if(!draft)return;STAGE_DOC_ID=id;drawStageDocs();}
 function viewStageDocs(projectId,stageId){STAGE_DOC_VIEW={projectId,stageId};drawStageDocsViewer();}
-function closeStageDocs(){$('#modal2').innerHTML='';STAGE_DOC_ID='';STAGE_DOC_VIEW=null;}
-function stageDocsMarkup(stage,editable){
+function closeStageDocs(){$('#modal2').innerHTML='';STAGE_DOC_ID='';STAGE_DOC_VIEW=null;STAGE_MEDIA_VIEW=null;}
+function stageMediaItem(projectId,stageId,fileId){
+  const project=(draft&&draft.id===projectId?draft:null)||byId(projectId);
+  const stage=project&&(project.stages||[]).find(item=>item.id===stageId);
+  return stage&&(stage.attachments||[]).find(item=>item.id===fileId);
+}
+function setStageVideoSpeed(fileId,value){
+  const speed=Math.max(.25,Math.min(2,Number(value)||1));
+  document.querySelectorAll('[data-stage-video-id]').forEach(video=>{if(video.dataset.stageVideoId===fileId)video.playbackRate=speed;});
+  if(STAGE_MEDIA_VIEW&&STAGE_MEDIA_VIEW.fileId===fileId){STAGE_MEDIA_VIEW.speed=speed;const player=$('#stage-media-player');if(player)player.playbackRate=speed;}
+}
+function openStageMediaViewer(projectId,stageId,fileId){
+  const file=stageMediaItem(projectId,stageId,fileId);
+  if(!file){toast('Dokumentasi tidak ditemukan.');return;}
+  const video=/\.(mp4|webm|mov|m4v)$/i.test(file.name||''),url=apiURL('/api/files/'+encodeURIComponent(file.file));
+  STAGE_MEDIA_VIEW={projectId,stageId,fileId,zoom:1,speed:1};
+  const media=video?`<video id="stage-media-player" controls playsinline preload="metadata" src="${esc(url)}"></video>`:`<div class="stage-media-image-viewport"><img id="stage-media-image" src="${esc(url)}" alt="${esc(file.name)}" style="transform:scale(1)"></div>`;
+  const controls=video?`<label class="stage-media-speed">Kecepatan<select id="stage-media-speed" data-on-change="${ea(['setStageVideoSpeed',file.id,'@value'])}"><option value="0.5">0,5×</option><option value="0.75">0,75×</option><option value="1" selected>Normal</option><option value="1.25">1,25×</option><option value="1.5">1,5×</option><option value="2">2×</option></select></label>`:`<div class="stage-media-zoom"><button class="btn sm" aria-label="Perkecil gambar" data-on-click="[&quot;zoomStageMedia&quot;,-0.25]">−</button><button class="btn sm" aria-label="Ukuran asli" data-on-click="[&quot;resetStageMediaZoom&quot;]">Ukuran asli</button><button class="btn sm" aria-label="Perbesar gambar" data-on-click="[&quot;zoomStageMedia&quot;,0.25]">+</button><span id="stage-media-zoom-level">100%</span></div>`;
+  $('#modal2').insertAdjacentHTML('beforeend',`<div id="stage-media-viewer" class="stage-media-overlay" role="dialog" aria-modal="true" aria-label="${esc(file.name)}"><section class="stage-media-dialog"><header class="stage-media-header"><div><b>${esc(file.name)}</b><small>${esc(String(file.description||'').trim()||'Keterangan belum diisi')}</small></div><button class="x" aria-label="Tutup media" data-on-click="[&quot;closeStageMediaViewer&quot;]">✕</button></header><div class="stage-media-content">${media}</div><footer class="stage-media-footer">${controls}<a class="btn sm pri" href="${esc(url)}" download="${esc(file.name)}">Unduh</a></footer></section></div>`);
+  const player=$('#stage-media-player');
+  if(player)player.playbackRate=STAGE_MEDIA_VIEW.speed;
+}
+function closeStageMediaViewer(){
+  const viewer=$('#stage-media-viewer');
+  if(viewer&&viewer.remove)viewer.remove();
+  STAGE_MEDIA_VIEW=null;
+}
+function zoomStageMedia(delta){
+  if(!STAGE_MEDIA_VIEW)return;
+  STAGE_MEDIA_VIEW.zoom=Math.max(.5,Math.min(3,STAGE_MEDIA_VIEW.zoom+delta));
+  const image=$('#stage-media-image'),label=$('#stage-media-zoom-level');
+  if(image)image.style.transform=`scale(${STAGE_MEDIA_VIEW.zoom})`;
+  if(label)label.textContent=Math.round(STAGE_MEDIA_VIEW.zoom*100)+'%';
+}
+function resetStageMediaZoom(){
+  if(!STAGE_MEDIA_VIEW)return;
+  STAGE_MEDIA_VIEW.zoom=1;
+  const image=$('#stage-media-image'),label=$('#stage-media-zoom-level');
+  if(image)image.style.transform='scale(1)';
+  if(label)label.textContent='100%';
+}
+function stageDocsMarkup(stage,editable,options={}){
+  const projectId=options.projectId||(draft&&draft.id)||(STAGE_DOC_VIEW&&STAGE_DOC_VIEW.projectId)||'';
   const files=(stage.attachments||[]).map(file=>{
-    const url=apiURL('/api/files/'+encodeURIComponent(file.file)),image=/\.(png|jpe?g|gif|webp)$/i.test(file.name||''),video=/\.(mp4|webm|mov|m4v)$/i.test(file.name||'');
-    const preview=image?`<img src="${esc(url)}" alt="${esc(file.name)}">`:video?`<video controls preload="metadata" src="${esc(url)}"></video>`:`<span class="badge" style="background:#64748b">${esc(((file.name||'').split('.').pop()||'FILE').toUpperCase())}</span>`;
-    return `<div class="stage-doc"><div class="stage-doc-preview">${preview}</div><div class="stage-doc-info"><b>${esc(file.name)}</b><div class="small muted">${file.size?fmtNum(Math.ceil(file.size/1024))+' KB':''}${file.uploadedBy?' · '+esc(file.uploadedBy):''}${file.uploadedAt?' · '+esc(fmtDT(file.uploadedAt)):''}</div></div><div class="stage-doc-actions"><button class="btn sm" data-on-click="${ea(["openStageDocFile",file.file])}">Buka</button>${editable&&canEdit()?`<button class="btn sm bad" data-on-click="${ea(["detachStageDoc",file.id])}">Lepas</button>`:''}</div></div>`;
+    const url=apiURL('/api/files/'+encodeURIComponent(file.file)),image=/\.(png|jpe?g|gif|webp)$/i.test(file.name||''),video=/\.(mp4|webm|mov|m4v)$/i.test(file.name||''),pdf=/\.pdf$/i.test(file.name||''),docx=/\.docx$/i.test(file.name||''),media=image||video;
+    const preview=image?`<button type="button" class="stage-doc-image-open" aria-label="Perbesar ${esc(file.name)}" data-on-click="${ea(['openStageMediaViewer',projectId,stage.id,file.id])}"><img src="${esc(url)}" alt="${esc(file.name)}"></button>`:video?`<video class="stage-doc-video" controls preload="metadata" src="${esc(url)}" data-stage-video-id="${esc(file.id)}"></video>`:pdf?`<div class="stage-pdf-preview" data-pdf-src="${esc(url)}" role="region" aria-label="Pratinjau ${esc(file.name)}">Memuat pratinjau PDF...</div>`:docx?`<div class="stage-docx-preview" data-docx-src="${esc(url)}" role="region" aria-label="Pratinjau ${esc(file.name)}">Memuat pratinjau dokumen...</div>`:`<span class="badge" style="background:#64748b">${esc(((file.name||'').split('.').pop()||'FILE').toUpperCase())}</span>`;
+    const mediaControls=video?`<label class="stage-doc-speed">Kecepatan<select aria-label="Kecepatan video ${esc(file.name)}" data-on-change="${ea(['setStageVideoSpeed',file.id,'@value'])}"><option value="0.5">0,5×</option><option value="0.75">0,75×</option><option value="1" selected>Normal</option><option value="1.25">1,25×</option><option value="1.5">1,5×</option><option value="2">2×</option></select></label>`:'';
+    const description=String(file.description||'').trim();
+    const descriptionMarkup=editable&&canEdit()?`<div class="stage-doc-purpose"><label>Keterangan / kondisi dokumentasi<textarea rows="2" maxlength="2000" placeholder="Jelaskan apa yang ditunjukkan, kondisi temuan, atau hasil verifikasi." data-on-input="${ea(['setStageDocDescription','file',file.id,'@value'])}">${esc(file.description||'')}</textarea></label><button class="btn sm" type="button" data-on-click="${ea(['saveStageDocDescription','file',file.id])}">Simpan keterangan</button></div>`:`<div class="stage-doc-purpose"><small>Keterangan / kondisi</small><p>${description?esc(description):'<span class="doc-description-missing">Keterangan belum diisi</span>'}</p></div>`;
+    const completeness=description?'<span class="doc-description-status complete">Keterangan tersedia</span>':'<span class="doc-description-status missing">Perlu keterangan</span>';
+    const actions=`${media?`<button class="btn sm" data-on-click="${ea(['openStageMediaViewer',projectId,stage.id,file.id])}">${image?'Perbesar':'Layar besar'}</button>`:''}<a class="btn sm" href="${esc(url)}" download="${esc(file.name)}">Unduh</a>${editable&&canEdit()?`<button class="btn sm bad" data-on-click="${ea(["detachStageDoc",file.id])}">Lepas</button>`:''}`;
+    return `<article class="stage-doc ${options.preview?'stage-doc-rich':''}"><div class="stage-doc-preview ${pdf?'stage-doc-preview-pdf':docx?'stage-doc-preview-docx':''}">${preview}</div><div class="stage-doc-info"><div class="stage-doc-title"><b>${esc(file.name)}</b>${completeness}</div><div class="small muted">${file.size?fmtNum(Math.ceil(file.size/1024))+' KB':''}${file.uploadedBy?' · '+esc(file.uploadedBy):''}${file.uploadedAt?' · '+esc(fmtDT(file.uploadedAt)):''}</div>${mediaControls}${descriptionMarkup}</div><div class="stage-doc-actions">${actions}</div></article>`;
   }).join('');
-  const links=(stage.docLinks||[]).map(link=>`<div class="stage-doc-link"><div class="stage-doc-link-info"><b>${esc(link.title||link.url)}</b><div class="small muted">${esc(link.url)}</div></div><div class="stage-doc-actions"><button class="btn sm" data-on-click="${ea(["openStageDocLink",stage.id,link.id])}">Buka</button>${editable&&canEdit()?`<button class="btn sm bad" data-on-click="${ea(["removeStageDocLink",link.id])}">Hapus</button>`:''}</div></div>`).join('');
+  const links=(stage.docLinks||[]).map(link=>{
+    const description=String(link.description||'').trim();
+    const descriptionMarkup=editable&&canEdit()?`<div class="stage-doc-purpose"><label>Keterangan / kondisi dokumentasi<textarea rows="2" maxlength="2000" placeholder="Jelaskan isi link atau hasil yang perlu diperhatikan." data-on-input="${ea(['setStageDocDescription','link',link.id,'@value'])}">${esc(link.description||'')}</textarea></label><button class="btn sm" type="button" data-on-click="${ea(['saveStageDocDescription','link',link.id])}">Simpan keterangan</button></div>`:`<div class="stage-doc-purpose"><small>Keterangan / kondisi</small><p>${description?esc(description):'<span class="doc-description-missing">Keterangan belum diisi</span>'}</p></div>`;
+    const completeness=description?'<span class="doc-description-status complete">Keterangan tersedia</span>':'<span class="doc-description-status missing">Perlu keterangan</span>';
+    return `<article class="stage-doc-link"><div class="stage-doc-link-info"><div class="stage-doc-title"><b>${esc(link.title||link.url)}</b>${completeness}</div><div class="small muted stage-doc-url">${esc(link.url)}</div>${descriptionMarkup}</div><div class="stage-doc-actions"><button class="btn sm" data-on-click="${ea(["openStageDocLink",stage.id,link.id])}">Buka</button>${editable&&canEdit()?`<button class="btn sm bad" data-on-click="${ea(["removeStageDocLink",link.id])}">Hapus</button>`:''}</div></article>`;
+  }).join('');
   return files+links;
+}
+let DOCX_PREVIEW_PROMISE=null;
+function loadDocxPreview(){
+  if(window.DocxPreview&&typeof window.DocxPreview.renderAsync==='function')return Promise.resolve(window.DocxPreview);
+  if(!DOCX_PREVIEW_PROMISE)DOCX_PREVIEW_PROMISE=new Promise((resolve,reject)=>{
+    const script=document.createElement('script');
+    script.src='/lib/docx-preview.js';
+    script.onload=()=>{
+      if(window.DocxPreview&&typeof window.DocxPreview.renderAsync==='function')resolve(window.DocxPreview);
+      else{DOCX_PREVIEW_PROMISE=null;reject(new Error('Renderer DOCX tidak tersedia'));}
+    };
+    script.onerror=()=>{DOCX_PREVIEW_PROMISE=null;reject(new Error('Gagal memuat renderer DOCX'));};
+    document.head.appendChild(script);
+  });
+  return DOCX_PREVIEW_PROMISE;
+}
+async function renderStageDocxPreviews(){
+  const previews=[...document.querySelectorAll('.stage-docx-preview[data-docx-src]:not([data-loaded])')];
+  if(!previews.length)return;
+  try{
+    const renderer=await loadDocxPreview();
+    await Promise.all(previews.map(async preview=>{
+      try{
+        const response=await fetch(preview.dataset.docxSrc,{credentials:'same-origin'});
+        if(!response.ok)throw new Error('HTTP '+response.status);
+        const content=await response.arrayBuffer();
+        if(!preview.isConnected)return;
+        preview.replaceChildren();
+        await renderer.renderAsync(content,preview,preview,{renderAltChunks:false,ignoreFonts:true});
+        preview.dataset.loaded='true';
+      }catch(error){
+        if(preview.isConnected)preview.textContent='Pratinjau gagal dimuat. Unduh file untuk membukanya.';
+        console.error('Gagal menampilkan pratinjau DOCX:',error);
+      }
+    }));
+  }catch(error){
+    previews.forEach(preview=>{if(preview.isConnected)preview.textContent='Pratinjau DOCX tidak tersedia. Unduh file untuk membukanya.';});
+    console.error('Gagal memuat renderer DOCX:',error);
+  }
+}
+let PDF_PREVIEW_PROMISE=null;
+function loadPdfPreview(){
+  if(window.PdfPreview&&typeof window.PdfPreview.getDocument==='function')return Promise.resolve(window.PdfPreview);
+  if(!PDF_PREVIEW_PROMISE)PDF_PREVIEW_PROMISE=new Promise((resolve,reject)=>{
+    const script=document.createElement('script');
+    script.src='/lib/pdf-preview.js';
+    script.onload=()=>{
+      if(window.PdfPreview&&typeof window.PdfPreview.getDocument==='function'){
+        window.PdfPreview.GlobalWorkerOptions.workerSrc='/lib/pdf.worker.min.mjs';
+        resolve(window.PdfPreview);
+      }else{PDF_PREVIEW_PROMISE=null;reject(new Error('Renderer PDF tidak tersedia'));}
+    };
+    script.onerror=()=>{PDF_PREVIEW_PROMISE=null;reject(new Error('Gagal memuat renderer PDF'));};
+    document.head.appendChild(script);
+  });
+  return PDF_PREVIEW_PROMISE;
+}
+async function renderStagePdfPreviews(){
+  const previews=[...document.querySelectorAll('.stage-pdf-preview[data-pdf-src]:not([data-loaded])')];
+  if(!previews.length)return;
+  try{
+    const renderer=await loadPdfPreview();
+    await Promise.all(previews.map(async preview=>{
+      try{
+        const response=await fetch(preview.dataset.pdfSrc,{credentials:'same-origin'});
+        if(!response.ok)throw new Error('HTTP '+response.status);
+        const data=new Uint8Array(await response.arrayBuffer());
+        if(!preview.isConnected)return;
+        preview.replaceChildren();
+        const pdf=await renderer.getDocument({data}).promise;
+        if(!preview.isConnected){await pdf.destroy();return;}
+        preview.setAttribute('aria-label',`Pratinjau PDF, ${pdf.numPages} halaman`);
+        const pages=[];
+        for(let pageNumber=1;pageNumber<=pdf.numPages;pageNumber++){
+          const page=await pdf.getPage(pageNumber),viewport=page.getViewport({scale:1}),container=document.createElement('div');
+          container.className='stage-pdf-page';
+          container.style.aspectRatio=`${viewport.width} / ${viewport.height}`;
+          container.setAttribute('aria-label',`Halaman ${pageNumber}`);
+          const canvas=document.createElement('canvas');
+          canvas.setAttribute('aria-label',`Halaman ${pageNumber} dari ${pdf.numPages}`);
+          container.appendChild(canvas);
+          preview.appendChild(container);
+          pages.push({page,canvas,container,viewport});
+        }
+        const renderPage=async item=>{
+          const width=Math.max(1,item.container.clientWidth),scale=width/item.viewport.width,outputScale=Math.min(window.devicePixelRatio||1,2);
+          const viewport=item.page.getViewport({scale});
+          item.canvas.width=Math.floor(viewport.width*outputScale);
+          item.canvas.height=Math.floor(viewport.height*outputScale);
+          item.canvas.style.width='100%';
+          item.canvas.style.height='100%';
+          await item.page.render({canvasContext:item.canvas.getContext('2d'),viewport,transform:outputScale===1?null:[outputScale,0,0,outputScale,0,0]}).promise;
+          item.container.dataset.rendered='true';
+        };
+        if('IntersectionObserver'in window){
+          const observer=new IntersectionObserver(entries=>{
+            entries.forEach(entry=>{
+              if(!entry.isIntersecting)return;
+              observer.unobserve(entry.target);
+              const item=pages.find(candidate=>candidate.container===entry.target);
+              if(item)renderPage(item).catch(error=>{item.container.textContent='Gagal merender halaman PDF.';console.error('Gagal merender halaman PDF:',error);});
+            });
+          },{root:preview,rootMargin:'500px 0px'});
+          pages.slice(1).forEach(item=>observer.observe(item.container));
+        }else{
+          for(const item of pages)await renderPage(item);
+        }
+        if(pages[0])await renderPage(pages[0]);
+        preview.dataset.loaded='true';
+      }catch(error){
+        if(preview.isConnected)preview.textContent='Pratinjau PDF gagal dimuat. Unduh file untuk membukanya.';
+        console.error('Gagal menampilkan pratinjau PDF:',error);
+      }
+    }));
+  }catch(error){
+    previews.forEach(preview=>{if(preview.isConnected)preview.textContent='Pratinjau PDF tidak tersedia. Unduh file untuk membukanya.';});
+    console.error('Gagal memuat renderer PDF:',error);
+  }
 }
 function drawStageDocsViewer(){
   const project=STAGE_DOC_VIEW&&byId(STAGE_DOC_VIEW.projectId),stage=project&&project.stages.find(s=>s.id===STAGE_DOC_VIEW.stageId);if(!stage){closeStageDocs();return;}
-  const files=stageDocsMarkup(stage,false);
+  const files=stageDocsMarkup(stage,false,{projectId:project.id,preview:true});
   const count=(stage.attachments||[]).length+(stage.docLinks||[]).length;
   $('#modal2').innerHTML=`<div class="ov"><div class="dlg wide"><div class="dh"><h3>${esc(project.name)} · ${esc(stage.name||'Stage')}</h3><button class="x" data-on-click="[&quot;closeStageDocs&quot;]">✕</button></div><div class="db"><div class="small muted" style="margin-bottom:12px">Dokumentasi stage (${count})</div><div class="stage-doc-list">${files||'<div class="empty">Belum ada dokumentasi untuk stage ini.</div>'}</div></div><div class="df"><button class="btn" data-on-click="[&quot;closeStageDocs&quot;]">Tutup</button></div></div></div>`;
+  renderStageDocxPreviews();
 }
 function drawStageDocs(){
   const stage=draft&&draft.stages.find(s=>s.id===STAGE_DOC_ID);if(!stage){closeStageDocs();return;}
-  const files=(ATT_UNSAVED&&VIEW==='project_form'?'<div class="small" style="color:#f59e0b;margin-bottom:8px">⚠ Lampiran belum tersimpan ke project. Tutup dialog ini lalu tekan <b>Simpan project</b>.</div>':'')+stageDocsMarkup(stage,true);
-  const upload=canEdit()?(isNew?'<div class="small muted">Simpan project terlebih dahulu sebelum mengunggah dokumentasi.</div>':'<label class="btn sm pri stage-doc-upload">Tambah file<input type="file" accept="image/*,video/mp4,video/webm,video/quicktime,.m4v,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.csv,.txt" multiple data-on-change="[&quot;uploadStageDocs&quot;,&quot;@el&quot;]"></label>'):'';
-  const linkForm=canEdit()?`<div class="fg" style="margin-top:14px"><label>Nama link (opsional)<input id="stage_doc_link_title" placeholder="Contoh: Report FAT"></label><label class="full">Tempel link OneDrive / SharePoint<input id="stage_doc_link_url" type="url" placeholder="https://..." data-on-keydown="[&quot;handleDocLinkKey&quot;]"></label><div><button class="btn sm" data-on-click="[&quot;addStageDocLink&quot;]">+ Tambah link</button></div></div>`:'';
-  $('#modal2').innerHTML=`<div class="ov"><div class="dlg wide"><div class="dh"><h3>Dokumentasi · ${esc(stage.name||'Stage')}</h3><button class="x" data-on-click="[&quot;closeStageDocs&quot;]">✕</button></div><div class="db"><div style="display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin-bottom:12px">${upload}<span class="small muted">Foto, video, dan dokumen · Maksimal 100 MB per file</span></div><div class="stage-doc-list">${files||'<div class="empty">Belum ada dokumentasi untuk stage ini.</div>'}</div><h4 style="margin:18px 0 0">Link dokumentasi</h4>${linkForm}</div><div class="df"><button class="btn" data-on-click="[&quot;closeStageDocs&quot;]">Tutup</button></div></div></div>`;
+  const files=(ATT_UNSAVED&&VIEW==='project_form'?'<div class="small" style="color:#f59e0b;margin-bottom:8px">⚠ Lampiran belum tersimpan ke project. Tutup dialog ini lalu tekan <b>Simpan project</b>.</div>':'')+stageDocsMarkup(stage,true,{projectId:draft.id,preview:true});
+  const upload=canEdit()?(isNew?'<div class="small muted">Simpan project terlebih dahulu sebelum mengunggah dokumentasi.</div>':`<div class="stage-doc-upload-form"><label>Keterangan / kondisi dokumentasi <span class="muted">(opsional)</span><textarea id="stage_doc_description" rows="2" maxlength="2000" placeholder="Boleh diisi sebelum unggah, atau ditambahkan pada kartu file setelah unggah."></textarea></label><label class="btn sm pri stage-doc-upload">Pilih file &amp; unggah<input type="file" accept="image/*,video/mp4,video/webm,video/quicktime,.m4v,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.csv,.txt" data-on-change="[&quot;uploadStageDocs&quot;,&quot;@el&quot;]"></label><span class="small muted">Keterangan bisa ditambahkan atau dilengkapi pada kartu file setelah unggah · Maksimal 100 MB per file</span></div>`):'';
+  const linkForm=canEdit()?`<div class="stage-doc-link-form"><label>Nama link<input id="stage_doc_link_title" placeholder="Contoh: Laporan hasil FAT"></label><label>URL OneDrive / SharePoint<input id="stage_doc_link_url" type="url" placeholder="https://..." data-on-keydown="[&quot;handleDocLinkKey&quot;]"></label><label class="stage-doc-link-description">Keterangan / kondisi dokumentasi<textarea id="stage_doc_link_description" rows="2" maxlength="2000" placeholder="Jelaskan tujuan link atau kondisi yang didokumentasikan."></textarea></label><button class="btn sm pri" data-on-click="[&quot;addStageDocLink&quot;]">+ Tambah link</button></div>`:'';
+  const count=(stage.attachments||[]).length+(stage.docLinks||[]).length;
+  const incomplete=[...(stage.attachments||[]),...(stage.docLinks||[])].filter(item=>!String(item.description||'').trim()).length;
+  $('#modal2').innerHTML=`<div class="ov"><div class="dlg wide stage-doc-modal"><div class="dh"><h3>Dokumentasi · ${esc(stage.name||'Stage')} <span class="muted small">(${count})</span></h3><button class="x" data-on-click="[&quot;closeStageDocs&quot;]">✕</button></div><div class="db"><p class="small muted">Setiap file atau link perlu menjelaskan isi bukti, kondisi yang terlihat, atau hasil pemeriksaan. ${incomplete?`${incomplete} dokumentasi belum memiliki keterangan.`:''}</p>${upload}<div class="stage-doc-list">${files||'<div class="empty">Belum ada dokumentasi untuk stage ini.</div>'}</div><h4 style="margin:18px 0 8px">Tambah link dokumentasi</h4>${linkForm}</div><div class="df"><button class="btn" data-on-click="[&quot;closeStageDocs&quot;]">Tutup</button></div></div></div>`;
+  renderStageDocxPreviews();
 }
 async function syncStageDocsIfDetail(){
   if(VIEW==='project_detail'&&draft&&!isNew){
@@ -2610,10 +2857,11 @@ async function syncStageDocsIfDetail(){
 async function addStageDocLink(){
   if(!canEdit()||!draft)return;
   const stage=draft.stages.find(s=>s.id===STAGE_DOC_ID);if(!stage)return;
-  const rawUrl=$('#stage_doc_link_url').value.trim(),title=$('#stage_doc_link_title').value.trim();
+  const rawUrl=$('#stage_doc_link_url').value.trim(),title=$('#stage_doc_link_title').value.trim(),description=$('#stage_doc_link_description').value.trim();
+  if(!description){toast('Keterangan / kondisi link wajib diisi.');return;}
   let parsed;try{parsed=new URL(rawUrl);}catch(e){toast('Link tidak valid.');return;}
   if(!['http:','https:'].includes(parsed.protocol)||parsed.username||parsed.password){toast('URL harus menggunakan http atau https.');return;}
-  stage.docLinks=stage.docLinks||[];stage.docLinks.push({id:uid(),title:title||parsed.hostname,url:parsed.href});
+  stage.docLinks=stage.docLinks||[];stage.docLinks.push({id:uid(),title:title||parsed.hostname,url:parsed.href,description:description});
   await syncStageDocsIfDetail();drawStageDocs();toast('Link dokumentasi ditambahkan');
 }
 async function removeStageDocLink(id){
@@ -2627,8 +2875,9 @@ function openStageDocLink(stageId,linkId){
   try{const url=new URL(link.url);if(!['http:','https:'].includes(url.protocol)||url.username||url.password)throw new Error();window.open(url.href,'_blank','noopener,noreferrer');}catch(e){toast('Link dokumentasi tidak valid.');}
 }
 async function uploadStageDocs(input){
-  const stage=draft&&draft.stages.find(s=>s.id===STAGE_DOC_ID);if(!canEdit()||!stage)return;
+  const stage=draft&&draft.stages.find(s=>s.id===STAGE_DOC_ID);  if(!canEdit()||!stage)return;
   if(isNew){toast('Simpan project terlebih dahulu sebelum mengunggah dokumentasi.');input.value='';return;}
+  const description=$('#stage_doc_description').value.trim();
   const allowed=/\.(png|jpe?g|gif|webp|mp4|webm|mov|m4v|pdf|docx?|xlsx?|pptx?|csv|txt)$/i;
   for(const file of Array.from(input.files||[])){
     if(file.size>FILE_MAX){toast('File terlalu besar (maksimal 100 MB).');continue;}
@@ -2636,18 +2885,32 @@ async function uploadStageDocs(input){
     toast('Mengunggah '+file.name+' ...');
     try{
       const uploaded=await api('/api/files',{method:'POST',headers:{'Content-Type':'application/octet-stream','X-Filename':encodeURIComponent(file.name),'X-Prefix':encodeURIComponent(draft.code||'PRJ')},body:file});
-      stage.attachments=stage.attachments||[];stage.attachments.push({id:uid(),name:file.name,file:uploaded.name,size:uploaded.size||file.size,type:file.type||uploaded.mime_type||'',uploadedAt:Date.now(),uploadedBy:ME});
+      stage.attachments=stage.attachments||[];stage.attachments.push({id:uid(),name:file.name,file:uploaded.name,size:uploaded.size||file.size,type:file.type||uploaded.mime_type||'',uploadedAt:Date.now(),uploadedBy:ME,description:description});
       toast('File dokumentasi berhasil diunggah');
     }catch(e){toast('Gagal mengunggah dokumentasi: '+e.message);}
   }
   input.value='';await syncStageDocsIfDetail();drawStageDocs();
+}
+function stageDocItem(kind,id){
+  const stage=STAGE_DOC_ID&&draft?draft.stages.find(item=>item.id===STAGE_DOC_ID):null;
+  const list=kind==='file'?stage&&stage.attachments:stage&&stage.docLinks;
+  return list&&(list||[]).find(item=>item.id===id);
+}
+function setStageDocDescription(kind,id,value){
+  if(!['file','link'].includes(kind))return;
+  const item=stageDocItem(kind,id);if(item)item.description=value;
+}
+async function saveStageDocDescription(kind,id){
+  if(!canEdit()||!draft)return;
+  const item=stageDocItem(kind,id);if(!item)return;
+  if(!String(item.description||'').trim()){toast('Keterangan / kondisi dokumentasi wajib diisi.');return;}
+  await syncStageDocsIfDetail();drawStageDocs();toast('Keterangan dokumentasi disimpan');
 }
 async function detachStageDoc(id){
   if(!canEdit()||!draft)return;
   const stage=draft.stages.find(s=>s.id===STAGE_DOC_ID);if(!stage)return;
   stage.attachments=(stage.attachments||[]).filter(file=>file.id!==id);await syncStageDocsIfDetail();drawStageDocs();
 }
-function openStageDocFile(file){window.open(apiURL('/api/files/'+encodeURIComponent(file)),'_blank','noopener');}
 function setS(id,k,v,quiet){
   const s=draft.stages.find(x=>x.id===id);if(!s)return;
   const t=fd(today());
@@ -3255,7 +3518,7 @@ async function userDel(n){if(!confirm('Hapus pengguna "'+n+'"? Riwayat perubahan
 async function backupNow(){try{const r=await api('/api/backup',{method:'POST'});toast('Backup dibuat: '+r.files.join(', '));}catch(e){toast(e.message);}}
 
 /* ================= boot ================= */
-document.addEventListener('keydown',e=>{if(e.key==='Escape'){if($('#modal2').innerHTML){closeM2();return;}if($('#modal').innerHTML&&USER)closeModal();}});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){if($('#stage-media-viewer')){closeStageMediaViewer();return;}if($('#modal2').innerHTML){closeM2();return;}if($('#modal').innerHTML&&USER)closeModal();}});
 window.addEventListener&&window.addEventListener('focus',()=>{if(USER)syncNow().then(ch=>{if(ch)render();});});
 ['click','change','input','focus','blur','keydown'].forEach(ev => {
   document.addEventListener(ev, e => ptDispatch(e, ev), true);
